@@ -1,10 +1,28 @@
 {
+  "target_application": {
+    "executable": "WidgetInc.exe",
+    "window_title": "WidgetInc",
+    "process_name": "WidgetInc",
+    "startup_timeout": 30
+  },
   "screen_dimensions": {
     "width": 1920,
     "height": 1080
   },
-  "mouse_speed": 10,
-  "click_delay": 0.1,
-  "minigame_timeout": 300,
-  "ocr_confidence_threshold": 0.8
+  "automation": {
+    "mouse_speed": 10,
+    "click_delay": 0.1,
+    "detection_timeout": 5.0,
+    "retry_attempts": 3
+  },
+  "detection": {
+    "ui_threshold": 0.8,
+    "sprite_threshold": 0.8,
+    "ocr_confidence_threshold": 0.8
+  },
+  "safety": {
+    "emergency_stop_key": "F9",
+    "pause_key": "F8",
+    "max_automation_time": 3600
+  }
 }

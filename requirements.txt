@@ -2,7 +2,7 @@ opencv-python
 pillow
 pyautogui
 pytesseract
-tkinter
 numpy
 pygetwindow
 pyperclip
+psutil

@@ -16,6 +16,7 @@ setup(
         "numpy",
         "pygetwindow",
         "pyperclip",
+        "psutil",
     ],
     entry_points={
         "console_scripts": [

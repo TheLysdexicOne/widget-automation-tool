@@ -17,20 +17,31 @@ The Widget Automation Tool is designed to automate mouse movements and clicks fo
 ```
 widget-automation-tool
 ├── src
-│   ├── main.py            # Entry point of the application
-│   ├── screen_capture.py   # Functions for capturing the screen
-│   ├── mouse_control.py    # Functions to simulate mouse actions
-│   ├── text_recognition.py  # OCR functions for text extraction
-│   ├── game_logic.py       # Logic for determining active minigame
+├── src
+│   ├── main.py                 # Entry point of the application
+│   ├── screen_capture.py       # Functions for capturing the screen
+│   ├── mouse_control.py        # Functions to simulate mouse actions
+│   ├── text_recognition.py     # OCR functions for text extraction
+│   ├── game_logic.py           # Logic for determining active minigame
+│   ├── widget_inc_manager.py   # WidgetInc process management
+│   ├── overlay_gui.py          # On-screen status overlay
 │   └── gui
-│       ├── __init__.py     # Initializes the GUI package
-│       └── menu.py         # GUI for minigame selection
+│       ├── __init__.py         # Initializes the GUI package
+│       └── menu.py             # GUI for minigame selection
 ├── config
-│   ├── settings.json       # Configuration settings for the application
-│   └── minigames.json      # List of available minigames and actions
-├── requirements.txt        # Project dependencies
-├── setup.py                # Packaging information
-└── README.md               # Project documentation
+│   ├── settings.json           # Configuration settings for the application
+│   └── minigames.json          # List of available minigames and actions
+├── assets                      # Game assets (sprites, templates)
+│   ├── sprites/                # Sprite templates for computer vision
+│   └── ui_elements/            # UI element templates
+├── tests                       # Test files
+│   ├── run_tests.py            # Test runner
+│   ├── test_overlay.py         # Overlay GUI tests
+│   ├── simple_overlay_test.py  # Standalone overlay test
+│   └── README.md               # Test documentation
+├── requirements.txt            # Project dependencies
+├── setup.py                    # Packaging information
+└── README.md                   # Project documentation
 ```
 
 ## Installation
@@ -64,6 +75,32 @@ widget-automation-tool
    ```
 2. Use the GUI to select a minigame and start the automation process.
 3. Press the designated escape key to stop the automation.
+
+## Testing
+
+### Run All Tests
+
+```bash
+# Use the test runner (recommended)
+python tests/run_tests.py
+```
+
+### Individual Tests
+
+```bash
+# Simple overlay test (no WidgetInc required)
+python tests/simple_overlay_test.py
+
+# Full overlay test (requires WidgetInc)
+python tests/test_overlay.py
+```
+
+### Test Categories
+
+- **GUI/Overlay Tests**: Test the on-screen overlay functionality
+- **Unit Tests**: Test individual components in isolation
+
+See `tests/README.md` for detailed testing documentation.
 
 ## Contributing
 

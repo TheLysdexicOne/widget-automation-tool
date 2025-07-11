@@ -1,27 +1,73 @@
 {
+  "target_application": {
+    "executable": "WidgetInc.exe",
+    "window_title": "WidgetInc",
+    "process_name": "WidgetInc"
+  },
   "minigames": [
     {
-      "name": "Minigame 1",
-      "start_sequence": "Click Start",
+      "name": "Static Clicker Game",
+      "window_title": "WidgetInc",
+      "game_type": "static_ui",
+      "ui_config": {
+        "template_folder": "assets/ui_elements",
+        "detection_threshold": 0.8,
+        "required_elements": ["start_button", "play_button"]
+      },
+      "automation_sequence": [
+        { "action": "detect_ui", "wait": 1.0 },
+        { "action": "click_element", "element": "start_button" },
+        { "action": "wait", "duration": 0.5 },
+        { "action": "click_element", "element": "play_button" }
+      ],
       "parameters": {
         "duration": 30,
-        "difficulty": "easy"
+        "difficulty": "easy",
+        "max_retries": 3
       }
     },
     {
-      "name": "Minigame 2",
-      "start_sequence": "Press Here",
-      "parameters": {
-        "duration": 45,
-        "difficulty": "medium"
-      }
-    },
-    {
-      "name": "Minigame 3",
-      "start_sequence": "Begin Game",
+      "name": "Sprite Sorting Game",
+      "window_title": "WidgetInc",
+      "game_type": "vision_based",
+      "sprite_config": {
+        "template_folder": "assets/sprites",
+        "conveyor_region": {
+          "x_percent": 10,
+          "y_percent": 30,
+          "width_percent": 80,
+          "height_percent": 40
+        },
+        "sorting_bins": {
+          "red": { "x_percent": 20, "y_percent": 80 },
+          "blue": { "x_percent": 40, "y_percent": 80 },
+          "green": { "x_percent": 60, "y_percent": 80 },
+          "yellow": { "x_percent": 80, "y_percent": 80 }
+        },
+        "detection_threshold": 0.8
+      },
       "parameters": {
         "duration": 60,
-        "difficulty": "hard"
+        "difficulty": "medium",
+        "click_delay": 0.2
+      }
+    },
+    {
+      "name": "Decision Making Game",
+      "window_title": "WidgetInc",
+      "game_type": "hybrid",
+      "ui_config": {
+        "template_folder": "assets/ui_elements",
+        "detection_threshold": 0.8
+      },
+      "sprite_config": {
+        "template_folder": "assets/sprites",
+        "detection_threshold": 0.8
+      },
+      "parameters": {
+        "duration": 45,
+        "difficulty": "hard",
+        "decision_timeout": 2.0
       }
     }
   ]
