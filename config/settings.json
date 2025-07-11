@@ -1,0 +1,10 @@
+{
+  "screen_dimensions": {
+    "width": 1920,
+    "height": 1080
+  },
+  "mouse_speed": 10,
+  "click_delay": 0.1,
+  "minigame_timeout": 300,
+  "ocr_confidence_threshold": 0.8
+}

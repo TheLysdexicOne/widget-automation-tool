@@ -1,0 +1,28 @@
+{
+  "minigames": [
+    {
+      "name": "Minigame 1",
+      "start_sequence": "Click Start",
+      "parameters": {
+        "duration": 30,
+        "difficulty": "easy"
+      }
+    },
+    {
+      "name": "Minigame 2",
+      "start_sequence": "Press Here",
+      "parameters": {
+        "duration": 45,
+        "difficulty": "medium"
+      }
+    },
+    {
+      "name": "Minigame 3",
+      "start_sequence": "Begin Game",
+      "parameters": {
+        "duration": 60,
+        "difficulty": "hard"
+      }
+    }
+  ]
+}
