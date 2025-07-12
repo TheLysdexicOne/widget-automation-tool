@@ -323,48 +323,69 @@ class OverlayGUI:
 
         def check_position():
             try:
-                if self.widget_manager.find_widget_inc_window():
-                    widget_window = self.widget_manager.window
+                # Store the original window reference to avoid re-detecting
+                if not hasattr(self, "_target_window") or self._target_window is None:
+                    # Only search for WidgetInc on first run or if we lost the window
+                    if self.widget_manager.find_widget_inc_window():
+                        self._target_window = self.widget_manager.window
+                    else:
+                        return
 
-                    if widget_window:
-                        # Calculate new position for collapsed state (right-aligned)
-                        new_x = (
-                            widget_window.left
-                            + widget_window.width
-                            - self.collapsed_size[0]
-                            - 10
+                # Check if our stored window is still valid
+                widget_window = self._target_window
+                if widget_window:
+                    try:
+                        # Test if window is still valid by accessing its properties
+                        _ = widget_window.left
+                        _ = widget_window.top
+                        _ = widget_window.width
+                        _ = widget_window.height
+                    except:
+                        # Window is no longer valid, clear reference
+                        self._target_window = None
+                        return
+
+                    # Calculate new position for collapsed state (right-aligned)
+                    new_x = (
+                        widget_window.left
+                        + widget_window.width
+                        - self.collapsed_size[0]
+                        - 10
+                    )
+                    new_y = widget_window.top + 64
+
+                    # If expanded, adjust x position to expand left
+                    if self.is_expanded:
+                        new_x = new_x - (self.expanded_width - self.collapsed_size[0])
+
+                    # Update position if significantly different
+                    if (
+                        abs(new_x - self.root.winfo_x()) > 10
+                        or abs(new_y - self.root.winfo_y()) > 10
+                    ):
+                        width = (
+                            self.expanded_width
+                            if self.is_expanded
+                            else self.collapsed_size[0]
                         )
-                        new_y = widget_window.top + 64
-
-                        # If expanded, adjust x position to expand left
-                        if self.is_expanded:
-                            new_x = new_x - (
-                                self.expanded_width - self.collapsed_size[0]
-                            )
-
-                        # Update position if significantly different
-                        if (
-                            abs(new_x - self.root.winfo_x()) > 10
-                            or abs(new_y - self.root.winfo_y()) > 10
-                        ):
-                            width = (
-                                self.expanded_width
-                                if self.is_expanded
-                                else self.collapsed_size[0]
-                            )
-                            height = (
-                                self.expanded_height
-                                if self.is_expanded
-                                else self.collapsed_size[1]
-                            )
-                            self.root.geometry(f"{width}x{height}+{new_x}+{new_y}")
+                        height = (
+                            self.expanded_height
+                            if self.is_expanded
+                            else self.collapsed_size[1]
+                        )
+                        self.root.geometry(f"{width}x{height}+{new_x}+{new_y}")
 
             except Exception as e:
+                # Clear the stored window reference on error
+                self._target_window = None
                 # Silently ignore errors when WidgetInc isn't running (for testing)
                 pass
 
             # Schedule next check
             self.root.after(1000, check_position)
+
+        # Initialize target window reference
+        self._target_window = None
 
         # Start monitoring
         self.root.after(1000, check_position)

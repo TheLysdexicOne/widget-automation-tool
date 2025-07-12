@@ -70,5 +70,52 @@
         "decision_timeout": 2.0
       }
     }
+  ],
+  "detection_patterns": [
+    {
+      "name": "Iron Mine",
+      "text_identifiers": ["Iron Mine"],
+      "has_logic": false
+    },
+    {
+      "name": "Copper Mine",
+      "text_identifiers": ["Copper Mine"],
+      "has_logic": false
+    },
+    {
+      "name": "Widget Spinner",
+      "text_identifiers": ["Widget Spinner"],
+      "has_logic": false
+    },
+    {
+      "name": "Iron Smelter",
+      "text_identifiers": ["Load Smelter", "Smelt Iron"],
+      "has_logic": false
+    },
+    {
+      "name": "Copper Smelter",
+      "text_identifiers": ["Load Smelter", "Smelt Copper"],
+      "has_logic": false
+    },
+    {
+      "name": "Battery Assembler",
+      "text_identifiers": ["Energize Battery"],
+      "has_logic": false
+    },
+    {
+      "name": "Computational Engine",
+      "text_identifiers": ["Compute Digits"],
+      "has_logic": false
+    },
+    {
+      "name": "Capacitor Bank",
+      "text_identifiers": ["Match Voltage"],
+      "has_logic": false
+    },
+    {
+      "name": "Circuit Fab",
+      "text_identifiers": ["Engrave Circuits"],
+      "has_logic": false
+    }
   ]
 }

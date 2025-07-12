@@ -2,6 +2,7 @@ import psutil
 import time
 import json
 from mouse_control import get_widget_inc_window, focus_widget_inc
+import pygetwindow as gw
 
 
 class WidgetIncManager:
@@ -37,9 +38,47 @@ class WidgetIncManager:
         return False
 
     def find_widget_inc_window(self):
-        """Find and store reference to WidgetInc window"""
-        self.window = get_widget_inc_window()
-        return self.window is not None
+        """Find the WidgetInc window more specifically"""
+        try:
+            # First, check if we have a stored window and it's still valid
+            if hasattr(self, "window") and self.window:
+                try:
+                    # Test if window is still valid
+                    _ = self.window.title
+                    return True
+                except:
+                    # Window is no longer valid
+                    self.window = None
+
+            # Try to find by exact window title first
+            windows = gw.getWindowsWithTitle("WidgetInc")
+            if windows:
+                # Verify it's actually WidgetInc.exe process
+                for window in windows:
+                    try:
+                        # You could add process verification here if needed
+                        self.window = window
+                        return True
+                    except:
+                        continue
+
+            # If not found by title, try partial matches but be more specific
+            all_windows = gw.getAllWindows()
+            for window in all_windows:
+                try:
+                    title = window.title.lower()
+                    if "widgetinc" in title and not (
+                        "notepad" in title or "chrome" in title or "firefox" in title
+                    ):
+                        self.window = window
+                        return True
+                except:
+                    continue
+
+            return False
+        except Exception as e:
+            print(f"Error finding WidgetInc window: {e}")
+            return False
 
     def wait_for_widget_inc(self, timeout=None):
         """Wait for WidgetInc to start and window to appear"""
