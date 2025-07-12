@@ -13,6 +13,7 @@ class OverlayGUI:
         self.is_pinned = False
         self.hover_timer = None
         self.collapse_timer = None
+        self.last_click_time = 0  # For click debouncing
 
         # Threading-safe flags for state changes
         self.should_expand = False
@@ -119,20 +120,27 @@ class OverlayGUI:
                 self.start_collapse_timer()
 
         def on_click(event):
+            # Debounce clicks to prevent multiple rapid toggles
+            current_time = time.time()
+            if current_time - self.last_click_time < 0.3:  # 300ms debounce
+                return
+
+            self.last_click_time = current_time
             # Make the entire overlay clickable for pin/unpin
             self.toggle_pin()
 
         def on_right_click(event):
-            print(f"Right-click handler called: {event}")
             # Show context menu anywhere on the overlay
             self.show_context_menu(event)
 
-        # Bind to canvas, frame, and root window
+        # Bind to canvas, frame, and root window for hover events
         for widget in [self.canvas, self.main_frame, self.root]:
             widget.bind("<Enter>", on_enter)
             widget.bind("<Leave>", on_leave)
-            widget.bind("<Button-1>", on_click)
             widget.bind("<Button-3>", on_right_click)  # Right click
+
+        # Only bind click to canvas to avoid multiple triggers
+        self.canvas.bind("<Button-1>", on_click)
 
     def start_hover_timer(self):
         """Start timer for hover expansion"""
@@ -193,7 +201,7 @@ class OverlayGUI:
 
     def collapse_overlay(self):
         """Collapse the overlay to minimal size"""
-        if self.is_expanded and not self.is_pinned:
+        if self.is_expanded and not self.is_pinned:  # Don't collapse if pinned
             self.is_expanded = False
             try:
                 # Calculate original position - move back to the right
@@ -221,11 +229,27 @@ class OverlayGUI:
         self.is_pinned = not self.is_pinned
 
         if self.is_pinned:
-            self.expand_overlay()
+            # When pinning: cancel timers and ensure expanded
+            if self.hover_timer:
+                self.hover_timer.cancel()
+                self.hover_timer = None
+            if self.collapse_timer:
+                self.collapse_timer.cancel()
+                self.collapse_timer = None
+
+            # Expand when pinned (if not already expanded)
+            if not self.is_expanded:
+                self.expand_overlay()
+        else:
+            # When unpinning: restore normal hover behavior
+            # Don't force collapse, just allow normal behavior to resume
+            pass
 
         # Redraw to show/hide pin icon
         if self.is_expanded:
             self.draw_expanded()
+        else:
+            self.draw_collapsed()
 
     def draw_collapsed(self):
         """Draw the collapsed state (just the red circle)"""
@@ -254,6 +278,13 @@ class OverlayGUI:
             outline=self.circle_color,
         )
 
+        # Draw pin icon if pinned - anchored to top-right of circle
+        if self.is_pinned:
+            # Position pin icon at top-right corner of the circle
+            pin_x = circle_x + self.circle_size[0] - 6  # Overlap circle by 6 pixels
+            pin_y = circle_y - 2  # Slightly above circle
+            self.draw_pin_icon(pin_x, pin_y)
+
     def draw_expanded(self):
         """Draw the expanded state with text"""
         self.canvas.delete("all")
@@ -281,12 +312,13 @@ class OverlayGUI:
             outline=self.circle_color,
         )
 
-        # Draw pin icon if pinned
+        # Draw pin icon if pinned - anchored to top-right of circle
         if self.is_pinned:
-            pin_x = 10
-            pin_y = 10
+            # Position pin icon at top-right corner of the circle
+            pin_x = circle_x + self.circle_size[0] - 6  # Overlap circle by 6 pixels
+            pin_y = circle_y - 2  # Slightly above circle
             self.draw_pin_icon(pin_x, pin_y)
-            text_x = 30
+            text_x = 10  # Text starts from left
         else:
             text_x = 10
 
@@ -311,13 +343,27 @@ class OverlayGUI:
         )
 
     def draw_pin_icon(self, x, y):
-        """Draw a simple pin/lock icon"""
-        # Simple pin icon (golden color)
+        """Draw a pin/lock icon anchored to circle"""
+        # Pin icon with better visibility
+        # Draw pin head (circle)
         self.canvas.create_oval(
-            x, y, x + 8, y + 8, fill=self.pin_color, outline=self.pin_color
+            x, y, x + 8, y + 8, fill=self.pin_color, outline="#000000", width=1
         )
+        # Draw pin body (rectangle)
         self.canvas.create_rectangle(
-            x + 2, y + 6, x + 6, y + 12, fill=self.pin_color, outline=self.pin_color
+            x + 2, y + 6, x + 6, y + 12, fill=self.pin_color, outline="#000000", width=1
+        )
+        # Draw pin point
+        self.canvas.create_polygon(
+            x + 3,
+            y + 12,
+            x + 4,
+            y + 15,
+            x + 5,
+            y + 12,
+            fill=self.pin_color,
+            outline="#000000",
+            width=1,
         )
 
     def update_status(self, status, detail=""):
@@ -375,8 +421,6 @@ class OverlayGUI:
     def show_context_menu(self, event):
         """Show right-click context menu"""
         try:
-            print(f"Right-click detected at {event.x_root}, {event.y_root}")
-
             context_menu = tk.Menu(self.root, tearoff=0)
             context_menu.add_command(
                 label="Show Debug Console", command=self.show_debug_console
