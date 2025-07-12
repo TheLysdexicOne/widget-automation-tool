@@ -14,6 +14,10 @@ class OverlayGUI:
         self.hover_timer = None
         self.collapse_timer = None
 
+        # Threading-safe flags for state changes
+        self.should_expand = False
+        self.should_collapse = False
+
         # GUI state
         self.status_text = "INACTIVE"
         self.detail_text = "No minigame detected"
@@ -68,6 +72,12 @@ class OverlayGUI:
         # Start position monitoring
         self.monitor_position()
 
+        # Cycle through startup states
+        self.cycle_startup_states()
+
+        # Start flag checking for thread-safe updates
+        self.check_state_flags()
+
     def position_window(self):
         """Position the overlay window relative to WidgetInc"""
         if self.widget_manager.find_widget_inc_window():
@@ -75,14 +85,14 @@ class OverlayGUI:
 
             if widget_window:
                 try:
-                    # Position on right side of WidgetInc window, offset from top
+                    # Position perfectly aligned to top-right, down 32px from title bar
+                    # Account for window borders/decorations
                     x = (
                         widget_window.left
                         + widget_window.width
                         - self.collapsed_size[0]
-                        - 10
                     )
-                    y = widget_window.top + 64  # Offset for header bar + 32px
+                    y = widget_window.top + 32  # Just below title bar
 
                     self.root.geometry(
                         f"{self.collapsed_size[0]}x{self.collapsed_size[1]}+{x}+{y}"
@@ -109,13 +119,20 @@ class OverlayGUI:
                 self.start_collapse_timer()
 
         def on_click(event):
+            # Make the entire overlay clickable for pin/unpin
             self.toggle_pin()
 
-        # Bind to both canvas and frame
-        for widget in [self.canvas, self.main_frame]:
+        def on_right_click(event):
+            print(f"Right-click handler called: {event}")
+            # Show context menu anywhere on the overlay
+            self.show_context_menu(event)
+
+        # Bind to canvas, frame, and root window
+        for widget in [self.canvas, self.main_frame, self.root]:
             widget.bind("<Enter>", on_enter)
             widget.bind("<Leave>", on_leave)
             widget.bind("<Button-1>", on_click)
+            widget.bind("<Button-3>", on_right_click)  # Right click
 
     def start_hover_timer(self):
         """Start timer for hover expansion"""
@@ -126,7 +143,7 @@ class OverlayGUI:
             self.collapse_timer.cancel()
             self.collapse_timer = None
 
-        self.hover_timer = threading.Timer(0.25, self.expand_overlay)
+        self.hover_timer = threading.Timer(0.25, self.set_expand_flag)
         self.hover_timer.start()
 
     def start_collapse_timer(self):
@@ -138,54 +155,66 @@ class OverlayGUI:
         if self.collapse_timer:
             self.collapse_timer.cancel()
 
-        self.collapse_timer = threading.Timer(0.5, self.collapse_overlay)
+        self.collapse_timer = threading.Timer(0.5, self.set_collapse_flag)
         self.collapse_timer.start()
+
+    def set_expand_flag(self):
+        """Set flag to expand overlay (called from timer thread)"""
+        self.should_expand = True
+
+    def set_collapse_flag(self):
+        """Set flag to collapse overlay (called from timer thread)"""
+        self.should_collapse = True
 
     def expand_overlay(self):
         """Expand the overlay to show status"""
         if not self.is_expanded:
             self.is_expanded = True
+            try:
+                # Calculate new position - expand to the left
+                current_x = self.root.winfo_x()
+                current_y = self.root.winfo_y()
 
-            # Calculate new position - expand to the left
-            current_x = self.root.winfo_x()
-            current_y = self.root.winfo_y()
+                # New X position: move left by the difference in width
+                new_x = current_x - (self.expanded_width - self.collapsed_size[0])
 
-            # New X position: move left by the difference in width
-            new_x = current_x - (self.expanded_width - self.collapsed_size[0])
+                # Resize and reposition window
+                self.root.geometry(
+                    f"{self.expanded_width}x{self.expanded_height}+{new_x}+{current_y}"
+                )
+                self.canvas.configure(
+                    width=self.expanded_width, height=self.expanded_height
+                )
 
-            # Resize and reposition window
-            self.root.geometry(
-                f"{self.expanded_width}x{self.expanded_height}+{new_x}+{current_y}"
-            )
-            self.canvas.configure(
-                width=self.expanded_width, height=self.expanded_height
-            )
-
-            # Redraw expanded view
-            self.draw_expanded()
+                # Redraw expanded view
+                self.draw_expanded()
+            except Exception as e:
+                print(f"Error expanding overlay: {e}")
 
     def collapse_overlay(self):
         """Collapse the overlay to minimal size"""
         if self.is_expanded and not self.is_pinned:
             self.is_expanded = False
+            try:
+                # Calculate original position - move back to the right
+                current_x = self.root.winfo_x()
+                current_y = self.root.winfo_y()
 
-            # Calculate original position - move back to the right
-            current_x = self.root.winfo_x()
-            current_y = self.root.winfo_y()
+                # New X position: move right by the difference in width
+                new_x = current_x + (self.expanded_width - self.collapsed_size[0])
 
-            # New X position: move right by the difference in width
-            new_x = current_x + (self.expanded_width - self.collapsed_size[0])
+                # Resize and reposition window
+                self.root.geometry(
+                    f"{self.collapsed_size[0]}x{self.collapsed_size[1]}+{new_x}+{current_y}"
+                )
+                self.canvas.configure(
+                    width=self.collapsed_size[0], height=self.collapsed_size[1]
+                )
 
-            # Resize and reposition window
-            self.root.geometry(
-                f"{self.collapsed_size[0]}x{self.collapsed_size[1]}+{new_x}+{current_y}"
-            )
-            self.canvas.configure(
-                width=self.collapsed_size[0], height=self.collapsed_size[1]
-            )
-
-            # Redraw collapsed view
-            self.draw_collapsed()
+                # Redraw collapsed view
+                self.draw_collapsed()
+            except Exception as e:
+                print(f"Error collapsing overlay: {e}")
 
     def toggle_pin(self):
         """Toggle the pinned state"""
@@ -291,32 +320,132 @@ class OverlayGUI:
             x + 2, y + 6, x + 6, y + 12, fill=self.pin_color, outline=self.pin_color
         )
 
-    def update_status(self, status_text, detail_text=None):
-        """Update the status and detail text"""
-        self.status_text = status_text
-        if detail_text:
-            self.detail_text = detail_text
+    def update_status(self, status, detail=""):
+        """Update the overlay status"""
+        self.status_text = status
+        self.detail_text = detail
 
-        # Update circle color based on status
-        status_upper = status_text.upper()
-        if status_upper == "ACTIVE":
-            self.circle_color = "#44FF44"  # Green for active
-        elif status_upper == "INACTIVE":
-            self.circle_color = "#FF4444"  # Red for inactive
-        elif "ERROR" in status_upper:
-            self.circle_color = "#FFAA00"  # Orange for error
-        elif "WAITING" in status_upper:
-            self.circle_color = "#4444FF"  # Blue for waiting
-        elif "STARTING" in status_upper:
-            self.circle_color = "#FF44FF"  # Purple for starting
+        # Update color based on status
+        if status == "ACTIVE":
+            self.circle_color = "#00FF00"  # Green
+        elif status == "WAITING":
+            self.circle_color = "#FFD700"  # Gold
+        elif status == "ERROR":
+            self.circle_color = "#FF0000"  # Red
+        elif status == "RELOADED":
+            self.circle_color = "#00FFFF"  # Cyan
         else:
-            self.circle_color = "#CCCCCC"  # Gray for unknown states
+            self.circle_color = "#FF4444"  # Default red
 
-        # Redraw in current state
+        # Redraw based on current state
         if self.is_expanded:
             self.draw_expanded()
         else:
             self.draw_collapsed()
+
+    def show_activate_button(self, minigame):
+        """Show activate button for detected minigame"""
+        # For now, just update status - activate button functionality can be added later
+        self.update_status("WAITING", f"Ready: {minigame.get('name', 'Unknown')}")
+
+    def hide_activate_button(self):
+        """Hide activate button"""
+        self.update_status("INACTIVE", "No minigame detected")
+
+    def show(self):
+        """Show the overlay"""
+        if self.root:
+            self.root.deiconify()
+            self.root.lift()
+
+    def hide(self):
+        """Hide the overlay"""
+        if self.root:
+            self.root.withdraw()
+
+    def destroy(self):
+        """Destroy the overlay"""
+        if self.hover_timer:
+            self.hover_timer.cancel()
+        if self.collapse_timer:
+            self.collapse_timer.cancel()
+        if self.root:
+            self.root.destroy()
+
+    def show_context_menu(self, event):
+        """Show right-click context menu"""
+        try:
+            print(f"Right-click detected at {event.x_root}, {event.y_root}")
+
+            context_menu = tk.Menu(self.root, tearoff=0)
+            context_menu.add_command(
+                label="Show Debug Console", command=self.show_debug_console
+            )
+            context_menu.add_separator()
+            context_menu.add_command(label="Close", command=self.destroy)
+
+            # Show menu at cursor position
+            context_menu.tk_popup(event.x_root, event.y_root)
+            print("Context menu shown")
+        except Exception as e:
+            print(f"Error showing context menu: {e}")
+
+    def show_debug_console(self):
+        """Show debug console from overlay"""
+        try:
+            # Try to access debug GUI through widget manager's main app
+            if (
+                hasattr(self.widget_manager, "main_app")
+                and self.widget_manager.main_app
+            ):
+                main_app = self.widget_manager.main_app
+                if hasattr(main_app, "debug_gui") and main_app.debug_gui:
+                    main_app.debug_gui.root.deiconify()
+                    main_app.debug_gui.root.lift()
+                    main_app.debug_gui.root.focus_force()
+                    return
+
+            # Alternative: try to find main app through global reference
+            # This would need to be set when overlay is created
+            print("Debug console access not available from overlay")
+        except Exception as e:
+            print(f"Error showing debug console: {e}")
+
+    def cycle_startup_states(self):
+        """Cycle through all available states on startup"""
+
+        def cycle_states():
+            states = [
+                ("STARTING", "Initializing..."),
+                ("SEARCHING", "Looking for WidgetInc..."),
+                ("READY", "WidgetInc found"),
+                ("ACTIVE", "Game detected"),
+                ("WAITING", "Ready for automation"),
+                ("INACTIVE", "No minigame detected"),
+            ]
+
+            # Start expanded for better visibility
+            if not self.is_expanded:
+                self.expand_overlay()
+
+            # Cycle through states with delays
+            for i, (status, detail) in enumerate(states):
+
+                def update_state(s=status, d=detail):
+                    self.update_status(s, d)
+
+                self.root.after(i * 1000, update_state)  # 1 second intervals
+
+            # Return to appropriate final state after cycling
+            def final_state():
+                self.update_status("INACTIVE", "No minigame detected")
+                if not self.is_pinned:
+                    self.collapse_overlay()
+
+            self.root.after(len(states) * 1000 + 500, final_state)
+
+        # Start cycling after a short delay
+        self.root.after(500, cycle_states)
 
     def monitor_position(self):
         """Monitor WidgetInc window position and update overlay position"""
@@ -390,24 +519,19 @@ class OverlayGUI:
         # Start monitoring
         self.root.after(1000, check_position)
 
-    def show(self):
-        """Show the overlay"""
-        if self.root:
-            self.root.deiconify()
+    def check_state_flags(self):
+        """Check and process state change flags (call from main thread)"""
+        if self.should_expand:
+            self.should_expand = False
+            self.expand_overlay()
 
-    def hide(self):
-        """Hide the overlay"""
-        if self.root:
-            self.root.withdraw()
+        if self.should_collapse:
+            self.should_collapse = False
+            self.collapse_overlay()
 
-    def destroy(self):
-        """Destroy the overlay"""
-        if self.hover_timer:
-            self.hover_timer.cancel()
-        if self.collapse_timer:
-            self.collapse_timer.cancel()
+        # Schedule next check
         if self.root:
-            self.root.destroy()
+            self.root.after(50, self.check_state_flags)  # Check every 50ms
 
 
 def create_overlay():

@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
 """
 Debug GUI for Widget Automation Tool
-Separate window for debugging, logging, and appl        # Log text widget with scrollbar
-        self.log_text = scrolledtext.ScrolledText(
-            log_frame,
-            wrap=tk.WORD,
-            width=80,
-            height=25,
-            font=('Consolas', 10),
-            bg='#1e1e1e',
-            fg='#ffffff',
-            insertbackground='white'
-        )trol
+Separate window for debugging, logging, and control
 """
 
 import tkinter as tk
@@ -23,6 +13,7 @@ import sys
 import os
 from datetime import datetime
 import queue
+from window_spy import WindowSpyOverlay
 
 
 class DebugGUI:
@@ -42,14 +33,12 @@ class DebugGUI:
             "SUCCESS": "#4CAF50",  # Green
         }
 
-        # Settings
+        # Settings with proper defaults
         self.settings = {
-            "debug_mode": False,
-            "enable_logging": True,
-            "enable_cursor_tracking": False,
-            "enable_click_recording": False,
-            "enable_on_screen_debug": False,
-            "enable_disabled_buttons": False,
+            "enable_cursor_tracking": True,  # Default enabled for development
+            "enable_click_recording": False,  # Default disabled until spy is ready
+            "enable_on_screen_debug": True,  # Default enabled for minigame detection
+            "enable_disabled_buttons": True,  # Default enabled to show all buttons
             "auto_scroll_log": True,
             "log_timestamps": True,
             "log_level": "INFO",
@@ -61,6 +50,13 @@ class DebugGUI:
 
         # Start log processing
         self.process_log_queue()
+
+        # Initialize window spy overlay
+        try:
+            self.window_spy = WindowSpyOverlay(debug_gui=self)
+        except Exception as e:
+            print(f"Error initializing window spy: {e}")
+            self.window_spy = None
 
         # Welcome message
         self.log("INFO", "Debug GUI initialized successfully")
@@ -75,11 +71,11 @@ class DebugGUI:
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True, padx=5, pady=5)
 
-        # Create tabs
+        # Create tabs in new order: Console, Settings, Monitoring, Debug
         self.create_console_tab()
-        self.create_settings_tab()
+        self.create_settings_tab()  # This was "Controls" - now "Settings"
         self.create_monitoring_tab()
-        self.create_controls_tab()
+        self.create_debug_tab()  # This was "Settings" - now "Debug"
 
         # Status bar
         self.create_status_bar()
@@ -165,10 +161,10 @@ class DebugGUI:
             controls_frame, text="Timestamps", variable=self.timestamp_var
         ).pack(side="left", padx=10)
 
-        # Clear button
-        ttk.Button(controls_frame, text="Clear Log", command=self.clear_log).pack(
-            side="right", padx=5
-        )
+        # Restart button (replaced Clear Log)
+        ttk.Button(
+            controls_frame, text="🔄 Restart", command=self.restart_application
+        ).pack(side="right", padx=5)
 
         # Copy button
         ttk.Button(controls_frame, text="Copy Log", command=self.copy_log).pack(
@@ -176,75 +172,26 @@ class DebugGUI:
         )
 
     def create_settings_tab(self):
-        """Create the settings tab"""
+        """Create the settings tab (previously Controls)"""
         settings_frame = ttk.Frame(self.notebook)
         self.notebook.add(settings_frame, text="Settings")
 
-        # Main settings frame
-        main_frame = ttk.LabelFrame(settings_frame, text="Debug Settings")
-        main_frame.pack(fill="x", padx=10, pady=10)
+        # Configuration controls
+        config_frame = ttk.LabelFrame(settings_frame, text="Configuration")
+        config_frame.pack(fill="x", padx=10, pady=10)
 
-        # Debug mode
-        self.debug_mode_var = tk.BooleanVar(value=self.settings["debug_mode"])
-        ttk.Checkbutton(
-            main_frame,
-            text="Debug Mode",
-            variable=self.debug_mode_var,
-            command=self.on_setting_change,
-        ).pack(anchor="w", padx=10, pady=5)
+        btn_frame2 = ttk.Frame(config_frame)
+        btn_frame2.pack(fill="x", padx=10, pady=10)
 
-        # Enable logging
-        self.enable_logging_var = tk.BooleanVar(value=self.settings["enable_logging"])
-        ttk.Checkbutton(
-            main_frame,
-            text="Enable Logging",
-            variable=self.enable_logging_var,
-            command=self.on_setting_change,
-        ).pack(anchor="w", padx=10, pady=5)
-
-        # Cursor tracking
-        self.cursor_tracking_var = tk.BooleanVar(
-            value=self.settings["enable_cursor_tracking"]
+        ttk.Button(btn_frame2, text="Reload Config", command=self.reload_config).pack(
+            side="left", padx=5
         )
-        ttk.Checkbutton(
-            main_frame,
-            text="Enable Cursor Tracking",
-            variable=self.cursor_tracking_var,
-            command=self.on_setting_change,
-        ).pack(anchor="w", padx=10, pady=5)
-
-        # Click recording
-        self.click_recording_var = tk.BooleanVar(
-            value=self.settings["enable_click_recording"]
+        ttk.Button(btn_frame2, text="Edit Minigames", command=self.edit_minigames).pack(
+            side="left", padx=5
         )
-        ttk.Checkbutton(
-            main_frame,
-            text="Enable Click Recording",
-            variable=self.click_recording_var,
-            command=self.on_setting_change,
-        ).pack(anchor="w", padx=10, pady=5)
-
-        # On-screen debug
-        self.on_screen_debug_var = tk.BooleanVar(
-            value=self.settings["enable_on_screen_debug"]
+        ttk.Button(btn_frame2, text="Edit Settings", command=self.edit_settings).pack(
+            side="left", padx=5
         )
-        ttk.Checkbutton(
-            main_frame,
-            text="Enable On-screen Debug",
-            variable=self.on_screen_debug_var,
-            command=self.on_setting_change,
-        ).pack(anchor="w", padx=10, pady=5)
-
-        # Disabled buttons
-        self.disabled_buttons_var = tk.BooleanVar(
-            value=self.settings["enable_disabled_buttons"]
-        )
-        ttk.Checkbutton(
-            main_frame,
-            text="Enable Disabled Buttons",
-            variable=self.disabled_buttons_var,
-            command=self.on_setting_change,
-        ).pack(anchor="w", padx=10, pady=5)
 
         # Overlay settings frame
         overlay_frame = ttk.LabelFrame(settings_frame, text="Overlay Settings")
@@ -258,6 +205,21 @@ class DebugGUI:
             variable=self.hide_activate_var,
             command=self.on_setting_change,
         ).pack(anchor="w", padx=10, pady=5)
+
+        # Show/Hide Overlay controls
+        overlay_controls_frame = ttk.Frame(overlay_frame)
+        overlay_controls_frame.pack(fill="x", padx=10, pady=10)
+
+        ttk.Button(
+            overlay_controls_frame,
+            text="Show/Hide Overlay",
+            command=self.toggle_overlay,
+        ).pack(side="left", padx=5)
+        ttk.Button(
+            overlay_controls_frame,
+            text="Reset Overlay Position",
+            command=self.reset_overlay_position,
+        ).pack(side="left", padx=5)
 
         # Apply settings button
         ttk.Button(
@@ -337,13 +299,141 @@ class DebugGUI:
             side="left", padx=5
         )
 
-    def create_controls_tab(self):
-        """Create the controls tab"""
-        controls_frame = ttk.Frame(self.notebook)
-        self.notebook.add(controls_frame, text="Controls")
+    def create_debug_tab(self):
+        """Create the debug tab (previously Settings)"""
+        debug_frame = ttk.Frame(self.notebook)
+        self.notebook.add(debug_frame, text="Debug")
 
-        # Application controls
-        app_frame = ttk.LabelFrame(controls_frame, text="Application Controls")
+        # Create main container with two columns
+        main_container = ttk.Frame(debug_frame)
+        main_container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Left column - Debug Options
+        left_frame = ttk.Frame(main_container)
+        left_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+
+        # Debug settings frame
+        debug_settings_frame = ttk.LabelFrame(left_frame, text="Debug Options")
+        debug_settings_frame.pack(fill="x", pady=(0, 10))
+
+        # Cursor tracking
+        self.cursor_tracking_var = tk.BooleanVar(
+            value=self.settings["enable_cursor_tracking"]
+        )
+        ttk.Checkbutton(
+            debug_settings_frame,
+            text="Enable Cursor Tracking",
+            variable=self.cursor_tracking_var,
+            command=self.on_setting_change,
+        ).pack(anchor="w", padx=10, pady=5)
+
+        # Click recording
+        self.click_recording_var = tk.BooleanVar(
+            value=self.settings["enable_click_recording"]
+        )
+        ttk.Checkbutton(
+            debug_settings_frame,
+            text="Enable Click Recording",
+            variable=self.click_recording_var,
+            command=self.on_setting_change,
+        ).pack(anchor="w", padx=10, pady=5)
+
+        # On-screen debug
+        self.on_screen_debug_var = tk.BooleanVar(
+            value=self.settings["enable_on_screen_debug"]
+        )
+        ttk.Checkbutton(
+            debug_settings_frame,
+            text="Enable On-screen Debug",
+            variable=self.on_screen_debug_var,
+            command=self.on_setting_change,
+        ).pack(anchor="w", padx=10, pady=5)
+
+        # Disabled buttons
+        self.disabled_buttons_var = tk.BooleanVar(
+            value=self.settings["enable_disabled_buttons"]
+        )
+        ttk.Checkbutton(
+            debug_settings_frame,
+            text="Enable Disabled Buttons",
+            variable=self.disabled_buttons_var,
+            command=self.on_setting_change,
+        ).pack(anchor="w", padx=10, pady=5)
+
+        # Application controls (moved from Controls tab)
+        app_frame = ttk.LabelFrame(left_frame, text="Application Controls")
+        app_frame.pack(fill="x", pady=(0, 10))
+
+        # Right column - Click Recording Actions
+        right_frame = ttk.Frame(main_container)
+        right_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
+
+        # Click recording actions frame
+        actions_frame = ttk.LabelFrame(right_frame, text="Recent Actions")
+        actions_frame.pack(fill="both", expand=True)
+
+        # Actions list
+        self.actions_listbox = tk.Listbox(
+            actions_frame,
+            height=10,
+            font=("Consolas", 9),
+            bg="#1e1e1e",
+            fg="#ffffff",
+            selectbackground="#404040",
+        )
+        self.actions_listbox.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Actions control buttons
+        actions_control_frame = ttk.Frame(actions_frame)
+        actions_control_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        ttk.Button(
+            actions_control_frame,
+            text="Copy",
+            command=self.copy_selected_action,
+        ).pack(side="left", padx=5)
+
+        ttk.Button(
+            actions_control_frame,
+            text="Remove",
+            command=self.remove_selected_action,
+        ).pack(side="left", padx=5)
+
+        ttk.Button(
+            actions_control_frame,
+            text="Clear All",
+            command=self.clear_all_actions,
+        ).pack(side="left", padx=5)
+
+        # Window spy info frame
+        spy_info_frame = ttk.LabelFrame(right_frame, text="Window Spy Info")
+        spy_info_frame.pack(fill="x", pady=(10, 0))
+
+        # Info labels
+        self.spy_labels = {}
+        spy_items = [
+            ("Window Width", "0 px"),
+            ("Window Height", "0 px"),
+            ("Cursor X", "0 px"),
+            ("Cursor Y", "0 px"),
+            ("Cursor X%", "0.0%"),
+            ("Cursor Y%", "0.0%"),
+        ]
+
+        for item, default_value in spy_items:
+            frame = ttk.Frame(spy_info_frame)
+            frame.pack(fill="x", padx=10, pady=2)
+
+            label = ttk.Label(frame, text=f"{item}:")
+            label.pack(side="left")
+
+            value_label = ttk.Label(frame, text=default_value, font=("Consolas", 9))
+            value_label.pack(side="right")
+
+            self.spy_labels[item] = value_label
+
+        # Initialize actions list
+        self.recent_actions = []
         app_frame.pack(fill="x", padx=10, pady=10)
 
         btn_frame1 = ttk.Frame(app_frame)
@@ -353,14 +443,6 @@ class DebugGUI:
             btn_frame1,
             text="Reload Application (Ctrl+R)",
             command=self.reload_application,
-        ).pack(side="left", padx=5)
-        ttk.Button(
-            btn_frame1, text="Show/Hide Overlay", command=self.toggle_overlay
-        ).pack(side="left", padx=5)
-        ttk.Button(
-            btn_frame1,
-            text="Reset Overlay Position",
-            command=self.reset_overlay_position,
         ).pack(side="left", padx=5)
 
         # Second row for restart button
@@ -373,25 +455,8 @@ class DebugGUI:
             command=self.restart_application,
         ).pack(side="left", padx=5)
 
-        # Configuration controls
-        config_frame = ttk.LabelFrame(controls_frame, text="Configuration")
-        config_frame.pack(fill="x", padx=10, pady=10)
-
-        btn_frame2 = ttk.Frame(config_frame)
-        btn_frame2.pack(fill="x", padx=10, pady=10)
-
-        ttk.Button(btn_frame2, text="Reload Config", command=self.reload_config).pack(
-            side="left", padx=5
-        )
-        ttk.Button(btn_frame2, text="Edit Minigames", command=self.edit_minigames).pack(
-            side="left", padx=5
-        )
-        ttk.Button(btn_frame2, text="Edit Settings", command=self.edit_settings).pack(
-            side="left", padx=5
-        )
-
-        # Emergency controls
-        emergency_frame = ttk.LabelFrame(controls_frame, text="Emergency Controls")
+        # Emergency controls (moved from Controls tab)
+        emergency_frame = ttk.LabelFrame(debug_frame, text="Emergency Controls")
         emergency_frame.pack(fill="x", padx=10, pady=10)
 
         btn_frame3 = ttk.Frame(emergency_frame)
@@ -406,6 +471,23 @@ class DebugGUI:
         ttk.Button(
             btn_frame3, text="Reset Everything", command=self.reset_everything
         ).pack(side="left", padx=5)
+
+        # Logs section
+        logs_frame = ttk.LabelFrame(debug_frame, text="Logs")
+        logs_frame.pack(fill="x", padx=10, pady=10)
+
+        logs_btn_frame = ttk.Frame(logs_frame)
+        logs_btn_frame.pack(fill="x", padx=10, pady=10)
+
+        ttk.Button(logs_btn_frame, text="Copy", command=self.copy_log).pack(
+            side="left", padx=5
+        )
+        ttk.Button(logs_btn_frame, text="Save", command=self.save_log).pack(
+            side="left", padx=5
+        )
+        ttk.Button(logs_btn_frame, text="Clear", command=self.clear_log).pack(
+            side="left", padx=5
+        )
 
     def create_status_bar(self):
         """Create the status bar"""
@@ -473,19 +555,53 @@ class DebugGUI:
     def on_setting_change(self):
         """Handle setting changes"""
         # Update settings dictionary
-        self.settings["debug_mode"] = self.debug_mode_var.get()
-        self.settings["enable_logging"] = self.enable_logging_var.get()
         self.settings["enable_cursor_tracking"] = self.cursor_tracking_var.get()
         self.settings["enable_click_recording"] = self.click_recording_var.get()
         self.settings["enable_on_screen_debug"] = self.on_screen_debug_var.get()
         self.settings["enable_disabled_buttons"] = self.disabled_buttons_var.get()
 
+        # Handle window spy visibility
+        if self.settings["enable_click_recording"]:
+            if self.window_spy:
+                self.window_spy.show()
+        else:
+            if self.window_spy:
+                self.window_spy.hide()
+
         self.log("INFO", "Settings updated")
+
+        # Apply settings to overlay if available
+        self.apply_settings_to_overlay()
 
     def on_log_level_change(self, event=None):
         """Handle log level change"""
-        self.settings["log_level"] = self.log_level_var.get()
-        self.log("INFO", f"Log level changed to {self.log_level_var.get()}")
+        old_level = self.settings.get("log_level", "INFO")
+        new_level = self.log_level_var.get()
+        self.settings["log_level"] = new_level
+
+        # Map levels to descriptions
+        level_descriptions = {
+            "DEBUG": "All messages (DEBUG, INFO, WARNING, ERROR)",
+            "INFO": "Standard messages (INFO, WARNING, ERROR)",
+            "WARNING": "Important messages only (WARNING, ERROR)",
+            "ERROR": "Error messages only (ERROR)",
+        }
+
+        description = level_descriptions.get(new_level, "Unknown level")
+        self.log("INFO", f"Log level changed from {old_level} to {new_level}")
+        self.log("INFO", f"Now showing: {description}")
+
+        # Refresh the log display to apply new filter
+        self.refresh_log_display()
+
+    def refresh_log_display(self):
+        """Refresh the log display with current filter level"""
+        try:
+            if self.log_text.winfo_exists():
+                # This would ideally re-filter existing messages, but for now just inform user
+                self.log("DEBUG", "Log display refreshed with new filter level")
+        except:
+            pass
 
     def apply_settings_to_overlay(self):
         """Apply current settings to the overlay"""
@@ -564,6 +680,103 @@ class DebugGUI:
             self.log("ERROR", f"Failed to copy log: {e}")
             messagebox.showerror("Error", f"Failed to copy log: {e}")
 
+    def copy_selected_action(self):
+        """Copy the selected action to clipboard"""
+        try:
+            selection = self.actions_listbox.curselection()
+            if selection:
+                index = selection[0]
+                action = self.recent_actions[index]
+
+                # Format the action for clipboard
+                if action["type"] == "click":
+                    clipboard_text = (
+                        f"Click: {action['x_percent']:.1f}%, {action['y_percent']:.1f}%"
+                    )
+                elif action["type"] == "drag":
+                    clipboard_text = f"Drag: {action['x1_percent']:.1f}%, {action['y1_percent']:.1f}% to {action['x2_percent']:.1f}%, {action['y2_percent']:.1f}%"
+
+                # Copy to clipboard
+                self.root.clipboard_clear()
+                self.root.clipboard_append(clipboard_text)
+                self.log("INFO", f"Copied action: {clipboard_text}")
+            else:
+                self.log("WARNING", "No action selected to copy")
+        except Exception as e:
+            self.log("ERROR", f"Error copying action: {e}")
+
+    def remove_selected_action(self):
+        """Remove the selected action from the list"""
+        try:
+            selection = self.actions_listbox.curselection()
+            if selection:
+                index = selection[0]
+                removed_action = self.recent_actions.pop(index)
+                self.actions_listbox.delete(index)
+                self.log("INFO", f"Removed action: {removed_action['type']}")
+            else:
+                self.log("WARNING", "No action selected to remove")
+        except Exception as e:
+            self.log("ERROR", f"Error removing action: {e}")
+
+    def clear_all_actions(self):
+        """Clear all actions from the list"""
+        try:
+            self.recent_actions.clear()
+            self.actions_listbox.delete(0, tk.END)
+            self.log("INFO", "Cleared all recorded actions")
+        except Exception as e:
+            self.log("ERROR", f"Error clearing actions: {e}")
+
+    def add_action(self, action):
+        """Add a new action to the list"""
+        try:
+            self.recent_actions.append(action)
+
+            # Format display text
+            if action["type"] == "click":
+                display_text = (
+                    f"Click: ({action['x_percent']:.1f}%, {action['y_percent']:.1f}%)"
+                )
+            elif action["type"] == "drag":
+                display_text = f"Drag: ({action['x1_percent']:.1f}%, {action['y1_percent']:.1f}%) to ({action['x2_percent']:.1f}%, {action['y2_percent']:.1f}%)"
+
+            self.actions_listbox.insert(tk.END, display_text)
+
+            # Keep only last 10 actions
+            if len(self.recent_actions) > 10:
+                self.recent_actions.pop(0)
+                self.actions_listbox.delete(0)
+
+            # Auto-select the newest action
+            self.actions_listbox.selection_clear(0, tk.END)
+            self.actions_listbox.selection_set(tk.END)
+            self.actions_listbox.see(tk.END)
+
+        except Exception as e:
+            self.log("ERROR", f"Error adding action: {e}")
+
+    def update_window_spy_info(self, window_info, cursor_info):
+        """Update the window spy information display"""
+        try:
+            if hasattr(self, "spy_labels"):
+                self.spy_labels["Window Width"].config(
+                    text=f"{window_info['width']} px"
+                )
+                self.spy_labels["Window Height"].config(
+                    text=f"{window_info['height']} px"
+                )
+                self.spy_labels["Cursor X"].config(text=f"{cursor_info['x']} px")
+                self.spy_labels["Cursor Y"].config(text=f"{cursor_info['y']} px")
+                self.spy_labels["Cursor X%"].config(
+                    text=f"{cursor_info['x_percent']:.1f}%"
+                )
+                self.spy_labels["Cursor Y%"].config(
+                    text=f"{cursor_info['y_percent']:.1f}%"
+                )
+        except Exception as e:
+            self.log("ERROR", f"Error updating window spy info: {e}")
+
     def reload_application(self):
         """Reload the application"""
         self.log("INFO", "🔄 Reloading application...")
@@ -634,17 +847,18 @@ class DebugGUI:
     def test_overlay(self):
         """Test the overlay functionality"""
         self.log("INFO", "Testing overlay...")
-
+        # Show a temporary message on the overlay
         if self.main_app and hasattr(self.main_app, "overlay"):
-            overlay = self.main_app.overlay
-            # Test different states
-            overlay.update_status("TESTING", "Debug GUI test")
+            self.main_app.overlay.update_status("TESTING", "Test overlay function")
+            # Reset after 3 seconds
             self.root.after(
-                2000, lambda: overlay.update_status("INACTIVE", "Test complete")
+                3000,
+                lambda: self.main_app.overlay.update_status(
+                    "INACTIVE", "No minigame detected"
+                ),
             )
-            self.log("SUCCESS", "Overlay test completed")
         else:
-            self.log("ERROR", "No overlay found to test")
+            self.log("WARNING", "No overlay found to test")
 
     def test_detection(self):
         """Test the detection system"""
@@ -735,6 +949,10 @@ Press Ctrl+R to reload the application
 
     def destroy(self):
         """Destroy the debug GUI"""
+        # Clean up window spy
+        if hasattr(self, "window_spy"):
+            self.window_spy.destroy()
+
         self.root.destroy()
 
 

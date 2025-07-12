@@ -4,21 +4,24 @@ import sys
 import tkinter as tk
 import threading
 import importlib
+import argparse
 from widget_inc_manager import WidgetIncManager
 from mouse_control import click_mouse_percent, move_mouse_to_percent
-from simplified_overlay import create_simplified_overlay
+from overlay_gui import OverlayGUI
 from minigame_detector import MinigameDetector
 from debug_gui import create_debug_gui
 
 
 class MainApplication:
-    def __init__(self):
+    def __init__(self, debug_mode=False):
+        self.debug_mode = debug_mode
         self.monitoring_active = False
         self.overlay = None
         self.detector = None
         self.widget_manager = None
         self.monitoring_thread = None
         self.debug_gui = None
+        self.system_tray = None
         self.stats = {
             "detections_today": 0,
             "automation_runs": 0,
@@ -29,7 +32,6 @@ class MainApplication:
         # Modules to reload
         self.modules_to_reload = [
             "overlay_gui",
-            "enhanced_overlay",
             "widget_inc_manager",
             "minigame_detector",
             "mouse_control",
@@ -88,11 +90,20 @@ class MainApplication:
         self.root = tk.Tk()
         self.root.withdraw()  # Hide main window
 
-        # Create debug GUI first
+        # Create debug GUI
         self.debug_gui = create_debug_gui(self)
 
+        # Show GUI based on mode
+        if self.debug_mode:
+            print("Debug mode: Showing GUI")
+            self.debug_gui.log("INFO", "Starting in DEBUG mode with GUI...")
+        else:
+            print("Normal mode: Starting in system tray")
+            self.debug_gui.log("INFO", "Starting in NORMAL mode with system tray...")
+            self.debug_gui.root.withdraw()  # Hide debug GUI initially
+            self.create_system_tray()
+
         # Log startup
-        self.debug_gui.log("INFO", "Starting Widget Automation Tool...")
         self.debug_gui.update_status("Application Status", "STARTING")
 
         # Load configuration
@@ -150,8 +161,11 @@ class MainApplication:
                 self.debug_gui.update_status("WidgetInc Status", "READY")
 
             # Initialize overlay
-            self.overlay = create_simplified_overlay()
+            self.overlay = OverlayGUI()
             self.overlay.widget_manager = self.widget_manager
+            self.overlay.widget_manager.main_app = (
+                self  # Link to main app for debug console access
+            )
             self.overlay.show()
             self.debug_gui.log("SUCCESS", "Overlay initialized")
             self.debug_gui.update_status("Overlay Status", "ACTIVE")
@@ -170,24 +184,14 @@ class MainApplication:
 
     def link_debug_gui_to_overlay(self):
         """Link debug GUI settings to overlay"""
-        # Copy settings from debug GUI to overlay
-        self.overlay.debug_mode = self.debug_gui.settings["debug_mode"]
-        self.overlay.enable_logging = self.debug_gui.settings["enable_logging"]
-        self.overlay.enable_cursor_tracking = self.debug_gui.settings[
-            "enable_cursor_tracking"
-        ]
-        self.overlay.enable_click_recording = self.debug_gui.settings[
-            "enable_click_recording"
-        ]
-        self.overlay.enable_on_screen_debug = self.debug_gui.settings[
-            "enable_on_screen_debug"
-        ]
-        self.overlay.enable_disabled_buttons = self.debug_gui.settings[
-            "enable_disabled_buttons"
-        ]
+        # Only set attributes that exist on the overlay
+        if hasattr(self.overlay, "hide_activate_button_setting"):
+            self.overlay.hide_activate_button_setting = self.debug_gui.settings.get(
+                "hide_activate_button", False
+            )
 
-        # Remove debug options from overlay since they're now in debug GUI
-        # The overlay will only show basic status and activate button
+        # Store debug settings reference for overlay to use
+        self.overlay.debug_settings = self.debug_gui.settings
 
     def start_monitoring(self):
         """Start the monitoring thread"""
@@ -316,22 +320,38 @@ class MainApplication:
     def reload_application(self):
         """Reload the application"""
         self.schedule_gui_update(
-            lambda: self.debug_gui.log("INFO", "🔄 Reloading application...")
+            lambda: self.debug_gui.log(
+                "INFO", "🔄 Starting application reload process..."
+            )
         )
 
         try:
             # Reload modules
+            self.schedule_gui_update(
+                lambda: self.debug_gui.log("INFO", "📦 Reloading Python modules...")
+            )
             self.reload_modules()
 
             # Reload configuration
+            self.schedule_gui_update(
+                lambda: self.debug_gui.log("INFO", "⚙️ Reloading configuration files...")
+            )
             self.load_config()
 
             # Reinitialize detector
             if self.detector:
+                self.schedule_gui_update(
+                    lambda: self.debug_gui.log(
+                        "INFO", "🔍 Reinitializing minigame detector..."
+                    )
+                )
                 self.detector.load_known_minigames()
 
             # Show reload notification on overlay
             if self.overlay:
+                self.schedule_gui_update(
+                    lambda: self.debug_gui.log("INFO", "🎯 Updating overlay status...")
+                )
                 self.schedule_gui_update(
                     lambda: self.overlay.update_status(
                         "RELOADED", "Application reloaded"
@@ -377,6 +397,9 @@ class MainApplication:
         except KeyboardInterrupt:
             self.debug_gui.log("INFO", "Shutting down application...")
             self.shutdown()
+        except Exception as e:
+            print(f"Error in GUI loop: {e}")
+            self.shutdown()
 
     def shutdown(self):
         """Shutdown the application"""
@@ -410,6 +433,83 @@ class MainApplication:
 
         print("Application shutdown complete")
         sys.exit(0)
+
+    def create_system_tray(self):
+        """Create system tray functionality"""
+        try:
+            import pystray
+            from PIL import Image, ImageDraw
+
+            # Create a simple icon
+            def create_icon():
+                # Create a simple red circle icon
+                width = 64
+                height = 64
+                image = Image.new("RGB", (width, height), (0, 0, 0))
+                draw = ImageDraw.Draw(image)
+                draw.ellipse([8, 8, width - 8, height - 8], fill=(255, 68, 68))
+                return image
+
+            # Create menu items
+            menu = pystray.Menu(
+                pystray.MenuItem("Show Debug Console", self.show_debug_console),
+                pystray.MenuItem("Hide Debug Console", self.hide_debug_console),
+                pystray.Menu.SEPARATOR,
+                pystray.MenuItem("Exit", self.exit_application),
+            )
+
+            # Create system tray icon
+            self.system_tray = pystray.Icon(
+                "Widget Automation Tool",
+                create_icon(),
+                menu=menu,
+            )
+
+            # Start system tray in background thread
+            def run_tray():
+                self.system_tray.run()
+
+            tray_thread = threading.Thread(target=run_tray, daemon=True)
+            tray_thread.start()
+
+            self.debug_gui.log("SUCCESS", "System tray created successfully")
+
+        except ImportError:
+            self.debug_gui.log(
+                "WARNING",
+                "pystray not available - install with: pip install pystray Pillow",
+            )
+        except Exception as e:
+            self.debug_gui.log("ERROR", f"Failed to create system tray: {e}")
+
+    def show_debug_console(self):
+        """Show the debug console from system tray"""
+        if self.debug_gui and hasattr(self.debug_gui, "root"):
+            try:
+                self.debug_gui.root.deiconify()
+                self.debug_gui.root.lift()
+                self.debug_gui.root.focus_force()
+                self.debug_gui.log("INFO", "Debug console shown from system tray")
+            except:
+                pass
+
+    def hide_debug_console(self):
+        """Hide the debug console to system tray"""
+        if self.debug_gui and hasattr(self.debug_gui, "root"):
+            try:
+                self.debug_gui.root.withdraw()
+                self.debug_gui.log("INFO", "Debug console hidden to system tray")
+            except:
+                pass
+
+    def exit_application(self):
+        """Exit application from system tray"""
+        try:
+            if self.system_tray:
+                self.system_tray.stop()
+            self.shutdown()
+        except:
+            pass
 
 
 def load_minigames_config():
@@ -492,7 +592,15 @@ def run_hybrid_game(minigame, widget_manager):
 
 def main():
     """Main application entry point"""
-    app = MainApplication()
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Widget Automation Tool")
+    parser.add_argument(
+        "--debug", action="store_true", help="Start in debug mode with GUI visible"
+    )
+    args = parser.parse_args()
+
+    # Create application with debug mode flag
+    app = MainApplication(debug_mode=args.debug)
     return app.start()
 
 
