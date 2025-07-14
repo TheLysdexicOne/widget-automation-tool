@@ -1,0 +1,60 @@
+# Widget Automation Tool - Task List
+
+## Phase 1: Core Infrastructure
+
+### Core Component (System Tray)
+
+- [x] Create system tray icon and menu (Qt)
+- [x] Implement application lifecycle management
+- [x] Add context menu with options (Show Debug Console, Exit)
+- [x] Handle application shutdown gracefully
+- [x] Implement component coordination/messaging system
+- [x] Add configuration loading/saving
+- [x] Process detection for WidgetInc.exe
+
+### Overlay Component
+
+- [x] Create overlay window that stays on top
+- [-] Implement window attachment to WidgetInc.exe
+- [-] Draw 24x24 colored circle in 32x32 shaded box
+- [-] Position overlay at top-right corner + 32px offset
+- [-] Implement state-based color changes
+- [-] Handle target window movement/resize
+- [-] Hide overlay when WidgetInc.exe is not found
+- [-] Auto-reattach when WidgetInc.exe is launched
+
+### Debug Console Component
+
+- [x] Create main debug window with tabs
+- [x] Implement Console tab with log display
+- [x] Add Settings tab for configuration
+- [x] Add Monitoring tab for process stats
+- [x] Add Debug tab for advanced debugging
+- [x] Implement log level dropdown (DEBUG, INFO, WARN, ERROR)
+- [x] Add "Copy Logs" button functionality
+- [x] Add "Close" button (minimize to tray)
+- [x] Prevent application exit on console close
+- [x] Auto-scroll log display
+- [x] Log filtering by level/component
+
+## Phase 2: Launch Parameters & Application Flow
+
+### Command Line Arguments
+
+- [x] Implement standard launch (no parameters)
+- [x] Implement debug launch (--debug flag)
+- [x] Implement test launch (--tests flag)
+- [x] Add help documentation (--help)
+- [x] Add version information (--version)
+
+### Application States
+
+- [x] Define application state enum/constants
+- [-] Implement state change notifications
+  - ACTIVE = performing automation
+  - WAITING = valid screen/minigame and automation configuration found, waiting for user to start
+  - INACTIVE = No automation configuration found for current screen/minigame
+  - ERROR = Something wrong with application
+- [-] Map states to overlay colors
+- [-] Add state persistence across sessions
+- [-] Implement state change logging
