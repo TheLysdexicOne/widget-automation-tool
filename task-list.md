@@ -67,11 +67,15 @@
 - [x] Add contextual Show/Hide Console to right-click menu of system tray
 - [x] Add contextual Show/Hide Overlay to right-click menu of system tray
 - [x] Restructure states.
+
   - ACTIVE = performing automation
   - READY = "The tool recognizes the current screen/minigame and is waitin for user to activate."
   - ATTENTION (name can be something more relevant) = "The tool recognizes the current screen/minigame, but there is no automation programmed."
   - INACTIVE = "The tool does not recognize the current screen/minigame, therefore there is no automation available on this screen."
   - ERROR = Something wrong with application
+
+- [ ] Add right-click menu to overlay and give the console tabs as options
+- [ ] Monitoring tab: Keep "Process Monitoring". Let's add a "Window Spy" button
 
 ## Phase 3: Configuration & Settings
 

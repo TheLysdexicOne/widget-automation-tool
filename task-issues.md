@@ -2,6 +2,13 @@
 
 ## Open
 
+## Closed
+
+- [x] Overlay positioned incorrectly
+  - Top-right of the overlay should be anchored to the top-right of the window, offset down 32px to be below the header of the application.
+- [x] Incorrect "Default" state
+  - "WAITING" state should be considered "The tool recognizes the current screen/minigame and is waitin for user to activate"
+  - "INACTIVE" state should be considered as "The tool does not recognize the current screen/minigame, therefore there is no automation available on this screen"
 - [x] Overlay not anchored correctly
   - Top-right of overlay needs to be anchored to the top-right of WidgetInc.exe (reference .old.referenc-only/src/overlay_gui.py if needed)
   - Top-right of status indicator needs to be anchored to the top-right of the overlay
@@ -20,7 +27,7 @@
 2025-07-14 00:18:35,190 - overlay.overlay_window - DEBUG - Mouse left overlay
 ```
 
-- [ ] Expanded overlay not displaying correctly
+- [x] Expanded overlay not displaying correctly
 
   - expanded overlay is not shaded (only the original 32x32 shaded box is present)
   - expanded overlay is missing colored status text in all caps
@@ -28,11 +35,3 @@
 
 - [x] Overlay showing over all windows (always on top). Try granular z-indexing
   - **Reverted to always-on-top for now** - z-indexing can be addressed in future phase
-
-## Closed
-
-- [x] Overlay positioned incorrectly
-  - Top-right of the overlay should be anchored to the top-right of the window, offset down 32px to be below the header of the application.
-- [x] Incorrect "Default" state
-  - "WAITING" state should be considered "The tool recognizes the current screen/minigame and is waitin for user to activate"
-  - "INACTIVE" state should be considered as "The tool does not recognize the current screen/minigame, therefore there is no automation available on this screen"

@@ -17,7 +17,7 @@
 - [x] Create overlay window that stays on top
 - [x] Implement window attachment to WidgetInc.exe
 - [x] Draw 24x24 colored circle in 32x32 shaded box
-- [-] Position overlay at top-right corner + 32px offset
+- [x] Position overlay at top-right corner + 32px offset
 - [x] Implement state-based color changes
 - [x] Handle target window movement/resize
 - [x] Hide overlay when WidgetInc.exe is not found
@@ -61,9 +61,9 @@
 
 ## Intermediate Phase 2.5
 
-- [ ] Add contextual Show/Hide Console to right-click menu of system tray
-- [ ] Add contextual Show/Hide Overlay to right-click menu of system tray
-- [ ] Restructure states.
+- [x] Add contextual Show/Hide Console to right-click menu of system tray
+- [x] Add contextual Show/Hide Overlay to right-click menu of system tray
+- [x] Restructure states.
   - ACTIVE = performing automation
   - READY = "The tool recognizes the current screen/minigame and is waitin for user to activate."
   - ATTENTION (name can be something more relevant) = "The tool recognizes the current screen/minigame, but there is no automation programmed."

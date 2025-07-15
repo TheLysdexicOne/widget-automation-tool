@@ -26,6 +26,8 @@ from PyQt6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QHeaderView,
+    QFrame,
+    QGridLayout,
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRect
 from PyQt6.QtGui import QFont, QTextCursor, QCloseEvent
@@ -90,6 +92,21 @@ class DebugConsole(QMainWindow):
         # Status bar
         self.statusBar().showMessage("Debug Console Ready")
 
+    def switch_to_tab(self, tab_name):
+        """Switch to the specified tab."""
+        tab_map = {
+            "console": 0,
+            "settings": 1,
+            "monitoring": 2,
+            "debug": 3,
+        }
+
+        if tab_name.lower() in tab_map:
+            self.tab_widget.setCurrentIndex(tab_map[tab_name.lower()])
+            self.logger.info(f"Switched to {tab_name} tab")
+        else:
+            self.logger.warning(f"Unknown tab: {tab_name}")
+
     def _create_console_tab(self):
         """Create the console tab."""
         console_widget = QWidget()
@@ -149,44 +166,93 @@ class DebugConsole(QMainWindow):
         self.tab_widget.addTab(settings_widget, "Settings")
 
     def _create_monitoring_tab(self):
-        """Create the monitoring tab."""
+        """Create the monitoring tab with card-based layout."""
         monitoring_widget = QWidget()
-        layout = QVBoxLayout(monitoring_widget)
+        main_layout = QVBoxLayout(monitoring_widget)
 
-        # Process information
-        self.process_table = QTableWidget(0, 3)
-        self.process_table.setHorizontalHeaderLabels(["Property", "Value", "Status"])
-        header = self.process_table.horizontalHeader()
+        # Create a scroll area for the cards
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        # Container for cards
+        cards_container = QWidget()
+        cards_layout = QGridLayout(cards_container)
+        cards_layout.setSpacing(15)  # Space between cards
+
+        # Row 1: Process Monitoring Card
+        process_card = self._create_card(
+            "Process Monitoring", "Monitor running processes"
+        )
+        self.process_monitoring_table = QTableWidget(0, 3)
+        self.process_monitoring_table.setHorizontalHeaderLabels(
+            ["Process", "Status", "Details"]
+        )
+        self.process_monitoring_table.setMaximumHeight(120)
+        header = self.process_monitoring_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        layout.addWidget(QLabel("Process Monitoring:"))
-        layout.addWidget(self.process_table)
+        process_card.layout().addWidget(self.process_monitoring_table)
+        cards_layout.addWidget(process_card, 0, 0, 1, 2)  # Span 2 columns
 
-        # Window position information (like AHK Window Spy)
-        self.window_info_table = QTableWidget(0, 2)
-        self.window_info_table.setHorizontalHeaderLabels(["Property", "Value"])
-        self.window_info_table.setMaximumHeight(200)
-        header = self.window_info_table.horizontalHeader()
+        # Row 2: Coordinates Monitoring Card
+        coordinates_card = self._create_card(
+            "Coordinates Monitoring", "Track window positions"
+        )
+        self.coordinates_table = QTableWidget(0, 4)
+        self.coordinates_table.setHorizontalHeaderLabels(
+            ["Component", "X", "Y", "Size"]
+        )
+        self.coordinates_table.setMaximumHeight(120)
+        header = self.coordinates_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        layout.addWidget(QLabel("Window Information (AHK Style):"))
-        layout.addWidget(self.window_info_table)
+        coordinates_card.layout().addWidget(self.coordinates_table)
+        cards_layout.addWidget(coordinates_card, 1, 0)
 
-        # Overlay information
-        self.overlay_info_table = QTableWidget(0, 2)
-        self.overlay_info_table.setHorizontalHeaderLabels(["Property", "Value"])
-        self.overlay_info_table.setMaximumHeight(150)
-        header = self.overlay_info_table.horizontalHeader()
+        # Row 2: Mouse Tracking Card
+        mouse_card = self._create_card("Mouse Tracking", "Real-time mouse position")
+        self.mouse_tracking_table = QTableWidget(0, 2)
+        self.mouse_tracking_table.setHorizontalHeaderLabels(["Metric", "Value"])
+        self.mouse_tracking_table.setMaximumHeight(120)
+        header = self.mouse_tracking_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        layout.addWidget(QLabel("Overlay Information:"))
-        layout.addWidget(self.overlay_info_table)
+        mouse_card.layout().addWidget(self.mouse_tracking_table)
+        cards_layout.addWidget(mouse_card, 1, 1)
 
-        # Application state
-        self.state_info = QTextEdit()
-        self.state_info.setMaximumHeight(100)
-        self.state_info.setReadOnly(True)
-        layout.addWidget(QLabel("Application State:"))
-        layout.addWidget(self.state_info)
+        # Set up scroll area
+        scroll_area.setWidget(cards_container)
+        main_layout.addWidget(scroll_area)
 
         self.tab_widget.addTab(monitoring_widget, "Monitoring")
+
+    def _create_card(self, title, subtitle):
+        """Create a card widget with title and subtitle."""
+        card = QFrame()
+        card.setFrameStyle(QFrame.Shape.StyledPanel)
+        card.setStyleSheet(
+            """
+            QFrame {
+                background-color: #f0f0f0;
+                border: 1px solid #d0d0d0;
+                border-radius: 8px;
+                padding: 10px;
+            }
+        """
+        )
+
+        layout = QVBoxLayout(card)
+        layout.setSpacing(5)
+
+        # Title
+        title_label = QLabel(title)
+        title_label.setStyleSheet("font-weight: bold; font-size: 14px; color: #333;")
+        layout.addWidget(title_label)
+
+        # Subtitle
+        subtitle_label = QLabel(subtitle)
+        subtitle_label.setStyleSheet("font-size: 12px; color: #666;")
+        layout.addWidget(subtitle_label)
+
+        return card
 
     def _create_debug_tab(self):
         """Create the debug tab."""
@@ -309,357 +375,296 @@ class DebugConsole(QMainWindow):
     def _update_monitoring_tab(self):
         """Update the monitoring tab with current information."""
         try:
-            # Update process table
-            self._update_process_table()
+            # Update process monitoring card
+            self._update_process_monitoring_card()
 
-            # Update window information
-            self._update_window_info_table()
+            # Update coordinates monitoring card
+            self._update_coordinates_card()
 
-            # Update overlay information
-            self._update_overlay_info_table()
-
-            # Update state info
-            self._update_state_info()
+            # Update mouse tracking card
+            self._update_mouse_tracking_card()
 
         except Exception as e:
             self.logger.error(f"Error updating monitoring tab: {e}")
 
-    def _update_process_table(self):
-        """Update the process monitoring table."""
-        if hasattr(self.app, "process_monitor") and self.app.process_monitor:
-            target_info = self.app.process_monitor.get_current_target_info()
+    def _update_process_monitoring_card(self):
+        """Update the process monitoring card."""
+        try:
+            self.process_monitoring_table.setRowCount(0)
 
-            # Clear and rebuild table
-            self.process_table.setRowCount(0)
-
-            data = [
-                (
-                    "Target Process",
-                    self.app.process_monitor.target_process_name,
-                    "Found" if target_info else "Not Found",
-                ),
-                (
-                    "Monitoring",
-                    "Enabled" if self.app.process_monitor.is_monitoring else "Disabled",
-                    "Active" if self.app.process_monitor.is_monitoring else "Inactive",
-                ),
+            # Add processes to monitor
+            processes_to_monitor = [
+                ("WidgetInc.exe", self._get_widgetinc_status()),
+                ("Widget Core", self._get_widget_core_status()),
+                ("Widget Console", self._get_widget_console_status()),
+                ("Widget Overlay", self._get_widget_overlay_status()),
             ]
 
-            if target_info:
-                data.extend(
-                    [
-                        ("Process ID", str(target_info["pid"]), "Connected"),
-                        ("Window Handle", str(target_info["hwnd"]), "Attached"),
-                    ]
+            for i, (process_name, status_info) in enumerate(processes_to_monitor):
+                self.process_monitoring_table.insertRow(i)
+                self.process_monitoring_table.setItem(
+                    i, 0, QTableWidgetItem(process_name)
+                )
+                self.process_monitoring_table.setItem(
+                    i, 1, QTableWidgetItem(status_info["status"])
+                )
+                self.process_monitoring_table.setItem(
+                    i, 2, QTableWidgetItem(status_info["details"])
                 )
 
-            for i, (prop, value, status) in enumerate(data):
-                self.process_table.insertRow(i)
-                self.process_table.setItem(i, 0, QTableWidgetItem(prop))
-                self.process_table.setItem(i, 1, QTableWidgetItem(value))
-                self.process_table.setItem(i, 2, QTableWidgetItem(status))
+        except Exception as e:
+            self.logger.error(f"Error updating process monitoring card: {e}")
 
-    def _update_window_info_table(self):
-        """Update the window information table with AHK Window Spy style data."""
+    def _update_coordinates_card(self):
+        """Update the coordinates monitoring card."""
         try:
-            # Clear table
-            self.window_info_table.setRowCount(0)
+            self.coordinates_table.setRowCount(0)
 
-            # Get target window info from process monitor
+            # Add coordinates to monitor
+            coordinates_to_monitor = [
+                ("WidgetInc.exe", self._get_widgetinc_coordinates()),
+                ("Overlay", self._get_overlay_coordinates()),
+            ]
+
+            for i, (component, coord_info) in enumerate(coordinates_to_monitor):
+                self.coordinates_table.insertRow(i)
+                self.coordinates_table.setItem(i, 0, QTableWidgetItem(component))
+                self.coordinates_table.setItem(
+                    i, 1, QTableWidgetItem(str(coord_info["x"]))
+                )
+                self.coordinates_table.setItem(
+                    i, 2, QTableWidgetItem(str(coord_info["y"]))
+                )
+                self.coordinates_table.setItem(
+                    i, 3, QTableWidgetItem(coord_info["size"])
+                )
+
+        except Exception as e:
+            self.logger.error(f"Error updating coordinates card: {e}")
+
+    def _update_mouse_tracking_card(self):
+        """Update the mouse tracking card."""
+        try:
+            self.mouse_tracking_table.setRowCount(0)
+
+            # Get mouse tracking data
+            mouse_data = self._get_mouse_tracking_data()
+
+            tracking_metrics = [
+                ("Actual", mouse_data["actual"]),
+                ("Percentage", mouse_data["percentage"]),
+                ("Playable %", mouse_data["playable_percentage"]),
+            ]
+
+            for i, (metric, value) in enumerate(tracking_metrics):
+                self.mouse_tracking_table.insertRow(i)
+                self.mouse_tracking_table.setItem(i, 0, QTableWidgetItem(metric))
+                self.mouse_tracking_table.setItem(i, 1, QTableWidgetItem(value))
+
+        except Exception as e:
+            self.logger.error(f"Error updating mouse tracking card: {e}")
+
+    def _get_widgetinc_status(self):
+        """Get WidgetInc.exe status information."""
+        try:
             if hasattr(self.app, "process_monitor") and self.app.process_monitor:
                 target_info = self.app.process_monitor.get_current_target_info()
-
-                if target_info and "hwnd" in target_info:
-                    # Get detailed window information using pygetwindow
-                    import pygetwindow as gw
-
-                    target_window = None
-
-                    # Find the window object
-                    for window in gw.getAllWindows():
-                        if (
-                            hasattr(window, "_hWnd")
-                            and window._hWnd == target_info["hwnd"]
-                        ):
-                            target_window = window
-                            break
-
-                    if target_window:
-                        # Get window rect information
-                        try:
-                            # Screen coordinates (full window including frame)
-                            screen_data = [
-                                ("Window Title", target_window.title),
-                                ("--- SCREEN (Full Window) ---", ""),
-                                ("Screen X", str(target_window.left)),
-                                ("Screen Y", str(target_window.top)),
-                                ("Screen Width", str(target_window.width)),
-                                ("Screen Height", str(target_window.height)),
-                                (
-                                    "Screen Right",
-                                    str(target_window.left + target_window.width),
-                                ),
-                                (
-                                    "Screen Bottom",
-                                    str(target_window.top + target_window.height),
-                                ),
-                            ]  # Try to get client area using Windows API
-                            try:
-                                import win32gui
-
-                                # import win32api  # Not needed for this functionality
-
-                                # Get client rectangle
-                                client_rect = win32gui.GetClientRect(
-                                    target_info["hwnd"]
-                                )
-                                client_left, client_top, client_right, client_bottom = (
-                                    client_rect
-                                )
-
-                                # Convert client coordinates to screen coordinates
-                                client_screen_pos = win32gui.ClientToScreen(
-                                    target_info["hwnd"], (0, 0)
-                                )
-                                client_screen_x, client_screen_y = client_screen_pos
-
-                                client_data = [
-                                    ("--- CLIENT (Content Area) ---", ""),
-                                    ("Client X", str(client_screen_x)),
-                                    ("Client Y", str(client_screen_y)),
-                                    ("Client Width", str(client_right - client_left)),
-                                    ("Client Height", str(client_bottom - client_top)),
-                                    (
-                                        "Client Right",
-                                        str(
-                                            client_screen_x
-                                            + (client_right - client_left)
-                                        ),
-                                    ),
-                                    (
-                                        "Client Bottom",
-                                        str(
-                                            client_screen_y
-                                            + (client_bottom - client_top)
-                                        ),
-                                    ),
-                                ]
-
-                                # Calculate frame differences
-                                frame_data = [
-                                    ("--- FRAME DIFFERENCES ---", ""),
-                                    (
-                                        "Title Bar Height",
-                                        str(client_screen_y - target_window.top),
-                                    ),
-                                    (
-                                        "Left Border Width",
-                                        str(client_screen_x - target_window.left),
-                                    ),
-                                    (
-                                        "Right Border Width",
-                                        str(
-                                            (target_window.left + target_window.width)
-                                            - (
-                                                client_screen_x
-                                                + (client_right - client_left)
-                                            )
-                                        ),
-                                    ),
-                                    (
-                                        "Bottom Border Height",
-                                        str(
-                                            (target_window.top + target_window.height)
-                                            - (
-                                                client_screen_y
-                                                + (client_bottom - client_top)
-                                            )
-                                        ),
-                                    ),
-                                ]
-
-                                data = screen_data + client_data + frame_data
-
-                            except (ImportError, Exception) as e:
-                                # Fallback if win32gui is not available or fails
-                                data = screen_data + [
-                                    ("--- CLIENT INFO ---", ""),
-                                    ("Client Info", f"win32gui error: {e}"),
-                                    (
-                                        "Note",
-                                        "Install pywin32 for detailed client area info",
-                                    ),
-                                ]
-
-                        except Exception as e:
-                            data = [("Error", f"Failed to get window info: {e}")]
-
-                    else:
-                        data = [("Window Status", "Window object not found")]
-
+                if target_info:
+                    return {
+                        "status": "Running",
+                        "details": f"PID: {target_info['pid']}, HWND: {target_info['hwnd']}",
+                    }
                 else:
-                    data = [("Target Status", "No target window attached")]
+                    return {"status": "Not Found", "details": "Process not detected"}
             else:
-                data = [("Monitor Status", "Process monitor not available")]
-
-            # Populate table
-            for i, (prop, value) in enumerate(data):
-                self.window_info_table.insertRow(i)
-                self.window_info_table.setItem(i, 0, QTableWidgetItem(prop))
-                self.window_info_table.setItem(i, 1, QTableWidgetItem(str(value)))
-
+                return {
+                    "status": "Monitor Disabled",
+                    "details": "Process monitor not available",
+                }
         except Exception as e:
-            self.logger.error(f"Error updating window info table: {e}")
+            return {"status": "Error", "details": f"Error: {str(e)}"}
 
-    def _update_overlay_info_table(self):
-        """Update the overlay information table."""
-        try:  # Clear table
-            self.overlay_info_table.setRowCount(0)
-
-            # Get overlay info
-            if hasattr(self.app, "overlay_window") and self.app.overlay_window:
-                overlay = self.app.overlay_window
-
-                # Check if overlay has missing import
-                try:
-                    import logging
-
-                    logger = logging.getLogger(__name__)
-                except ImportError:
-                    pass
-
-                # Get overlay geometry
-                geometry = overlay.geometry()
-
-                data = [
-                    ("Overlay Visible", "Yes" if overlay.isVisible() else "No"),
-                    ("--- OVERLAY POSITION ---", ""),
-                    ("Overlay X", str(geometry.x())),
-                    ("Overlay Y", str(geometry.y())),
-                    ("Overlay Width", str(geometry.width())),
-                    ("Overlay Height", str(geometry.height())),
-                    ("Overlay Right", str(geometry.x() + geometry.width())),
-                    ("Overlay Bottom", str(geometry.y() + geometry.height())),
-                    ("--- OVERLAY STATE ---", ""),
-                    ("Is Expanded", "Yes" if overlay.is_expanded else "No"),
-                    ("Is Pinned", "Yes" if overlay.is_pinned else "No"),
-                    ("Current Size", f"{geometry.width()}x{geometry.height()}"),
-                    (
-                        "Original Size",
-                        f"{overlay.original_size[0]}x{overlay.original_size[1]}",
-                    ),
-                    (
-                        "Expanded Size",
-                        f"{overlay.expanded_size[0]}x{overlay.expanded_size[1]}",
-                    ),
-                    ("--- OVERLAY CONFIG ---", ""),
-                    ("Circle Diameter", str(overlay.circle_diameter)),
-                    ("Box Size", str(overlay.box_size)),
-                    ("Offset X", str(overlay.offset_x)),
-                    ("Offset Y", str(overlay.offset_y)),
-                    ("Current Color", str(overlay.current_color.name())),
-                ]
-
-                # Add target window relationship if available
-                if overlay.target_window:
-                    target_geometry = QRect(
-                        overlay.target_window.left,
-                        overlay.target_window.top,
-                        overlay.target_window.width,
-                        overlay.target_window.height,
-                    )
-
-                    data.extend(
-                        [
-                            ("--- TARGET RELATIONSHIP ---", ""),
-                            ("Target Window", overlay.target_window.title),
-                            ("Target X", str(target_geometry.x())),
-                            ("Target Y", str(target_geometry.y())),
-                            ("Target Width", str(target_geometry.width())),
-                            ("Target Height", str(target_geometry.height())),
-                            ("--- POSITIONING CALC ---", ""),
-                            ("Relative X", str(geometry.x() - target_geometry.x())),
-                            ("Relative Y", str(geometry.y() - target_geometry.y())),
-                            (
-                                "Distance from Right",
-                                str(target_geometry.right() - geometry.right()),
-                            ),
-                            (
-                                "Distance from Bottom",
-                                str(target_geometry.bottom() - geometry.bottom()),
-                            ),
-                        ]
-                    )
-
-            else:
-                data = [("Overlay Status", "Overlay window not available")]
-
-            # Populate table
-            for i, (prop, value) in enumerate(data):
-                self.overlay_info_table.insertRow(i)
-                self.overlay_info_table.setItem(i, 0, QTableWidgetItem(prop))
-                self.overlay_info_table.setItem(i, 1, QTableWidgetItem(str(value)))
-
-        except Exception as e:
-            self.logger.error(f"Error updating overlay info table: {e}")
-
-    def _update_state_info(self):
-        """Update the application state information."""
+    def _get_widget_core_status(self):
+        """Get Widget Core status information."""
         try:
             if hasattr(self.app, "get_state"):
                 state = self.app.get_state()
-                state_text = f"Current State: {state.value.title()}\n"
-                state_text += f"Last Updated: {datetime.now().strftime('%H:%M:%S')}\n"
-
-                # Add component status
-                components = [
-                    "system_tray",
-                    "process_monitor",
-                    "overlay_window",
-                    "debug_console",
-                ]
-
-                for component_name in components:
-                    if hasattr(self.app, component_name):
-                        component = getattr(self.app, component_name)
-                        if component:
-                            if component_name == "system_tray":
-                                status = (
-                                    "Active"
-                                    if hasattr(component, "tray_icon")
-                                    and component.tray_icon
-                                    else "Inactive"
-                                )
-                            elif component_name == "process_monitor":
-                                status = (
-                                    "Monitoring"
-                                    if component.is_monitoring
-                                    else "Stopped"
-                                )
-                            elif component_name == "overlay_window":
-                                status = (
-                                    "Visible" if component.isVisible() else "Hidden"
-                                )
-                            elif component_name == "debug_console":
-                                status = "Active"
-                            else:
-                                status = "Unknown"
-
-                            state_text += f"{component_name.replace('_', ' ').title()}: {status}\n"
-                        else:
-                            state_text += f"{component_name.replace('_', ' ').title()}: Not Initialized\n"
-                    else:
-                        state_text += (
-                            f"{component_name.replace('_', ' ').title()}: Missing\n"
-                        )
-
-                self.state_info.setPlainText(state_text)
+                return {
+                    "status": "Active",
+                    "details": f"State: {state.value if hasattr(state, 'value') else str(state)}",
+                }
             else:
-                self.state_info.setPlainText("Application state not available")
-
+                return {"status": "Unknown", "details": "Core state not available"}
         except Exception as e:
-            self.logger.error(f"Error updating state info: {e}")
-            self.state_info.setPlainText(f"Error getting state info: {e}")
+            return {"status": "Error", "details": f"Error: {str(e)}"}
+
+    def _get_widget_console_status(self):
+        """Get Widget Console status information."""
+        try:
+            return {
+                "status": "Active",
+                "details": f"Tabs: {self.tab_widget.count()}, Logs: {len(self.log_messages)}",
+            }
+        except Exception as e:
+            return {"status": "Error", "details": f"Error: {str(e)}"}
+
+    def _get_widget_overlay_status(self):
+        """Get Widget Overlay status information."""
+        try:
+            if hasattr(self.app, "overlay_window") and self.app.overlay_window:
+                overlay = self.app.overlay_window
+                visibility = "Visible" if overlay.isVisible() else "Hidden"
+                pin_status = "Pinned" if overlay.is_pinned else "Unpinned"
+                return {
+                    "status": visibility,
+                    "details": f"{pin_status}, Expanded: {overlay.is_expanded}",
+                }
+            else:
+                return {"status": "Not Available", "details": "Overlay not initialized"}
+        except Exception as e:
+            return {"status": "Error", "details": f"Error: {str(e)}"}
+
+    def _get_widgetinc_coordinates(self):
+        """Get WidgetInc.exe coordinates information."""
+        try:
+            if hasattr(self.app, "process_monitor") and self.app.process_monitor:
+                target_info = self.app.process_monitor.get_current_target_info()
+                if target_info and "hwnd" in target_info:
+                    import win32gui
+
+                    # Get client rectangle and convert to screen coordinates
+                    client_rect = win32gui.GetClientRect(target_info["hwnd"])
+                    client_screen_pos = win32gui.ClientToScreen(
+                        target_info["hwnd"], (0, 0)
+                    )
+                    client_width = client_rect[2]
+                    client_height = client_rect[3]
+
+                    return {
+                        "x": client_screen_pos[0],
+                        "y": client_screen_pos[1],
+                        "size": f"{client_width}×{client_height}",
+                    }
+                else:
+                    return {"x": "N/A", "y": "N/A", "size": "N/A"}
+            else:
+                return {"x": "N/A", "y": "N/A", "size": "N/A"}
+        except Exception as e:
+            return {"x": "Error", "y": "Error", "size": f"Error: {str(e)}"}
+
+    def _get_overlay_coordinates(self):
+        """Get Overlay coordinates information."""
+        try:
+            if hasattr(self.app, "overlay_window") and self.app.overlay_window:
+                overlay = self.app.overlay_window
+                if overlay.isVisible():
+                    geometry = overlay.geometry()
+                    return {
+                        "x": geometry.x(),
+                        "y": geometry.y(),
+                        "size": f"{geometry.width()}×{geometry.height()}",
+                    }
+                else:
+                    return {"x": "Hidden", "y": "Hidden", "size": "Hidden"}
+            else:
+                return {"x": "N/A", "y": "N/A", "size": "N/A"}
+        except Exception as e:
+            return {"x": "Error", "y": "Error", "size": f"Error: {str(e)}"}
+
+    def _get_mouse_tracking_data(self):
+        """Get mouse tracking data."""
+        try:
+            import win32api
+
+            # Get mouse position
+            mouse_pos = win32api.GetCursorPos()
+            mouse_x, mouse_y = mouse_pos
+
+            # Calculate percentages relative to window if available
+            window_percent_x = "N/A"
+            window_percent_y = "N/A"
+            playable_percent_x = "N/A"
+            playable_percent_y = "N/A"
+
+            if hasattr(self.app, "process_monitor") and self.app.process_monitor:
+                target_info = self.app.process_monitor.get_current_target_info()
+                if target_info and "hwnd" in target_info:
+                    try:
+                        import win32gui
+
+                        # Get client rectangle
+                        client_rect = win32gui.GetClientRect(target_info["hwnd"])
+                        client_screen_pos = win32gui.ClientToScreen(
+                            target_info["hwnd"], (0, 0)
+                        )
+                        client_width = client_rect[2]
+                        client_height = client_rect[3]
+
+                        if client_width > 0 and client_height > 0:
+                            rel_x = mouse_x - client_screen_pos[0]
+                            rel_y = mouse_y - client_screen_pos[1]
+
+                            if (
+                                0 <= rel_x <= client_width
+                                and 0 <= rel_y <= client_height
+                            ):
+                                window_percent_x = (
+                                    f"{(rel_x / client_width * 100):.1f}%"
+                                )
+                                window_percent_y = (
+                                    f"{(rel_y / client_height * 100):.1f}%"
+                                )
+
+                        # Calculate playable area percentage (3:2 ratio centered)
+                        if client_width > 0 and client_height > 0:
+                            # Calculate 3:2 ratio playable area
+                            target_ratio = 3.0 / 2.0
+                            current_ratio = client_width / client_height
+
+                            if current_ratio > target_ratio:
+                                # Window is wider than 3:2, playable area is height-limited
+                                playable_height = client_height
+                                playable_width = playable_height * target_ratio
+                                playable_x = (client_width - playable_width) / 2
+                                playable_y = 0
+                            else:
+                                # Window is taller than 3:2, playable area is width-limited
+                                playable_width = client_width
+                                playable_height = playable_width / target_ratio
+                                playable_x = 0
+                                playable_y = (client_height - playable_height) / 2
+
+                            # Calculate relative position within playable area
+                            rel_playable_x = mouse_x - client_screen_pos[0] - playable_x
+                            rel_playable_y = mouse_y - client_screen_pos[1] - playable_y
+
+                            if (
+                                0 <= rel_playable_x <= playable_width
+                                and 0 <= rel_playable_y <= playable_height
+                            ):
+                                playable_percent_x = (
+                                    f"{(rel_playable_x / playable_width * 100):.1f}%"
+                                )
+                                playable_percent_y = (
+                                    f"{(rel_playable_y / playable_height * 100):.1f}%"
+                                )
+                            else:
+                                playable_percent_x = "Outside"
+                                playable_percent_y = "Outside"
+                    except Exception:
+                        pass
+
+            return {
+                "actual": f"{mouse_x}, {mouse_y}",
+                "percentage": f"{window_percent_x}, {window_percent_y}",
+                "playable_percentage": f"{playable_percent_x}, {playable_percent_y}",
+            }
+        except Exception as e:
+            return {
+                "actual": "Error",
+                "percentage": "Error",
+                "playable_percentage": f"Error: {str(e)}",
+            }
 
     def _refresh_debug_info(self):
         """Refresh the debug information in the debug tab."""

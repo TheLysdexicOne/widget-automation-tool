@@ -21,9 +21,10 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QLabel,
+    QMenu,
 )
 from PyQt6.QtCore import Qt, QTimer, QRect, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QPainter, QBrush, QColor, QPen
+from PyQt6.QtGui import QPainter, QBrush, QColor, QPen, QAction
 
 import pygetwindow as gw
 
@@ -422,8 +423,74 @@ class OverlayWindow(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             self.logger.info("Left mouse button pressed - toggling pin")
             self._toggle_pin()
+        elif event.button() == Qt.MouseButton.RightButton:
+            self.logger.info("Right mouse button pressed - showing context menu")
+            self._show_context_menu(event.globalPosition().toPoint())
         else:
             self.logger.info(f"Non-left button pressed: {event.button()}")
+
+    def _show_context_menu(self, global_pos):
+        """Show context menu with console tab options."""
+        try:
+            menu = QMenu(self)
+
+            # Add console tab actions
+            console_action = QAction("Console", self)
+            console_action.triggered.connect(lambda: self._show_console_tab("console"))
+            menu.addAction(console_action)
+
+            settings_action = QAction("Settings", self)
+            settings_action.triggered.connect(
+                lambda: self._show_console_tab("settings")
+            )
+            menu.addAction(settings_action)
+
+            monitoring_action = QAction("Monitoring", self)
+            monitoring_action.triggered.connect(
+                lambda: self._show_console_tab("monitoring")
+            )
+            menu.addAction(monitoring_action)
+
+            debug_action = QAction("Debug", self)
+            debug_action.triggered.connect(lambda: self._show_console_tab("debug"))
+            menu.addAction(debug_action)
+
+            menu.addSeparator()
+
+            # Add overlay controls
+            if self.is_pinned:
+                unpin_action = QAction("Unpin Overlay", self)
+                unpin_action.triggered.connect(self._toggle_pin)
+                menu.addAction(unpin_action)
+            else:
+                pin_action = QAction("Pin Overlay", self)
+                pin_action.triggered.connect(self._toggle_pin)
+                menu.addAction(pin_action)
+
+            # Show menu at cursor position
+            menu.exec(global_pos)
+
+        except Exception as e:
+            self.logger.error(f"Failed to show context menu: {e}")
+
+    def _show_console_tab(self, tab_name):
+        """Show the debug console and switch to specified tab."""
+        try:
+            if hasattr(self.app, "debug_console") and self.app.debug_console:
+                self.app.debug_console.show()
+                self.app.debug_console.raise_()
+                self.app.debug_console.activateWindow()
+
+                # Switch to the specified tab
+                if hasattr(self.app.debug_console, "switch_to_tab"):
+                    self.app.debug_console.switch_to_tab(tab_name)
+                else:
+                    self.logger.warning("Debug console does not support tab switching")
+            else:
+                self.logger.warning("Debug console not available")
+
+        except Exception as e:
+            self.logger.error(f"Failed to show console tab {tab_name}: {e}")
 
     def mouseMoveEvent(self, event):
         """Handle mouse move events."""
