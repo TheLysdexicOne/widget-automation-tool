@@ -80,9 +80,14 @@ class SystemTrayManager(QObject):
         self.tray_menu = QMenu()
 
         # Show Debug Console action
-        show_console_action = QAction("Show Debug Console", self)
-        show_console_action.triggered.connect(self._on_show_debug_console)
-        self.tray_menu.addAction(show_console_action)
+        self.show_console_action = QAction("Show Debug Console", self)
+        self.show_console_action.triggered.connect(self._on_toggle_debug_console)
+        self.tray_menu.addAction(self.show_console_action)
+
+        # Show/Hide Overlay action
+        self.show_overlay_action = QAction("Hide Overlay", self)
+        self.show_overlay_action.triggered.connect(self._on_toggle_overlay)
+        self.tray_menu.addAction(self.show_overlay_action)
 
         # Separator
         self.tray_menu.addSeparator()
@@ -92,21 +97,72 @@ class SystemTrayManager(QObject):
         exit_action.triggered.connect(self._on_exit)
         self.tray_menu.addAction(exit_action)
 
+        # Connect to menu about to show to update action text
+        self.tray_menu.aboutToShow.connect(self._update_menu_actions)
+
         # Set the menu to the tray icon
         self.tray_icon.setContextMenu(self.tray_menu)
+
+    def _update_menu_actions(self):
+        """Update menu action text based on current state."""
+        try:
+            # Update debug console action text
+            if hasattr(self.app, "debug_console") and self.app.debug_console:
+                if self.app.debug_console.isVisible():
+                    self.show_console_action.setText("Hide Debug Console")
+                else:
+                    self.show_console_action.setText("Show Debug Console")
+            else:
+                self.show_console_action.setText("Show Debug Console")
+
+            # Update overlay action text
+            if hasattr(self.app, "overlay_window") and self.app.overlay_window:
+                if self.app.overlay_window.isVisible():
+                    self.show_overlay_action.setText("Hide Overlay")
+                else:
+                    self.show_overlay_action.setText("Show Overlay")
+            else:
+                self.show_overlay_action.setText("Show Overlay")
+
+        except Exception as e:
+            self.logger.error(f"Error updating menu actions: {e}")
 
     def _on_tray_icon_activated(self, reason):
         """Handle tray icon activation."""
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             self.logger.debug("Tray icon double-clicked")
-            self._on_show_debug_console()
+            self._on_toggle_debug_console()
         elif reason == QSystemTrayIcon.ActivationReason.MiddleClick:
             self.logger.debug("Tray icon middle-clicked")
 
-    def _on_show_debug_console(self):
-        """Handle show debug console action."""
-        self.logger.debug("Show debug console requested from tray menu")
-        self.app.show_debug_console()
+    def _on_toggle_debug_console(self):
+        """Handle toggle debug console action."""
+        self.logger.debug("Toggle debug console requested from tray menu")
+
+        try:
+            if hasattr(self.app, "debug_console") and self.app.debug_console:
+                if self.app.debug_console.isVisible():
+                    self.app.debug_console.hide()
+                else:
+                    self.app.show_debug_console()
+            else:
+                self.app.show_debug_console()
+        except Exception as e:
+            self.logger.error(f"Error toggling debug console: {e}")
+
+    def _on_toggle_overlay(self):
+        """Handle toggle overlay action."""
+        self.logger.debug("Toggle overlay requested from tray menu")
+
+        if self.app.overlay_window and self.app.overlay_window.isVisible():
+            self.app.overlay_window.hide()
+            self.show_overlay_action.setText("Show Overlay")
+        else:
+            if self.app.overlay_window and self.app.overlay_window.target_window:
+                self.app.overlay_window.show()
+                self.show_overlay_action.setText("Hide Overlay")
+            else:
+                self.logger.info("No target window to attach overlay to")
 
     def _on_exit(self):
         """Handle exit action."""

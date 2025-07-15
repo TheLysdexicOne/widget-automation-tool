@@ -92,10 +92,11 @@ class ConfigManager:
                 "size": {"circle_diameter": 24, "box_size": 32},
                 "position": {"anchor": "top-right", "offset_x": 0, "offset_y": 32},
                 "colors": {
-                    "active": "#00FF00",  # Green
-                    "waiting": "#FFFF00",  # Yellow
-                    "inactive": "#808080",  # Gray
-                    "error": "#FF0000",  # Red
+                    "active": "#00FF00",  # Green - performing automation
+                    "ready": "#00FFFF",  # Cyan - ready to activate
+                    "attention": "#FFFF00",  # Yellow - recognized but no automation
+                    "inactive": "#808080",  # Gray - not recognized
+                    "error": "#FF0000",  # Red - error
                 },
                 "opacity": 0.8,
                 "always_on_top": True,
@@ -199,7 +200,8 @@ class ConfigManager:
             "overlay.colors",
             {
                 "active": "#00FF00",
-                "waiting": "#FFFF00",
+                "ready": "#00FFFF",
+                "attention": "#FFFF00",
                 "inactive": "#808080",
                 "error": "#FF0000",
             },

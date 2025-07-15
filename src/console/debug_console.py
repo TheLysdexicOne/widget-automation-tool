@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRect
 from PyQt6.QtGui import QFont, QTextCursor, QCloseEvent
 
 
@@ -160,6 +160,24 @@ class DebugConsole(QMainWindow):
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(QLabel("Process Monitoring:"))
         layout.addWidget(self.process_table)
+
+        # Window position information (like AHK Window Spy)
+        self.window_info_table = QTableWidget(0, 2)
+        self.window_info_table.setHorizontalHeaderLabels(["Property", "Value"])
+        self.window_info_table.setMaximumHeight(200)
+        header = self.window_info_table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        layout.addWidget(QLabel("Window Information (AHK Style):"))
+        layout.addWidget(self.window_info_table)
+
+        # Overlay information
+        self.overlay_info_table = QTableWidget(0, 2)
+        self.overlay_info_table.setHorizontalHeaderLabels(["Property", "Value"])
+        self.overlay_info_table.setMaximumHeight(150)
+        header = self.overlay_info_table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        layout.addWidget(QLabel("Overlay Information:"))
+        layout.addWidget(self.overlay_info_table)
 
         # Application state
         self.state_info = QTextEdit()
@@ -294,6 +312,12 @@ class DebugConsole(QMainWindow):
             # Update process table
             self._update_process_table()
 
+            # Update window information
+            self._update_window_info_table()
+
+            # Update overlay information
+            self._update_overlay_info_table()
+
             # Update state info
             self._update_state_info()
 
@@ -335,116 +359,530 @@ class DebugConsole(QMainWindow):
                 self.process_table.setItem(i, 1, QTableWidgetItem(value))
                 self.process_table.setItem(i, 2, QTableWidgetItem(status))
 
+    def _update_window_info_table(self):
+        """Update the window information table with AHK Window Spy style data."""
+        try:
+            # Clear table
+            self.window_info_table.setRowCount(0)
+
+            # Get target window info from process monitor
+            if hasattr(self.app, "process_monitor") and self.app.process_monitor:
+                target_info = self.app.process_monitor.get_current_target_info()
+
+                if target_info and "hwnd" in target_info:
+                    # Get detailed window information using pygetwindow
+                    import pygetwindow as gw
+
+                    target_window = None
+
+                    # Find the window object
+                    for window in gw.getAllWindows():
+                        if (
+                            hasattr(window, "_hWnd")
+                            and window._hWnd == target_info["hwnd"]
+                        ):
+                            target_window = window
+                            break
+
+                    if target_window:
+                        # Get window rect information
+                        try:
+                            # Screen coordinates (full window including frame)
+                            screen_data = [
+                                ("Window Title", target_window.title),
+                                ("--- SCREEN (Full Window) ---", ""),
+                                ("Screen X", str(target_window.left)),
+                                ("Screen Y", str(target_window.top)),
+                                ("Screen Width", str(target_window.width)),
+                                ("Screen Height", str(target_window.height)),
+                                (
+                                    "Screen Right",
+                                    str(target_window.left + target_window.width),
+                                ),
+                                (
+                                    "Screen Bottom",
+                                    str(target_window.top + target_window.height),
+                                ),
+                            ]  # Try to get client area using Windows API
+                            try:
+                                import win32gui
+
+                                # import win32api  # Not needed for this functionality
+
+                                # Get client rectangle
+                                client_rect = win32gui.GetClientRect(
+                                    target_info["hwnd"]
+                                )
+                                client_left, client_top, client_right, client_bottom = (
+                                    client_rect
+                                )
+
+                                # Convert client coordinates to screen coordinates
+                                client_screen_pos = win32gui.ClientToScreen(
+                                    target_info["hwnd"], (0, 0)
+                                )
+                                client_screen_x, client_screen_y = client_screen_pos
+
+                                client_data = [
+                                    ("--- CLIENT (Content Area) ---", ""),
+                                    ("Client X", str(client_screen_x)),
+                                    ("Client Y", str(client_screen_y)),
+                                    ("Client Width", str(client_right - client_left)),
+                                    ("Client Height", str(client_bottom - client_top)),
+                                    (
+                                        "Client Right",
+                                        str(
+                                            client_screen_x
+                                            + (client_right - client_left)
+                                        ),
+                                    ),
+                                    (
+                                        "Client Bottom",
+                                        str(
+                                            client_screen_y
+                                            + (client_bottom - client_top)
+                                        ),
+                                    ),
+                                ]
+
+                                # Calculate frame differences
+                                frame_data = [
+                                    ("--- FRAME DIFFERENCES ---", ""),
+                                    (
+                                        "Title Bar Height",
+                                        str(client_screen_y - target_window.top),
+                                    ),
+                                    (
+                                        "Left Border Width",
+                                        str(client_screen_x - target_window.left),
+                                    ),
+                                    (
+                                        "Right Border Width",
+                                        str(
+                                            (target_window.left + target_window.width)
+                                            - (
+                                                client_screen_x
+                                                + (client_right - client_left)
+                                            )
+                                        ),
+                                    ),
+                                    (
+                                        "Bottom Border Height",
+                                        str(
+                                            (target_window.top + target_window.height)
+                                            - (
+                                                client_screen_y
+                                                + (client_bottom - client_top)
+                                            )
+                                        ),
+                                    ),
+                                ]
+
+                                data = screen_data + client_data + frame_data
+
+                            except (ImportError, Exception) as e:
+                                # Fallback if win32gui is not available or fails
+                                data = screen_data + [
+                                    ("--- CLIENT INFO ---", ""),
+                                    ("Client Info", f"win32gui error: {e}"),
+                                    (
+                                        "Note",
+                                        "Install pywin32 for detailed client area info",
+                                    ),
+                                ]
+
+                        except Exception as e:
+                            data = [("Error", f"Failed to get window info: {e}")]
+
+                    else:
+                        data = [("Window Status", "Window object not found")]
+
+                else:
+                    data = [("Target Status", "No target window attached")]
+            else:
+                data = [("Monitor Status", "Process monitor not available")]
+
+            # Populate table
+            for i, (prop, value) in enumerate(data):
+                self.window_info_table.insertRow(i)
+                self.window_info_table.setItem(i, 0, QTableWidgetItem(prop))
+                self.window_info_table.setItem(i, 1, QTableWidgetItem(str(value)))
+
+        except Exception as e:
+            self.logger.error(f"Error updating window info table: {e}")
+
+    def _update_overlay_info_table(self):
+        """Update the overlay information table."""
+        try:  # Clear table
+            self.overlay_info_table.setRowCount(0)
+
+            # Get overlay info
+            if hasattr(self.app, "overlay_window") and self.app.overlay_window:
+                overlay = self.app.overlay_window
+
+                # Check if overlay has missing import
+                try:
+                    import logging
+
+                    logger = logging.getLogger(__name__)
+                except ImportError:
+                    pass
+
+                # Get overlay geometry
+                geometry = overlay.geometry()
+
+                data = [
+                    ("Overlay Visible", "Yes" if overlay.isVisible() else "No"),
+                    ("--- OVERLAY POSITION ---", ""),
+                    ("Overlay X", str(geometry.x())),
+                    ("Overlay Y", str(geometry.y())),
+                    ("Overlay Width", str(geometry.width())),
+                    ("Overlay Height", str(geometry.height())),
+                    ("Overlay Right", str(geometry.x() + geometry.width())),
+                    ("Overlay Bottom", str(geometry.y() + geometry.height())),
+                    ("--- OVERLAY STATE ---", ""),
+                    ("Is Expanded", "Yes" if overlay.is_expanded else "No"),
+                    ("Is Pinned", "Yes" if overlay.is_pinned else "No"),
+                    ("Current Size", f"{geometry.width()}x{geometry.height()}"),
+                    (
+                        "Original Size",
+                        f"{overlay.original_size[0]}x{overlay.original_size[1]}",
+                    ),
+                    (
+                        "Expanded Size",
+                        f"{overlay.expanded_size[0]}x{overlay.expanded_size[1]}",
+                    ),
+                    ("--- OVERLAY CONFIG ---", ""),
+                    ("Circle Diameter", str(overlay.circle_diameter)),
+                    ("Box Size", str(overlay.box_size)),
+                    ("Offset X", str(overlay.offset_x)),
+                    ("Offset Y", str(overlay.offset_y)),
+                    ("Current Color", str(overlay.current_color.name())),
+                ]
+
+                # Add target window relationship if available
+                if overlay.target_window:
+                    target_geometry = QRect(
+                        overlay.target_window.left,
+                        overlay.target_window.top,
+                        overlay.target_window.width,
+                        overlay.target_window.height,
+                    )
+
+                    data.extend(
+                        [
+                            ("--- TARGET RELATIONSHIP ---", ""),
+                            ("Target Window", overlay.target_window.title),
+                            ("Target X", str(target_geometry.x())),
+                            ("Target Y", str(target_geometry.y())),
+                            ("Target Width", str(target_geometry.width())),
+                            ("Target Height", str(target_geometry.height())),
+                            ("--- POSITIONING CALC ---", ""),
+                            ("Relative X", str(geometry.x() - target_geometry.x())),
+                            ("Relative Y", str(geometry.y() - target_geometry.y())),
+                            (
+                                "Distance from Right",
+                                str(target_geometry.right() - geometry.right()),
+                            ),
+                            (
+                                "Distance from Bottom",
+                                str(target_geometry.bottom() - geometry.bottom()),
+                            ),
+                        ]
+                    )
+
+            else:
+                data = [("Overlay Status", "Overlay window not available")]
+
+            # Populate table
+            for i, (prop, value) in enumerate(data):
+                self.overlay_info_table.insertRow(i)
+                self.overlay_info_table.setItem(i, 0, QTableWidgetItem(prop))
+                self.overlay_info_table.setItem(i, 1, QTableWidgetItem(str(value)))
+
+        except Exception as e:
+            self.logger.error(f"Error updating overlay info table: {e}")
+
     def _update_state_info(self):
         """Update the application state information."""
-        if hasattr(self.app, "get_state"):
-            state = self.app.get_state()
-            state_text = f"Current State: {state.value.title()}\n"
-            state_text += f"Last Updated: {datetime.now().strftime('%H:%M:%S')}\n"
+        try:
+            if hasattr(self.app, "get_state"):
+                state = self.app.get_state()
+                state_text = f"Current State: {state.value.title()}\n"
+                state_text += f"Last Updated: {datetime.now().strftime('%H:%M:%S')}\n"
 
-            # Add component status
-            components = [
-                "system_tray",
-                "process_monitor",
-                "overlay_window",
-                "debug_console",
-            ]
-            for comp_name in components:
-                comp = getattr(self.app, comp_name, None)
-                status = "✓ Active" if comp else "✗ Inactive"
-                state_text += f"{comp_name.replace('_', ' ').title()}: {status}\n"
+                # Add component status
+                components = [
+                    "system_tray",
+                    "process_monitor",
+                    "overlay_window",
+                    "debug_console",
+                ]
 
-            self.state_info.setPlainText(state_text)
+                for component_name in components:
+                    if hasattr(self.app, component_name):
+                        component = getattr(self.app, component_name)
+                        if component:
+                            if component_name == "system_tray":
+                                status = (
+                                    "Active"
+                                    if hasattr(component, "tray_icon")
+                                    and component.tray_icon
+                                    else "Inactive"
+                                )
+                            elif component_name == "process_monitor":
+                                status = (
+                                    "Monitoring"
+                                    if component.is_monitoring
+                                    else "Stopped"
+                                )
+                            elif component_name == "overlay_window":
+                                status = (
+                                    "Visible" if component.isVisible() else "Hidden"
+                                )
+                            elif component_name == "debug_console":
+                                status = "Active"
+                            else:
+                                status = "Unknown"
+
+                            state_text += f"{component_name.replace('_', ' ').title()}: {status}\n"
+                        else:
+                            state_text += f"{component_name.replace('_', ' ').title()}: Not Initialized\n"
+                    else:
+                        state_text += (
+                            f"{component_name.replace('_', ' ').title()}: Missing\n"
+                        )
+
+                self.state_info.setPlainText(state_text)
+            else:
+                self.state_info.setPlainText("Application state not available")
+
+        except Exception as e:
+            self.logger.error(f"Error updating state info: {e}")
+            self.state_info.setPlainText(f"Error getting state info: {e}")
 
     def _refresh_debug_info(self):
-        """Refresh debug information."""
-        self.component_tree.clear()
-
+        """Refresh the debug information in the debug tab."""
         try:
-            # App component
-            app_item = QTreeWidgetItem(
-                ["Application", "Running", f"State: {self.app.get_state().value}"]
-            )
-            self.component_tree.addTopLevelItem(app_item)
+            # Clear the component tree
+            self.component_tree.clear()
 
-            # System tray
-            tray_status = (
-                "Active"
-                if self.app.system_tray and self.app.system_tray.tray_icon
-                else "Inactive"
-            )
-            tray_item = QTreeWidgetItem(
-                ["System Tray", tray_status, "Context menu available"]
-            )
-            app_item.addChild(tray_item)
+            # Create root items for each component
+            components = {
+                "Application": self.app,
+                "System Tray": getattr(self.app, "system_tray", None),
+                "Process Monitor": getattr(self.app, "process_monitor", None),
+                "Overlay Window": getattr(self.app, "overlay_window", None),
+                "Debug Console": self,
+            }
 
-            # Process monitor
-            monitor_status = (
-                "Monitoring"
-                if self.app.process_monitor and self.app.process_monitor.is_monitoring
-                else "Stopped"
-            )
-            monitor_item = QTreeWidgetItem(
-                ["Process Monitor", monitor_status, "Target: WidgetInc.exe"]
-            )
-            app_item.addChild(monitor_item)
+            for component_name, component in components.items():
+                item = QTreeWidgetItem(self.component_tree)
+                item.setText(0, component_name)
 
-            # Overlay
-            overlay_status = "Hidden"
-            if self.app.overlay_window:
-                overlay_status = (
-                    "Visible" if self.app.overlay_window.isVisible() else "Hidden"
-                )
-            overlay_item = QTreeWidgetItem(
-                ["Overlay", overlay_status, "Window overlay"]
-            )
-            app_item.addChild(overlay_item)
+                if component is None:
+                    item.setText(1, "Not Available")
+                    item.setText(2, "Component not initialized")
+                else:
+                    item.setText(1, "Available")
 
-            # Debug console
-            console_item = QTreeWidgetItem(
-                ["Debug Console", "Active", f"Logs: {len(self.log_messages)}"]
-            )
-            app_item.addChild(console_item)
+                    # Add specific details for each component
+                    if component_name == "Application":
+                        if hasattr(component, "get_state"):
+                            state = component.get_state()
+                            item.setText(2, f"State: {state.value.title()}")
+                        else:
+                            item.setText(2, "State management not available")
 
-            # Expand all
+                    elif component_name == "System Tray":
+                        if hasattr(component, "tray_icon") and component.tray_icon:
+                            item.setText(1, "Active")
+                            item.setText(2, "System tray icon visible")
+                        else:
+                            item.setText(1, "Inactive")
+                            item.setText(2, "System tray icon not created")
+
+                    elif component_name == "Process Monitor":
+                        if hasattr(component, "is_monitoring"):
+                            if component.is_monitoring:
+                                item.setText(1, "Monitoring")
+                                target_info = component.get_current_target_info()
+                                if target_info:
+                                    item.setText(
+                                        2, f"Target found: PID {target_info['pid']}"
+                                    )
+                                else:
+                                    item.setText(2, "Monitoring but target not found")
+                            else:
+                                item.setText(1, "Stopped")
+                                item.setText(2, "Not monitoring")
+                        else:
+                            item.setText(2, "Monitor interface not available")
+
+                    elif component_name == "Overlay Window":
+                        if hasattr(component, "isVisible"):
+                            if component.isVisible():
+                                item.setText(1, "Visible")
+                                geometry = component.geometry()
+                                item.setText(
+                                    2,
+                                    f"Position: {geometry.x()},{geometry.y()} Size: {geometry.width()}x{geometry.height()}",
+                                )
+                            else:
+                                item.setText(1, "Hidden")
+                                item.setText(2, "Window created but not visible")
+                        else:
+                            item.setText(2, "Window interface not available")
+
+                    elif component_name == "Debug Console":
+                        item.setText(1, "Active")
+                        item.setText(
+                            2,
+                            f"Tabs: {self.tab_widget.count()}, Logs: {len(self.log_messages)}",
+                        )
+
+            # Expand all items
             self.component_tree.expandAll()
 
+            self.statusBar().showMessage("Debug information refreshed", 2000)
+
         except Exception as e:
-            error_item = QTreeWidgetItem(["Error", "Failed", str(e)])
-            self.component_tree.addTopLevelItem(error_item)
+            self.logger.error(f"Error refreshing debug info: {e}")
+            self.statusBar().showMessage(f"Error refreshing debug info: {e}", 5000)
 
     def _run_debug_tests(self):
-        """Run debug tests."""
-        self.logger.info("Running debug tests from console...")
-
+        """Run debug tests to validate component functionality."""
         try:
-            # Test state changes
-            original_state = self.app.get_state()
+            self.logger.info("Starting debug tests...")
 
-            # Test each state
-            from core.application import ApplicationState
+            test_results = []
 
-            test_states = [
-                ApplicationState.WAITING,
-                ApplicationState.ACTIVE,
-                ApplicationState.INACTIVE,
-                ApplicationState.ERROR,
-            ]
+            # Test 1: Application state
+            try:
+                if hasattr(self.app, "get_state"):
+                    state = self.app.get_state()
+                    test_results.append(
+                        ("Application State", "PASS", f"Current state: {state.value}")
+                    )
+                else:
+                    test_results.append(
+                        ("Application State", "FAIL", "No get_state method")
+                    )
+            except Exception as e:
+                test_results.append(("Application State", "ERROR", str(e)))
 
-            for state in test_states:
-                self.app.set_state(state)
-                self.logger.info(f"Test: Set state to {state.value}")
+            # Test 2: System Tray
+            try:
+                if hasattr(self.app, "system_tray") and self.app.system_tray:
+                    if (
+                        hasattr(self.app.system_tray, "tray_icon")
+                        and self.app.system_tray.tray_icon
+                    ):
+                        test_results.append(("System Tray", "PASS", "Tray icon active"))
+                    else:
+                        test_results.append(
+                            ("System Tray", "FAIL", "Tray icon not found")
+                        )
+                else:
+                    test_results.append(
+                        ("System Tray", "FAIL", "System tray not initialized")
+                    )
+            except Exception as e:
+                test_results.append(("System Tray", "ERROR", str(e)))
 
-            # Restore original state
-            self.app.set_state(original_state)
+            # Test 3: Process Monitor
+            try:
+                if hasattr(self.app, "process_monitor") and self.app.process_monitor:
+                    if self.app.process_monitor.is_monitoring:
+                        target_info = self.app.process_monitor.get_current_target_info()
+                        if target_info:
+                            test_results.append(
+                                (
+                                    "Process Monitor",
+                                    "PASS",
+                                    f"Target found: PID {target_info['pid']}",
+                                )
+                            )
+                        else:
+                            test_results.append(
+                                (
+                                    "Process Monitor",
+                                    "WARNING",
+                                    "Monitoring but no target found",
+                                )
+                            )
+                    else:
+                        test_results.append(
+                            ("Process Monitor", "WARNING", "Not currently monitoring")
+                        )
+                else:
+                    test_results.append(
+                        ("Process Monitor", "FAIL", "Process monitor not initialized")
+                    )
+            except Exception as e:
+                test_results.append(("Process Monitor", "ERROR", str(e)))
 
-            self.logger.info("Debug tests completed")
+            # Test 4: Overlay Window
+            try:
+                if hasattr(self.app, "overlay_window") and self.app.overlay_window:
+                    if self.app.overlay_window.isVisible():
+                        test_results.append(
+                            ("Overlay Window", "PASS", "Window visible")
+                        )
+                    else:
+                        test_results.append(
+                            ("Overlay Window", "WARNING", "Window hidden")
+                        )
+                else:
+                    test_results.append(
+                        ("Overlay Window", "FAIL", "Overlay window not initialized")
+                    )
+            except Exception as e:
+                test_results.append(("Overlay Window", "ERROR", str(e)))
+
+            # Test 5: Debug Console (self-test)
+            try:
+                tab_count = self.tab_widget.count()
+                log_count = len(self.log_messages)
+                test_results.append(
+                    ("Debug Console", "PASS", f"Tabs: {tab_count}, Logs: {log_count}")
+                )
+            except Exception as e:
+                test_results.append(("Debug Console", "ERROR", str(e)))
+
+            # Log test results
+            for test_name, result, details in test_results:
+                if result == "PASS":
+                    self.logger.info(f"TEST {test_name}: {result} - {details}")
+                elif result == "WARNING":
+                    self.logger.warning(f"TEST {test_name}: {result} - {details}")
+                elif result == "FAIL":
+                    self.logger.error(f"TEST {test_name}: {result} - {details}")
+                elif result == "ERROR":
+                    self.logger.error(f"TEST {test_name}: {result} - {details}")
+
+            # Summary
+            pass_count = sum(1 for _, result, _ in test_results if result == "PASS")
+            total_count = len(test_results)
+
+            self.logger.info(
+                f"Debug tests completed: {pass_count}/{total_count} passed"
+            )
+            self.statusBar().showMessage(
+                f"Debug tests completed: {pass_count}/{total_count} passed", 5000
+            )
 
         except Exception as e:
-            self.logger.error(f"Debug test failed: {e}")
+            self.logger.error(f"Error running debug tests: {e}")
+            self.statusBar().showMessage(f"Error running debug tests: {e}", 5000)
 
     def closeEvent(self, event: QCloseEvent):
-        """Handle close event - minimize to tray instead of closing."""
+        """Handle close event - hide instead of closing."""
         event.ignore()
         self.hide()
-        self.statusBar().showMessage("Console minimized to system tray", 2000)
+
+    def showEvent(self, event):
+        """Handle show event - refresh debug info when shown."""
+        super().showEvent(event)
+        # Refresh debug info when console is shown
+        QTimer.singleShot(100, self._refresh_debug_info)

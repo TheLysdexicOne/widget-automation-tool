@@ -20,7 +20,7 @@
 - [x] Position overlay at top-right corner + 32px offset
 - [x] Implement state-based color changes
 - [x] Handle target window movement/resize
-- [ ] Implement expanded and pinned state
+- [x] Implement expanded and pinned state
   - On hover (0.25s) the screen expands into application (left, then down)
   - On click, the expanded screen is pinned and unpinned
 - [x] Hide overlay when WidgetInc.exe is not found
@@ -64,8 +64,14 @@
 
 ## Intermediate Phase 2.5
 
-- [ ] Add contextual Show/Hide Console to right-click menu of system tray
-- [ ] Add contextual Show/Hide Overlay to right-click menu of system tray
+- [x] Add contextual Show/Hide Console to right-click menu of system tray
+- [x] Add contextual Show/Hide Overlay to right-click menu of system tray
+- [x] Restructure states.
+  - ACTIVE = performing automation
+  - READY = "The tool recognizes the current screen/minigame and is waitin for user to activate."
+  - ATTENTION (name can be something more relevant) = "The tool recognizes the current screen/minigame, but there is no automation programmed."
+  - INACTIVE = "The tool does not recognize the current screen/minigame, therefore there is no automation available on this screen."
+  - ERROR = Something wrong with application
 
 ## Phase 3: Configuration & Settings
 

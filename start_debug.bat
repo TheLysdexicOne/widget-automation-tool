@@ -1,9 +1,13 @@
 @echo off
 REM Widget Automation Tool Debug Launcher
 REM Launches the application in debug mode
+REM Usage: start_debug.bat
 
 SET SCRIPT_DIR=%~dp0
 SET VENV_DIR=%SCRIPT_DIR%.venv
+
+REM Parse command line arguments for passthrough
+SET EXTRA_ARGS=%*
 
 REM Check if virtual environment exists
 IF NOT EXIST "%VENV_DIR%" (
@@ -29,8 +33,13 @@ IF NOT DEFINED VIRTUAL_ENV (
 echo Virtual environment activated: %VIRTUAL_ENV%
 
 REM Launch the application in debug mode
-echo Starting Widget Automation Tool in DEBUG mode...
-python src\main.py --debug
+IF "%EXTRA_ARGS%"=="" (
+    echo Starting Widget Automation Tool in DEBUG mode...
+    python src\main.py --debug
+) ELSE (
+    echo Starting Widget Automation Tool in DEBUG mode with args: %EXTRA_ARGS%
+    python src\main.py --debug %EXTRA_ARGS%
+)
 
 REM Deactivate virtual environment
 deactivate

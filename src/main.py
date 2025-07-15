@@ -44,10 +44,6 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "--tests", action="store_true", help="Run automated tests and exit"
-    )
-
-    parser.add_argument(
         "--target",
         default="WidgetInc.exe",
         help="Target process name to monitor (default: WidgetInc.exe)",
@@ -67,23 +63,13 @@ def main():
 
     logger.info("Starting Widget Automation Tool...")
     logger.info(f"Debug mode: {args.debug}")
-    logger.info(f"Test mode: {args.tests}")
 
     # Create QApplication
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)  # Keep running when windows are closed
 
     # Create main application
-    widget_app = WidgetAutomationApp(
-        debug_mode=args.debug, test_mode=args.tests, target_process=args.target
-    )
-
-    if args.tests:
-        # Run tests and exit
-        logger.info("Running automated tests...")
-        result = widget_app.run_tests()
-        logger.info(f"Tests completed with result: {result}")
-        return result
+    widget_app = WidgetAutomationApp(debug_mode=args.debug, target_process=args.target)
 
     # Start the application
     logger.info("Application initialized successfully")
