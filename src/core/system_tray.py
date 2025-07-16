@@ -92,6 +92,11 @@ class SystemTrayManager(QObject):
         # Separator
         self.tray_menu.addSeparator()
 
+        # Restart action
+        restart_action = QAction("Restart", self)
+        restart_action.triggered.connect(self._on_restart)
+        self.tray_menu.addAction(restart_action)
+
         # Exit action
         exit_action = QAction("Exit", self)
         exit_action.triggered.connect(self._on_exit)
@@ -192,3 +197,38 @@ class SystemTrayManager(QObject):
 
         except Exception as e:
             self.logger.error(f"Error during tray cleanup: {e}")
+
+    def _on_restart(self):
+        """Handle restart action."""
+        self.logger.info("Restart requested from tray menu")
+
+        try:
+            import sys
+            import os
+            import subprocess
+
+            # Get the current working directory and script path
+            current_dir = os.getcwd()
+
+            # Try to use the start_debug.bat file if it exists
+            start_script = os.path.join(current_dir, "start_debug.bat")
+            if not os.path.exists(start_script):
+                start_script = os.path.join(current_dir, "start.bat")
+
+            if os.path.exists(start_script):
+                # Use the batch file for restart
+                self.logger.info(f"Restarting using: {start_script}")
+                # Start the new process
+                subprocess.Popen([start_script], shell=True, cwd=current_dir)
+            else:
+                # Fallback to direct Python execution
+                self.logger.info("Restarting using direct Python execution")
+                python_executable = sys.executable
+                script_path = os.path.join(current_dir, "src", "main.py")
+                subprocess.Popen([python_executable, script_path], cwd=current_dir)
+
+            # Shutdown the current instance
+            self.app.shutdown()
+
+        except Exception as e:
+            self.logger.error(f"Error during restart: {e}")

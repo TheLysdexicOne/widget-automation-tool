@@ -26,6 +26,13 @@ from .base_tab import BaseTab
 class MonitoringTab(BaseTab):
     """Monitoring tab for real-time system information."""
 
+    def __init__(self, app, parent=None):
+        super().__init__(app)
+        self.widget_info_cache = {}
+        self.cache_timeout = 5000  # Cache for 5 seconds
+        self.last_cache_time = 0
+        self._setup_updates()
+
     def _setup_ui(self):
         """Setup the monitoring tab UI."""
         main_layout = QVBoxLayout(self)
@@ -197,15 +204,19 @@ class MonitoringTab(BaseTab):
         self.update_timer.start(2000)  # Update every 2 seconds
 
     def _update_monitoring_data(self):
-        """Update all monitoring cards with current information."""
+        """Update monitoring data with caching to improve performance."""
         try:
-            # Update process monitoring card
-            self._update_process_monitoring_card()
+            import time
 
-            # Update coordinates monitoring card
-            self._update_coordinates_card()
+            current_time = time.time() * 1000  # Convert to milliseconds
 
-            # Update mouse tracking card
+            # Only update expensive operations every 5 seconds
+            if current_time - self.last_cache_time > self.cache_timeout:
+                self._update_process_monitoring_card()
+                self._update_coordinates_card()
+                self.last_cache_time = current_time
+
+            # Update mouse tracking every 2 seconds (lightweight)
             self._update_mouse_tracking_card()
 
         except Exception as e:
@@ -512,76 +523,43 @@ class MonitoringTab(BaseTab):
         )
 
     def _get_playable_area_coordinates(self):
-        """Get playable area coordinates within WidgetInc.exe based on 3:2 ratio and black border detection."""
+        """Get playable area coordinates using ratio-based calculation."""
         try:
-            # Get WidgetInc.exe coordinates first
             widget_coords = self._get_widgetinc_coordinates()
-            if widget_coords["width"] > 0 and widget_coords["height"] > 0:
 
-                # First try pixel-based detection for precise bounds
-                try:
-                    pixel_bounds = self._detect_black_border_bounds(widget_coords)
-                    if pixel_bounds and pixel_bounds != widget_coords:
-                        return pixel_bounds
-                except Exception:
-                    # Fall back to ratio-based calculation if pixel detection fails
-                    pass
+            if widget_coords["width"] <= 0 or widget_coords["height"] <= 0:
+                return {"x": 0, "y": 0, "width": 0, "height": 0}
 
-                # Fall back to ratio-based calculation
-                # Calculate the 3:2 ratio playable area
-                window_width = widget_coords["width"]
-                window_height = widget_coords["height"]
-                window_ratio = window_width / window_height
+            # Calculate 3:2 aspect ratio area (fast calculation)
+            widget_width = widget_coords["width"]
+            widget_height = widget_coords["height"]
+            target_ratio = 3.0 / 2.0  # 1.5
 
-                # Target ratio is 3:2 = 1.5
-                target_ratio = 3.0 / 2.0
+            current_ratio = widget_width / widget_height
 
-                if window_ratio > target_ratio:
-                    # Window is wider than 3:2, so we have vertical black bars on left/right
-                    playable_height = window_height
-                    playable_width = int(playable_height * target_ratio)
+            if current_ratio > target_ratio:
+                # Window is wider than 3:2, add left/right black bars
+                playable_width = int(widget_height * target_ratio)
+                playable_height = widget_height
+                playable_x = widget_coords["x"] + (widget_width - playable_width) // 2
+                playable_y = widget_coords["y"]
+            else:
+                # Window is taller than 3:2, add top/bottom black bars
+                playable_width = widget_width
+                playable_height = int(widget_width / target_ratio)
+                playable_x = widget_coords["x"]
+                playable_y = widget_coords["y"] + (widget_height - playable_height) // 2
 
-                    # Center the playable area horizontally
-                    black_bar_width = (window_width - playable_width) // 2
-                    playable_x = widget_coords["x"] + black_bar_width
-                    playable_y = widget_coords["y"]
-
-                elif window_ratio < target_ratio:
-                    # Window is taller than 3:2, so we have horizontal black bars on top/bottom
-                    playable_width = window_width
-                    playable_height = int(playable_width / target_ratio)
-
-                    # Center the playable area vertically
-                    black_bar_height = (window_height - playable_height) // 2
-                    playable_x = widget_coords["x"]
-                    playable_y = widget_coords["y"] + black_bar_height
-
-                else:
-                    # Window is exactly 3:2, no black bars needed
-                    playable_width = window_width
-                    playable_height = window_height
-                    playable_x = widget_coords["x"]
-                    playable_y = widget_coords["y"]
-
-                return {
-                    "x": playable_x,
-                    "y": playable_y,
-                    "width": playable_width,
-                    "height": playable_height,
-                }
             return {
-                "x": 0,
-                "y": 0,
-                "width": 0,
-                "height": 0,
+                "x": playable_x,
+                "y": playable_y,
+                "width": playable_width,
+                "height": playable_height,
             }
+
         except Exception as e:
-            return {
-                "x": 0,
-                "y": 0,
-                "width": 0,
-                "height": 0,
-            }
+            self.logger.error(f"Error calculating playable area: {e}")
+            return {"x": 0, "y": 0, "width": 0, "height": 0}
 
     def _get_playable_area_info(self):
         """Get detailed information about the playable area including pixel scaling."""
@@ -590,9 +568,9 @@ class MonitoringTab(BaseTab):
             playable_coords = self._get_playable_area_coordinates()
 
             if playable_coords["width"] > 0 and playable_coords["height"] > 0:
-                # Calculate pixel scaling based on 180x120 background
-                background_width = 180
-                background_height = 120
+                # Calculate pixel scaling based on 192x128 background
+                background_width = 192
+                background_height = 128
 
                 # Background pixel scaling
                 bg_pixel_width = playable_coords["width"] / background_width
@@ -630,7 +608,7 @@ class MonitoringTab(BaseTab):
             return None
 
     def _get_widgetinc_coordinates(self):
-        """Get WidgetInc.exe window coordinates."""
+        """Get WidgetInc.exe client window coordinates (content area without decorations)."""
         try:
             # Get window coordinates using win32gui
             import win32gui
@@ -644,13 +622,19 @@ class MonitoringTab(BaseTab):
                     hwnd = self._find_window_by_pid(pid)
 
                     if hwnd:
-                        # Get window rectangle
-                        rect = win32gui.GetWindowRect(hwnd)
+                        # Get client rectangle (content area without decorations)
+                        client_rect = win32gui.GetClientRect(hwnd)
+                        client_screen_pos = win32gui.ClientToScreen(hwnd, (0, 0))
+
+                        # Client rect is (left, top, right, bottom) where left/top are usually 0
+                        client_width = client_rect[2] - client_rect[0]
+                        client_height = client_rect[3] - client_rect[1]
+
                         return {
-                            "x": rect[0],
-                            "y": rect[1],
-                            "width": rect[2] - rect[0],
-                            "height": rect[3] - rect[1],
+                            "x": client_screen_pos[0],
+                            "y": client_screen_pos[1],
+                            "width": client_width,
+                            "height": client_height,
                         }
 
             # If process not found, return zeros
@@ -763,9 +747,9 @@ class MonitoringTab(BaseTab):
                     percent_x = (rel_x / playable_coords["width"]) * 100
                     percent_y = (rel_y / playable_coords["height"]) * 100
 
-                    # Also calculate background pixel coordinates (180x120 grid)
-                    bg_x = int((rel_x / playable_coords["width"]) * 180)
-                    bg_y = int((rel_y / playable_coords["height"]) * 120)
+                    # Also calculate background pixel coordinates (192x128 grid)
+                    bg_x = int((rel_x / playable_coords["width"]) * 192)
+                    bg_y = int((rel_y / playable_coords["height"]) * 128)
 
                     return f"{percent_x:.1f}%, {percent_y:.1f}% (BG:{bg_x},{bg_y})"
                 else:
