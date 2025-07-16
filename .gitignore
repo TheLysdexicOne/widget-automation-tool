@@ -22,7 +22,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 .old.reference-only/
-.github/
+
 
 # Virtual Environment
 venv/
@@ -64,3 +64,5 @@ test_screenshots/
 .pytest_cache/
 .coverage
 htmlcov/
+.github/
+assets/
