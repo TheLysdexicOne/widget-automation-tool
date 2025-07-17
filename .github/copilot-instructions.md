@@ -31,6 +31,14 @@
 ## Tests
 
 - All tests should be in src/tests
+- One-time tests should be deleted after use
+- Do not move or delete any files with the prefix lyx\__._
+
+## Old Files
+
+- If a new file is created, move the old file into ./old so that it can be deleted
+- Don't ever reference a file in a {folder}/old/ folder
+- Don't ever use \_old or \_new in a production file
 
 ## Playable Area
 

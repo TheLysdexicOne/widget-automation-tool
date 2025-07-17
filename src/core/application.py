@@ -16,6 +16,8 @@ from PyQt6.QtGui import QIcon, QAction
 from core.system_tray import SystemTrayManager
 from core.process_monitor import ProcessMonitor
 from core.config_manager import ConfigManager
+from core.window_manager import WindowManager
+from core.mouse_tracker import MouseTracker
 from console.debug_console import DebugConsole
 from overlay.overlay_window import OverlayWindow
 
@@ -54,6 +56,8 @@ class WidgetAutomationApp(QObject):
         self.config_manager = None
         self.system_tray = None
         self.process_monitor = None
+        self.window_manager = None
+        self.mouse_tracker = None
         self.debug_console = None
         self.overlay_window = None
 
@@ -67,6 +71,12 @@ class WidgetAutomationApp(QObject):
 
             # Configuration manager
             self.config_manager = ConfigManager()
+
+            # Window manager (Core - handles all window operations)
+            self.window_manager = WindowManager()
+
+            # Mouse tracker (Core - handles mouse tracking)
+            self.mouse_tracker = MouseTracker()
 
             # System tray
             self.system_tray = SystemTrayManager(self)

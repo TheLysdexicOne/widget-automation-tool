@@ -37,6 +37,14 @@ class OverlayWindow(QWidget):
         self.app = app
         self.logger = logging.getLogger(__name__)
 
+        # Connect to Core components
+        self.window_manager = (
+            app.window_manager if hasattr(app, "window_manager") else None
+        )
+        self.mouse_tracker = (
+            app.mouse_tracker if hasattr(app, "mouse_tracker") else None
+        )
+
         # Overlay configuration
         self.circle_diameter = 24
         self.box_size = 40  # Increased from 32 to 40
@@ -420,6 +428,13 @@ class OverlayWindow(QWidget):
         self.logger.info(
             f"Overlay clicked at local pos: ({event.pos().x()}, {event.pos().y()}), global pos: ({event.globalPosition().toPoint().x()}, {event.globalPosition().toPoint().y()})"
         )
+
+        # Record click in mouse tracker
+        if self.mouse_tracker:
+            global_pos = event.globalPosition().toPoint()
+            button = "left" if event.button() == Qt.MouseButton.LeftButton else "right"
+            self.mouse_tracker.record_click(global_pos.x(), global_pos.y(), button)
+
         if event.button() == Qt.MouseButton.LeftButton:
             self.logger.info("Left mouse button pressed - toggling pin")
             self._toggle_pin()
@@ -633,3 +648,15 @@ class OverlayWindow(QWidget):
             f"Animation finished. Fixed size restored to {current_size.width()}x{current_size.height()}"
         )
         self.update()
+
+    def get_coordinates(self) -> dict:
+        """Get overlay coordinates for reporting to Core."""
+        geometry = self.geometry()
+        return {
+            "x": geometry.x(),
+            "y": geometry.y(),
+            "width": geometry.width(),
+            "height": geometry.height(),
+            "is_expanded": self.is_expanded,
+            "is_pinned": self.is_pinned,
+        }
