@@ -1,0 +1,147 @@
+{
+  "font_settings": {
+    "font_path": "assets/font/pixelFJ8pt1_.ttf",
+    "font_size": 8,
+    "font_color": "#ffffff",
+    "border_color": "#131422",
+    "base_resolution": {
+      "width": 2160,
+      "height": 1440
+    },
+    "scale_factor_at_2560x1440": 1.0,
+    "expected_pixel_size": 5
+  },
+  "detection_zones": {
+    "title_area": {
+      "region": {
+        "x_percent": 0.25,
+        "y_percent": 0.083,
+        "width_percent": 0.5,
+        "height_percent": 0.25
+      },
+      "expected_text": [
+        "Start",
+        "Continue",
+        "Options",
+        "Exit",
+        "New Game",
+        "Load Game"
+      ],
+      "background_id": "main_menu",
+      "priority": "high"
+    },
+    "center_content": {
+      "region": {
+        "x_percent": 0.125,
+        "y_percent": 0.333,
+        "width_percent": 0.75,
+        "height_percent": 0.333
+      },
+      "expected_text": [
+        "Factory",
+        "Research",
+        "Inventory",
+        "Settings",
+        "Widget",
+        "Iron",
+        "Copper",
+        "Battery",
+        "Circuit"
+      ],
+      "background_id": "factory_main",
+      "priority": "high"
+    },
+    "top_ui_bar": {
+      "region": {
+        "x_percent": 0.0,
+        "y_percent": 0.0,
+        "width_percent": 1.0,
+        "height_percent": 0.125
+      },
+      "expected_text": ["Resources", "Money", "Time", "Level", "Score"],
+      "background_id": "ui_overlay",
+      "priority": "medium"
+    },
+    "bottom_ui_bar": {
+      "region": {
+        "x_percent": 0.0,
+        "y_percent": 0.875,
+        "width_percent": 1.0,
+        "height_percent": 0.125
+      },
+      "expected_text": ["Build", "Upgrade", "Sell", "Info", "Help"],
+      "background_id": "ui_overlay",
+      "priority": "medium"
+    },
+    "left_panel": {
+      "region": {
+        "x_percent": 0.0,
+        "y_percent": 0.25,
+        "width_percent": 0.25,
+        "height_percent": 0.5
+      },
+      "expected_text": ["Inventory", "Items", "Tools", "Materials"],
+      "background_id": "side_panel",
+      "priority": "low"
+    },
+    "right_panel": {
+      "region": {
+        "x_percent": 0.75,
+        "y_percent": 0.25,
+        "width_percent": 0.25,
+        "height_percent": 0.5
+      },
+      "expected_text": ["Stats", "Info", "Details", "Progress"],
+      "background_id": "side_panel",
+      "priority": "low"
+    },
+    "dialog_box": {
+      "region": {
+        "x_percent": 0.2,
+        "y_percent": 0.3,
+        "width_percent": 0.6,
+        "height_percent": 0.4
+      },
+      "expected_text": [
+        "OK",
+        "Cancel",
+        "Yes",
+        "No",
+        "Confirm",
+        "Accept",
+        "Decline"
+      ],
+      "background_id": "dialog",
+      "priority": "critical"
+    },
+    "tooltip": {
+      "region": {
+        "x_percent": 0.3,
+        "y_percent": 0.2,
+        "width_percent": 0.4,
+        "height_percent": 0.3
+      },
+      "expected_text": [
+        "Widget",
+        "Description",
+        "Cost",
+        "Requirements",
+        "Effect"
+      ],
+      "background_id": "tooltip",
+      "priority": "medium"
+    }
+  },
+  "glyph_settings": {
+    "characters": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;':\",./<>?~ ",
+    "match_threshold": 0.95,
+    "spacing_tolerance": 2,
+    "output_directory": "assets/glyphs/",
+    "cache_enabled": true
+  },
+  "background_subtraction": {
+    "enabled": false,
+    "threshold": 30,
+    "use_background_removal": false
+  }
+}

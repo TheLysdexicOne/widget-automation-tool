@@ -76,7 +76,7 @@ class WidgetAutomationApp(QObject):
             self.window_manager = WindowManager()
 
             # Mouse tracker (Core - handles mouse tracking)
-            self.mouse_tracker = MouseTracker()
+            self.mouse_tracker = MouseTracker(self.window_manager)
 
             # System tray
             self.system_tray = SystemTrayManager(self)

@@ -218,19 +218,16 @@ class MonitoringTab(BaseTab):
         # Update display every 2 seconds
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self._update_display)
-        self.update_timer.start(500)  # 0.5 seconds for testing
-        self.logger.debug("Update timer started with 0.5-second interval for testing")
+        self.update_timer.start(2000)  # 2 seconds
 
     def _on_coordinates_updated(self, coordinates_data):
         """Handle coordinates update from Core."""
-        self.logger.debug(f"Received coordinates update: {coordinates_data}")
         self.current_coordinates = coordinates_data
         # Trigger immediate update
         self._update_display()
 
     def _on_mouse_moved(self, position):
         """Handle mouse movement from Core."""
-        self.logger.debug(f"Mouse moved to: {position}")
         # Get mouse data from Core
         if self.mouse_tracker:
             mouse_stats = self.mouse_tracker.get_stats()
@@ -239,31 +236,18 @@ class MonitoringTab(BaseTab):
     def _update_display(self):
         """Update the display with current data."""
         try:
-            self.logger.debug("Updating monitoring display...")
-            self.logger.debug(f"Window manager reference: {self.window_manager}")
-            self.logger.debug(f"Current coordinates: {self.current_coordinates}")
-
-            self.logger.debug("About to call _update_process_monitoring()")
             self._update_process_monitoring()
-
-            self.logger.debug("About to call _update_coordinates_monitoring()")
             self._update_coordinates_monitoring()
-
-            self.logger.debug("About to call _update_mouse_tracking()")
             self._update_mouse_tracking()
-
-            self.logger.debug("Display update completed successfully")
         except Exception as e:
             self.logger.error(f"Error updating display: {e}", exc_info=True)
 
     def _update_process_monitoring(self):
         """Update process monitoring table."""
         try:
-            self.logger.debug("Updating process monitoring table...")
             # Get data from Core window manager
             if self.window_manager:
                 widget_info = self.window_manager.get_widgetinc_info()
-                self.logger.debug(f"Widget info: {widget_info}")
 
                 # Update WidgetInc.exe row
                 if self.process_monitoring_table.item(0, 1):
@@ -292,8 +276,6 @@ class MonitoringTab(BaseTab):
                     self.process_monitoring_table.item(3, 1).setText(
                         "Running" if hasattr(self.app, "overlay_window") else "N/A"
                     )
-            else:
-                self.logger.debug("No window manager available")
 
         except Exception as e:
             self.logger.error(f"Error updating process monitoring: {e}", exc_info=True)
@@ -301,11 +283,7 @@ class MonitoringTab(BaseTab):
     def _update_coordinates_monitoring(self):
         """Update coordinates monitoring table."""
         try:
-            self.logger.debug(
-                f"Updating coordinates monitoring with data: {self.current_coordinates}"
-            )
             if not self.current_coordinates:
-                self.logger.debug("No coordinate data available")
                 return
 
             # Widget window coordinates
