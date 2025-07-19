@@ -163,11 +163,12 @@ class SystemTrayManager(QObject):
             self.app.overlay_window.hide()
             self.show_overlay_action.setText("Show Overlay")
         else:
-            if self.app.overlay_window and self.app.overlay_window.target_window:
+            if self.app.overlay_window:
+                self.app.overlay_window.position_overlay()
                 self.app.overlay_window.show()
                 self.show_overlay_action.setText("Hide Overlay")
             else:
-                self.logger.info("No target window to attach overlay to")
+                self.logger.info("No overlay window available")
 
     def _on_exit(self):
         """Handle exit action."""

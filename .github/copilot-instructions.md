@@ -40,6 +40,11 @@
 - Don't ever reference a file in a {folder}/old/ folder
 - Don't ever use \_old or \_new in a production file
 
+## MISC
+
+- The application can and will often be left of the center monitor causing negative coordinates - This is valid!
+- Clean up debug. If it's only needed for testing one part, remove the debugging when done.
+
 ## Playable Area
 
 ### Overview

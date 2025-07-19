@@ -19,7 +19,7 @@ from core.config_manager import ConfigManager
 from core.window_manager import WindowManager
 from core.mouse_tracker import MouseTracker
 from console.debug_console import DebugConsole
-from overlay.overlay_window import OverlayWindow
+from overlay.overlay_window_original import OverlayWindowOriginal
 
 
 class ApplicationState(Enum):
@@ -61,6 +61,10 @@ class WidgetAutomationApp(QObject):
         self.debug_console = None
         self.overlay_window = None
 
+        # Current target window info
+        self.current_target_hwnd = None
+        self.current_target_window = None
+
         # Initialize components
         self._initialize_components()
 
@@ -91,8 +95,8 @@ class WidgetAutomationApp(QObject):
             if self.debug_mode:
                 self.debug_console.show()
 
-            # Overlay window
-            self.overlay_window = OverlayWindow(self)
+            # Overlay window (original-style with screenshot functionality)
+            self.overlay_window = OverlayWindowOriginal(self.window_manager, self)
 
             # Connect signals
             self.state_changed.connect(self._on_state_changed)
@@ -111,9 +115,22 @@ class WidgetAutomationApp(QObject):
         self.logger.info(f"Target process found with handle: {hwnd}")
         self.target_process_found.emit(True)
 
-        # Attach overlay to the target window
+        # Store target window information
+        self.current_target_hwnd = hwnd
+        try:
+            import pygetwindow as gw
+
+            windows = gw.getWindowsWithTitle("WidgetInc")
+            if windows:
+                self.current_target_window = windows[0]
+        except Exception as e:
+            self.logger.error(f"Error getting target window: {e}")
+            self.current_target_window = None
+
+        # Show and position overlay for the target window
         if self.overlay_window:
-            self.overlay_window.attach_to_window(hwnd)
+            self.overlay_window.position_overlay()
+            self.overlay_window.show()
 
         # Update state - when target process is found, we don't know what screen it's on yet
         # So we start with INACTIVE (not recognized) until we can analyze the screen content
@@ -124,6 +141,10 @@ class WidgetAutomationApp(QObject):
         """Handle target process lost."""
         self.logger.info("Target process lost")
         self.target_process_found.emit(False)
+
+        # Clear target window information
+        self.current_target_hwnd = None
+        self.current_target_window = None
 
         # Hide overlay
         if self.overlay_window:
