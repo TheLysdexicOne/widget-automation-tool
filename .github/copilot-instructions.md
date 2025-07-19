@@ -4,19 +4,17 @@
 
 # Project general coding standards
 
+## Aesthetics
+
+- Industrialesque
+
 ## "KISS" Principals
 
 - "KISS" stands for "Keep It Simple, Stupid"
 - Keep the code clean and simple as much as possible
 - Use modules when it's easier to do so, don't try to reinvent the wheel
 - Do not overcomplicate code. If it seems complicated, it's probably complicated.
-
-## Separation of duties
-
-- While the application is initiated with main.py,
-- The brains are in src/core
-- The brains user display is src/console
-- The user experience is src/overlay
+- If code is used more than once, consider making it a function and possibly a helper file.
 
 ## Execution
 
@@ -44,6 +42,7 @@
 
 - The application can and will often be left of the center monitor causing negative coordinates - This is valid!
 - Clean up debug. If it's only needed for testing one part, remove the debugging when done.
+- Place all AI generated "summaries" in /documents/summaries
 
 ## Playable Area
 

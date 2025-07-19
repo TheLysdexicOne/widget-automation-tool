@@ -1,8 +1,0 @@
-{
-  "target_application": {
-    "executable": "WidgetInc.exe",
-    "window_title": "WidgetInc",
-    "process_name": "WidgetInc"
-  },
-  "frames": []
-}
