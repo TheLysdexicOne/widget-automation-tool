@@ -96,7 +96,12 @@ class WidgetAutomationApp(QObject):
                 self.debug_console.show()
 
             # Overlay window (original-style with screenshot functionality)
-            self.overlay_window = OverlayWindowOriginal(self.window_manager, self)
+            try:
+                self.overlay_window = OverlayWindowOriginal(self.window_manager, self)
+                self.logger.info("Overlay window created successfully")
+            except Exception as e:
+                self.logger.error(f"Failed to create overlay window: {e}")
+                self.overlay_window = None
 
             # Connect signals
             self.state_changed.connect(self._on_state_changed)
@@ -174,11 +179,10 @@ class WidgetAutomationApp(QObject):
         return self._state
 
     def show_debug_console(self):
-        """Show the debug console."""
+        """Show the debug console with proper focus."""
         if self.debug_console:
             self.debug_console.show()
-            self.debug_console.raise_()
-            self.debug_console.activateWindow()
+            self.debug_console._ensure_focus()
 
     def shutdown(self):
         """Gracefully shutdown the application."""
@@ -193,9 +197,11 @@ class WidgetAutomationApp(QObject):
             if self.overlay_window:
                 self.overlay_window.hide()
 
-            # Close debug console
+            # Close debug console properly
             if self.debug_console:
-                self.debug_console.close()
+                # Force close without event handling
+                self.debug_console.setVisible(False)
+                self.debug_console.cleanup()
 
             # Clean up system tray
             if self.system_tray:
@@ -206,5 +212,15 @@ class WidgetAutomationApp(QObject):
         except Exception as e:
             self.logger.error(f"Error during shutdown: {e}")
 
-        # Exit the application
-        QApplication.quit()
+        # Force exit the application
+        try:
+            from PyQt6.QtWidgets import QApplication
+
+            QApplication.quit()
+        except:
+            pass
+
+        # Force exit as last resort
+        import os
+
+        os._exit(0)

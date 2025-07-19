@@ -175,9 +175,28 @@ class ConsoleTab(BaseTab):
             self.parent().statusBar().showMessage("Logs cleared", 2000)
 
     def _close_console(self):
-        """Close the console window."""
-        if hasattr(self.parent(), "hide"):
-            self.parent().hide()
+        """Close the console window (minimize to system tray)."""
+        # Debounce rapid close button clicks
+        import time
+
+        current_time = time.time()
+        if hasattr(self, "_last_close_click"):
+            if (current_time - self._last_close_click) < 0.5:  # 500ms debounce
+                self.logger.debug("Close button click ignored (debouncing)")
+                return
+        self._last_close_click = current_time
+
+        self.logger.info("Console close button clicked - minimizing to tray")
+
+        # Use the debug console's minimize to tray method
+        if self.debug_console and hasattr(self.debug_console, "minimize_to_tray"):
+            self.debug_console.minimize_to_tray()
+        elif self.debug_console and hasattr(self.debug_console, "hide"):
+            self.debug_console.hide()
+        else:
+            self.logger.error(
+                "No debug console reference available for close operation"
+            )
 
     def cleanup(self):
         """Cleanup resources when tab is destroyed."""

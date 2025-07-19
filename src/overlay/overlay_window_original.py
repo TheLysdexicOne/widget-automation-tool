@@ -50,6 +50,9 @@ from PyQt6.QtGui import (
 import pyautogui
 
 from core.window_manager import WindowManager
+from utility.window_utils import calculate_overlay_position
+from utility.widget_utils import create_floating_button, ensure_widget_on_top
+from utility.logging_utils import get_smart_logger
 
 
 class OverlayWindowOriginal(QWidget):
@@ -62,7 +65,7 @@ class OverlayWindowOriginal(QWidget):
         super().__init__()
         self.window_manager = window_manager
         self.app = app  # Reference to main application for target window info
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_smart_logger(__name__)
 
         # Overlay dimensions (always expanded)
         self.overlay_width = 200
@@ -121,95 +124,32 @@ class OverlayWindowOriginal(QWidget):
         self.logger.debug("Simplified overlay window setup complete")
 
     def position_overlay(self):
-        """Position overlay in top-right corner of target window (matching original offset)."""
-        if self.app and self.app.current_target_window:
-            try:
-                window = self.app.current_target_window
-
-                # Use original offset calculations
-                offset_x = -8  # Left 8 pixels from right edge
-                offset_y = 40  # Down 40 pixels from top edge
-
-                # Get client area coordinates (content area without title bar/borders)
-                try:
-                    import win32gui
-
-                    # Get the window handle (hwnd)
-                    hwnd = None
-                    if hasattr(window, "_hWnd"):
-                        hwnd = window._hWnd
-                    else:
-                        # Fallback: find window by title/process
-                        import win32process
-                        import psutil
-
-                        for proc in psutil.process_iter(["pid", "name"]):
-                            if proc.info["name"] == "WidgetInc.exe":
-                                pid = proc.info["pid"]
-
-                                def enum_windows_proc(hwnd, lParam):
-                                    if win32gui.IsWindowVisible(hwnd):
-                                        _, found_pid = (
-                                            win32process.GetWindowThreadProcessId(hwnd)
-                                        )
-                                        if found_pid == pid:
-                                            lParam.append(hwnd)
-                                    return True
-
-                                windows = []
-                                win32gui.EnumWindows(enum_windows_proc, windows)
-                                if windows:
-                                    hwnd = windows[0]
-                                break
-
-                    if hwnd:
-                        # Get client rectangle (content area without decorations)
-                        client_rect = win32gui.GetClientRect(hwnd)
-                        client_screen_pos = win32gui.ClientToScreen(hwnd, (0, 0))
-
-                        # Client rect is (left, top, right, bottom) where left/top are usually 0
-                        client_width = client_rect[2] - client_rect[0]
-                        client_height = client_rect[3] - client_rect[1]
-                        client_x, client_y = client_screen_pos
-
-                        # Position at top-right corner of CLIENT area with offsets
-                        target_x = client_x + client_width - self.width() + offset_x
-                        target_y = client_y + offset_y
-                    else:
-                        # Fallback to full window coordinates if client area detection fails
-                        self.logger.warning(
-                            "Could not get client area - falling back to full window coordinates"
-                        )
-                        target_x = window.left + window.width - self.width() + offset_x
-                        target_y = window.top + offset_y
-
-                except (ImportError, Exception) as e:
-                    # Fallback to full window coordinates if win32gui is not available
-                    self.logger.warning(
-                        f"Client area detection failed: {e} - falling back to full window coordinates"
-                    )
-                    target_x = window.left + window.width - self.width() + offset_x
-                    target_y = window.top + offset_y
-
-                # Only move if position actually changed (reduce flicker)
-                current_pos = self.pos()
-                if current_pos.x() != target_x or current_pos.y() != target_y:
-                    self.move(target_x, target_y)
-
-                    # Also reposition screenshot button
-                    if (
-                        self.screenshot_button_widget
-                        and self.screenshot_button_widget.isVisible()
-                    ):
-                        self._position_screenshot_button()
-
-            except Exception as e:
-                self.logger.error(f"Error positioning overlay: {e}")
-        else:
-            # Hide overlay if no target window
+        """Position overlay in top-right corner of target window."""
+        if not (self.app and self.app.current_target_window):
             if self.isVisible():
-                self.logger.debug("No target window available - hiding overlay")
                 self.hide()
+            return
+
+        try:
+            window = self.app.current_target_window
+            target_x, target_y = calculate_overlay_position(
+                window, self.width(), self.height(), offset_x=-8, offset_y=40
+            )
+
+            # Only move if position actually changed (reduce flicker)
+            current_pos = self.pos()
+            if current_pos.x() != target_x or current_pos.y() != target_y:
+                self.move(target_x, target_y)
+
+                # Also reposition screenshot button
+                if (
+                    self.screenshot_button_widget
+                    and self.screenshot_button_widget.isVisible()
+                ):
+                    self._position_screenshot_button()
+
+        except Exception as e:
+            self.logger.error(f"Error positioning overlay: {e}")
 
     def update_state_color(self, state):
         """Update overlay color based on application state."""
@@ -327,63 +267,27 @@ class OverlayWindowOriginal(QWidget):
         if self.screenshot_button_widget:
             return  # Already created
 
-        self.screenshot_button_widget = QWidget()
-        self.screenshot_button_widget.setParent(None)  # Make it a top-level widget
-        self.screenshot_button_widget.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.Tool
+        # Use utility to create standardized floating button
+        self.screenshot_button_widget = create_floating_button(
+            parent=self,
+            width=40,
+            height=30,
+            click_handler=self._handle_screenshot_button_click,
+            icon_text="📷",
         )
-        self.screenshot_button_widget.setAttribute(
-            Qt.WidgetAttribute.WA_TranslucentBackground
-        )
-
-        # Set button size
-        button_width = 40
-        button_height = 30
-        self.screenshot_button_widget.setFixedSize(button_width, button_height)
-
-        # Style the button
-        self.screenshot_button_widget.setStyleSheet(
-            """
-            QWidget {
-                background-color: rgba(60, 60, 70, 200);
-                border: 1px solid rgba(100, 100, 110, 255);
-                border-radius: 6px;
-                color: #e0e0e0;
-            }
-            QWidget:hover {
-                background-color: rgba(80, 80, 90, 220);
-            }
-        """
-        )
-
-        # Add click handling
-        def button_mouse_press(event):
-            if event.button() == Qt.MouseButton.LeftButton:
-                self.logger.info("External screenshot button clicked")
-                if self.screenshot_menu_open:
-                    if self.screenshot_menu:
-                        self.screenshot_menu.close()
-                    self._on_screenshot_menu_closed()
-                else:
-                    self._show_screenshot_menu(event.globalPosition().toPoint())
-
-        self.screenshot_button_widget.mousePressEvent = button_mouse_press
-
-        # Paint the button icon
-        def button_paint(event):
-            painter = QPainter(self.screenshot_button_widget)
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-            # Draw camera icon
-            painter.setPen(QPen(QColor(200, 200, 200), 1))
-            painter.setFont(QFont("Arial", 12))
-            painter.drawText(12, 20, "📷")
-
-        self.screenshot_button_widget.paintEvent = button_paint
 
         self.logger.info("External screenshot button created successfully")
+
+    def _handle_screenshot_button_click(self, event):
+        """Handle screenshot button click."""
+        self.logger.info("External screenshot button clicked")
+
+        if self.screenshot_menu_open:
+            if self.screenshot_menu:
+                self.screenshot_menu.close()
+            self._on_screenshot_menu_closed()
+        else:
+            self._show_screenshot_menu(event.globalPosition().toPoint())
 
     def _position_screenshot_button(self):
         """Position the screenshot button below the status circle."""
@@ -418,15 +322,11 @@ class OverlayWindowOriginal(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent):
         """Handle mouse press events - left click to pin, right click for menu."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.logger.info("Left mouse button pressed on overlay")
-        elif event.button() == Qt.MouseButton.RightButton:
-            self.logger.info("Right mouse button pressed - showing context menu")
+        if event.button() == Qt.MouseButton.RightButton:
             self._show_context_menu(event.globalPosition().toPoint())
 
         # Ensure screenshot button stays visible after overlay interaction
-        if self.screenshot_button_widget and self.screenshot_button_widget.isVisible():
-            self.screenshot_button_widget.raise_()
+        ensure_widget_on_top(self.screenshot_button_widget)
 
         # Record click in mouse tracker
         if self.app and hasattr(self.app, "mouse_tracker") and self.app.mouse_tracker:

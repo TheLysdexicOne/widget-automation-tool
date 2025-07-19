@@ -147,7 +147,11 @@ class SystemTrayManager(QObject):
         try:
             if hasattr(self.app, "debug_console") and self.app.debug_console:
                 if self.app.debug_console.isVisible():
-                    self.app.debug_console.hide()
+                    # Use minimize to tray method if available, otherwise hide
+                    if hasattr(self.app.debug_console, "minimize_to_tray"):
+                        self.app.debug_console.minimize_to_tray()
+                    else:
+                        self.app.debug_console.hide()
                 else:
                     self.app.show_debug_console()
             else:
@@ -168,7 +172,12 @@ class SystemTrayManager(QObject):
                 self.app.overlay_window.show()
                 self.show_overlay_action.setText("Hide Overlay")
             else:
-                self.logger.info("No overlay window available")
+                self.logger.warning(
+                    "No overlay window available - overlay may have failed to initialize"
+                )
+                # Try to recreate overlay if needed
+                if hasattr(self.app, "_initialize_overlay"):
+                    self.app._initialize_overlay()
 
     def _on_exit(self):
         """Handle exit action."""
@@ -191,8 +200,13 @@ class SystemTrayManager(QObject):
         """Clean up the system tray icon."""
         try:
             if self.tray_icon:
+                self.tray_icon.setVisible(False)
                 self.tray_icon.hide()
                 self.tray_icon = None
+
+            if self.tray_menu:
+                self.tray_menu.clear()
+                self.tray_menu = None
 
             self.logger.debug("System tray cleaned up")
 

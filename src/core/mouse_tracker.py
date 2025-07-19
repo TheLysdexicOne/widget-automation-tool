@@ -117,13 +117,13 @@ class MouseTracker(QObject):
         # Calculate playable area information
         playable_info = self._get_playable_area_info(x, y)
 
-        # Log click with playable area percentage
+        # Simplified logging - only log when in playable area or important events
         if playable_info.get("inside_playable", False):
-            self.logger.info(
-                f"Click {button} at ({x}, {y}) - Playable area: {playable_info['x_percent']:.1f}%, {playable_info['y_percent']:.1f}%"
-            )
-        else:
-            self.logger.info(f"Click {button} at ({x}, {y}) - Outside playable area")
+            # Only log every 10th click to reduce noise
+            if self.click_count % 10 == 0:
+                self.logger.info(
+                    f"Clicks: {self.click_count} | Last: {button} at playable {playable_info['x_percent']:.1f}%, {playable_info['y_percent']:.1f}%"
+                )
 
         self.click_detected.emit((x, y), button, playable_info)
 

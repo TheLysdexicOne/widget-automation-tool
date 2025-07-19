@@ -9,6 +9,7 @@ It handles command line arguments and initializes the appropriate components.
 import sys
 import argparse
 import logging
+import signal
 from pathlib import Path
 
 # Add src directory to Python path
@@ -71,9 +72,30 @@ def main():
     # Create main application
     widget_app = WidgetAutomationApp(debug_mode=args.debug, target_process=args.target)
 
+    # Setup signal handlers for clean shutdown
+    def signal_handler(signum, frame):
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
+        widget_app.shutdown()
+        app.quit()
+        sys.exit(0)
+
+    # Handle Ctrl+C (SIGINT) and other termination signals
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     # Start the application
     logger.info("Application initialized successfully")
-    return app.exec()
+
+    try:
+        return app.exec()
+    except KeyboardInterrupt:
+        logger.info("KeyboardInterrupt received, shutting down...")
+        widget_app.shutdown()
+        return 0
+    except Exception as e:
+        logger.error(f"Application error: {e}")
+        widget_app.shutdown()
+        return 1
 
 
 if __name__ == "__main__":
