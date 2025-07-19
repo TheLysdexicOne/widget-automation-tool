@@ -14,10 +14,19 @@
 - Keep the code clean and simple as much as possible
 - Use modules when it's easier to do so, don't try to reinvent the wheel
 - Do not overcomplicate code. If it seems complicated, it's probably complicated.
-- If code is used more than once, consider making it a function and possibly a helper file.
+- If code is used more than once, consider making it a function and possibly a helper file
+
+## Don't Reinvent The Wheel
+
+- Don't duplicate calculation functions
+- Every time a calculation is duplicated, the risk of error increases
+- If a calculation is duplicated, then it creates more places to edit said calculation
+- If there is a module that does what we want, suggest it or use it
 
 ## Execution
 
+- Anything \_app should be considered a standalone application and should never rely on another application
+- Standalone applications can still use helper functions to reduce risk of error
 - Always use the .venv
 - Always use Powershell 7 commands in the terminal
 - Unless testing for compiling errors, use the "start.bat" or "start_debug.bat" files for executing the application

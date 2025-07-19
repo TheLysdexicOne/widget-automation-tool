@@ -1,7 +1,8 @@
 """
 Grid Overlay Utility
 
-Provides grid overlay functionality for visualizing playable areas and debug information.
+Provides grid overlay functionality for visualizing playable areas and pixel art grid.
+Shows the actual pixel art background grid with proper scaling using consolidated calculations.
 """
 
 import logging
@@ -10,9 +11,15 @@ from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen, QColor
 
+from .window_utils import (
+    calculate_pixel_size,
+    PIXEL_ART_GRID_WIDTH,
+    PIXEL_ART_GRID_HEIGHT,
+)
+
 
 class GridOverlayWidget(QWidget):
-    """Overlay widget that shows a grid border around the playable area."""
+    """Overlay widget that shows pixel art grid and playable area border."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -27,10 +34,12 @@ class GridOverlayWidget(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
 
-        # Grid properties
+        # Grid line properties
         self.playable_coords = {}
         self.border_color = QColor(255, 0, 0, 200)  # Red border
+        self.grid_color = QColor(0, 255, 255, 100)  # Cyan grid lines
         self.border_width = 3
+        self.grid_line_width = 2  # 2px wide lines as specified
 
         # Initially hidden
         self.hide()
@@ -71,20 +80,53 @@ class GridOverlayWidget(QWidget):
         self.logger.debug("Grid overlay hidden")
 
     def paintEvent(self, event):
-        """Paint the grid border around the playable area."""
+        """Paint the pixel art grid and border around the playable area."""
         if not self.playable_coords:
             return
 
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(
+            QPainter.RenderHint.Antialiasing, False
+        )  # Crisp pixel lines
 
-        # Set up pen for border
-        pen = QPen(self.border_color, self.border_width)
-        pen.setStyle(Qt.PenStyle.SolidLine)
-        painter.setPen(pen)
+        # Get playable area dimensions
+        playable_width = self.playable_coords["width"]
+        playable_height = self.playable_coords["height"]
+
+        # Use consolidated pixel size calculation - single source of truth
+        pixel_size = calculate_pixel_size(playable_width, playable_height)
+
+        self.logger.debug(
+            f"Pixel art scaling: {pixel_size:.2f}px per background pixel ({PIXEL_ART_GRID_WIDTH}x{PIXEL_ART_GRID_HEIGHT} grid)"
+        )
+
+        # Draw pixel art grid with 2px wide lines
+        grid_pen = QPen(self.grid_color, self.grid_line_width)
+        grid_pen.setStyle(Qt.PenStyle.SolidLine)
+        painter.setPen(grid_pen)
+
+        # Draw vertical grid lines using consolidated constants
+        for i in range(PIXEL_ART_GRID_WIDTH + 1):  # +1 to include the right edge
+            x = self.border_width + (i * pixel_size)
+            if x <= self.width() - self.border_width:
+                painter.drawLine(
+                    int(x), self.border_width, int(x), self.height() - self.border_width
+                )
+
+        # Draw horizontal grid lines using consolidated constants
+        for i in range(PIXEL_ART_GRID_HEIGHT + 1):  # +1 to include the bottom edge
+            y = self.border_width + (i * pixel_size)
+            if y <= self.height() - self.border_width:
+                painter.drawLine(
+                    self.border_width, int(y), self.width() - self.border_width, int(y)
+                )
+
+        # Draw playable area border on top of grid
+        border_pen = QPen(self.border_color, self.border_width)
+        border_pen.setStyle(Qt.PenStyle.SolidLine)
+        painter.setPen(border_pen)
 
         # Draw border rectangle
-        # Coordinates are relative to this widget, so draw from border_width
         border_rect = self.rect().adjusted(
             self.border_width // 2,
             self.border_width // 2,
@@ -94,7 +136,7 @@ class GridOverlayWidget(QWidget):
 
         painter.drawRect(border_rect)
 
-        # Optional: Add corner indicators for better visibility
+        # Add corner indicators for better visibility
         corner_size = 20
 
         # Top-left corner
@@ -143,12 +185,6 @@ class GridOverlayWidget(QWidget):
         painter.drawLine(
             border_rect.bottomRight().x() - corner_size,
             border_rect.bottomRight().y(),
-            border_rect.bottomRight().x(),
-            border_rect.bottomRight().y(),
-        )
-        painter.drawLine(
-            border_rect.bottomRight().x(),
-            border_rect.bottomRight().y() - corner_size,
             border_rect.bottomRight().x(),
             border_rect.bottomRight().y(),
         )

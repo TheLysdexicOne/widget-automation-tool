@@ -11,9 +11,10 @@ import argparse
 import logging
 import signal
 from pathlib import Path
+from typing import Dict
 
 # Add src directory to Python path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -28,14 +29,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont, QPainter, QColor, QBrush, QPen, QAction
 
-try:
-    import win32gui
-    import win32process
-    import psutil
-
-    WIN32_AVAILABLE = True
-except ImportError:
-    WIN32_AVAILABLE = False
+# Import shared utilities
+from utility.window_utils import find_target_window, is_window_valid
+from utility.mouse_tracker import MouseTracker
 
 
 class TrackerWidget(QWidget):
@@ -50,10 +46,22 @@ class TrackerWidget(QWidget):
         self.target_found = False
         self.target_hwnd = None
         self.coordinates = {}
+        self.window_coords = {}
+        self.playable_coords = {}
+
+        # Mouse tracker
+        self.mouse_tracker = MouseTracker()
+        self.mouse_tracker.set_coordinate_callbacks(
+            self._get_window_coords, self._get_playable_coords
+        )
+        self.mouse_tracker.position_changed.connect(self._on_mouse_position_changed)
 
         self._setup_window()
         self._setup_ui()
         self._start_monitoring()
+
+        # Start mouse tracking
+        self.mouse_tracker.start_tracking(100)  # Update every 100ms
 
         self.logger.info("Tracker widget initialized")
 
@@ -62,7 +70,7 @@ class TrackerWidget(QWidget):
         self.setWindowTitle("Widget Automation Tracker")
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-        self.setFixedSize(400, 300)
+        self.setMinimumSize(400, 300)
 
         # Dark mode styling
         self.setStyleSheet(
@@ -223,11 +231,29 @@ class TrackerWidget(QWidget):
         button_layout.addStretch()
         button_layout.addWidget(self.close_button)
 
+        # Mouse tracking display
+        self.mouse_label = QLabel("Mouse: No data")
+        self.mouse_label.setFont(QFont("Courier New", 9))
+        self.mouse_label.setStyleSheet(
+            """
+            QLabel {
+                background-color: #1e1e1e;
+                color: #00ff88;
+                border: 1px solid #555;
+                border-radius: 4px;
+                padding: 8px;
+                margin: 4px 0px;
+                font-family: 'Courier New', monospace;
+            }
+        """
+        )
+
         # Add all widgets to layout
         layout.addWidget(title_label)
         layout.addLayout(status_layout)
         layout.addWidget(self.info_area)
         layout.addWidget(self.coords_label)
+        layout.addWidget(self.mouse_label)  # Add mouse tracking display
         layout.addLayout(button_layout)
 
         # Standard context menu
@@ -258,48 +284,35 @@ class TrackerWidget(QWidget):
         self._check_target()
 
     def _check_target(self):
-        """Check for target process."""
-        found = False
-        target_info = {}
+        """Check for target process using shared utilities."""
+        target_info = find_target_window(self.target_process)
 
-        if WIN32_AVAILABLE:
-            try:
-                for proc in psutil.process_iter(["pid", "name"]):
-                    if proc.info["name"] == self.target_process:
-                        pid = proc.info["pid"]
-                        hwnd = self._find_window_by_pid(pid)
-                        if hwnd:
-                            found = True
-                            target_info = {
-                                "pid": pid,
-                                "hwnd": hwnd,
-                                "title": win32gui.GetWindowText(hwnd),
-                                "rect": win32gui.GetWindowRect(hwnd),
-                                "client_rect": win32gui.GetClientRect(hwnd),
-                            }
-                            break
-            except Exception as e:
-                self.logger.error(f"Error checking target: {e}")
+        if target_info:
+            # Target found - extract information
+            pid = target_info["pid"]
+            window_info = target_info["window_info"]
+            playable_area = target_info["playable_area"]
 
-        self._update_status(found, target_info)
+            # Create info dict compatible with existing update logic
+            found_info = {
+                "pid": pid,
+                "hwnd": window_info["hwnd"],
+                "title": window_info["title"],
+                "rect": window_info["window_rect"],
+                "client_rect": (
+                    0,
+                    0,
+                    window_info["client_width"],
+                    window_info["client_height"],
+                ),
+                "window_info": window_info,
+                "playable_area": playable_area,
+            }
 
-    def _find_window_by_pid(self, pid: int):
-        """Find window handle by process ID."""
-
-        def enum_windows_proc(hwnd, windows):
-            try:
-                _, window_pid = win32process.GetWindowThreadProcessId(hwnd)
-                if window_pid == pid and win32gui.IsWindowVisible(hwnd):
-                    title = win32gui.GetWindowText(hwnd)
-                    if "WidgetInc" in title:
-                        windows.append(hwnd)
-            except:
-                pass
-            return True
-
-        windows = []
-        win32gui.EnumWindows(enum_windows_proc, windows)
-        return windows[0] if windows else None
+            self._update_status(True, found_info)
+        else:
+            # Target not found
+            self._update_status(False, {})
 
     def _update_status(self, found: bool, target_info: dict):
         """Update status display."""
@@ -319,19 +332,29 @@ class TrackerWidget(QWidget):
                 )
 
                 # Update info area
-                info_text = f"Process: {self.target_process}\\n"
-                info_text += f"PID: {target_info.get('pid', 'N/A')}\\n"
-                info_text += f"HWND: {target_info.get('hwnd', 'N/A')}\\n"
+                info_text = f"Process: {self.target_process}\n"
+                info_text += f"PID: {target_info.get('pid', 'N/A')}\n"
+                info_text += f"HWND: {target_info.get('hwnd', 'N/A')}\n"
                 info_text += f"Title: {target_info.get('title', 'N/A')}"
                 self.info_area.setPlainText(info_text)
 
-                # Update coordinates
+                # Update coordinates - include playable area if available
                 if "rect" in target_info and "client_rect" in target_info:
                     rect = target_info["rect"]
                     client_rect = target_info["client_rect"]
 
-                    coords_text = f"Window: {rect[0]}, {rect[1]}, {rect[2] - rect[0]}x{rect[3] - rect[1]}\\n"
+                    coords_text = f"Window: {rect[0]}, {rect[1]}, {rect[2] - rect[0]}x{rect[3] - rect[1]}\n"
                     coords_text += f"Client: {client_rect[2]}x{client_rect[3]}"
+
+                    # Add playable area if available
+                    if "playable_area" in target_info and target_info["playable_area"]:
+                        playable = target_info["playable_area"]
+                        coords_text += f"\nPlayable: {playable['x']}, {playable['y']}, {playable['width']}x{playable['height']}"
+
+                        # Update tracker state for mouse tracker
+                        self.window_coords = target_info["window_info"]
+                        self.playable_coords = playable
+
                     self.coords_label.setText(coords_text)
 
             else:
@@ -347,11 +370,60 @@ class TrackerWidget(QWidget):
                 )
                 self.info_area.setPlainText("No target process found")
                 self.coords_label.setText("No coordinates available")
+                self.window_coords = {}
+                self.playable_coords = {}
 
     def _refresh_target(self):
         """Manually refresh target search."""
         self.logger.info("Manual refresh requested")
         self._check_target()
+
+    def _get_window_coords(self) -> Dict:
+        """Callback to provide window coordinates to mouse tracker."""
+        return self.window_coords
+
+    def _get_playable_coords(self) -> Dict:
+        """Callback to provide playable coordinates to mouse tracker."""
+        return self.playable_coords
+
+    def _on_mouse_position_changed(self, position_info: Dict):
+        """Handle mouse position updates from mouse tracker."""
+        try:
+            screen_x = position_info.get("screen_x", 0)
+            screen_y = position_info.get("screen_y", 0)
+
+            mouse_text = f"Screen: {screen_x}, {screen_y}\n"
+
+            # Add window information if available
+            if position_info.get("inside_window", False):
+                window_x_percent = position_info.get("window_x_percent", 0)
+                window_y_percent = position_info.get("window_y_percent", 0)
+                mouse_text += (
+                    f"Window: {window_x_percent:.1f}%, {window_y_percent:.1f}%\n"
+                )
+            else:
+                mouse_text += "Window: Outside\n"
+
+            # Add playable area information if available
+            if position_info.get("inside_playable", False):
+                x_percent = position_info.get("x_percent", 0)
+                y_percent = position_info.get("y_percent", 0)
+                grid_pos = position_info.get("grid_position", {})
+                pixel_size = position_info.get("pixel_size", 0)
+
+                mouse_text += f"Playable: {x_percent:.1f}%, {y_percent:.1f}%\n"
+                mouse_text += (
+                    f"Grid: ({grid_pos.get('x', 0)}, {grid_pos.get('y', 0)})\n"
+                )
+                mouse_text += f"Pixel: {pixel_size:.2f}px"
+            else:
+                mouse_text += "Playable: Outside"
+
+            self.mouse_label.setText(mouse_text)
+
+        except Exception as e:
+            self.logger.error(f"Error updating mouse display: {e}")
+            self.mouse_label.setText("Mouse: Error")
 
 
 def setup_logging():
