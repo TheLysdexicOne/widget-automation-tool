@@ -138,7 +138,7 @@ class StatusManager(QObject):
         # Create timer for animation
         self.reset_animation_timer = QTimer()
         self.reset_animation_timer.timeout.connect(self._animation_step)
-        self.reset_animation_timer.start(500)  # 0.5 seconds per state
+        self.reset_animation_timer.start(100)  # 0.5 seconds per state
 
         # Start with first animation state
         self._animation_step()

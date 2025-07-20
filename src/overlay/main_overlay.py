@@ -13,8 +13,10 @@ This is the main application widget that provides:
 import logging
 import subprocess
 import sys
+import json
+import uuid
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from enum import Enum
 
 from PyQt6.QtWidgets import (
@@ -25,6 +27,20 @@ from PyQt6.QtWidgets import (
     QMenu,
     QApplication,
     QSystemTrayIcon,
+    QDialog,
+    QLabel,
+    QLineEdit,
+    QCheckBox,
+    QTextEdit,
+    QListWidget,
+    QListWidgetItem,
+    QScrollArea,
+    QFrame,
+    QGridLayout,
+    QFormLayout,
+    QDialogButtonBox,
+    QMessageBox,
+    QFileDialog,
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRect
 from PyQt6.QtGui import (
@@ -64,6 +80,7 @@ from utility.window_utils import (
     is_window_valid,
     get_window_info,
 )
+from utility.frames_manager import FramesManager, FramesMenuSystem
 
 
 class StatusIndicatorWidget(QWidget):
@@ -73,7 +90,7 @@ class StatusIndicatorWidget(QWidget):
         super().__init__(parent)
         self.current_state = ApplicationState.READY
         self.setFixedHeight(40)  # Slightly taller than buttons to fit circle and text
-        self.setMinimumWidth(180)
+        self.setMinimumWidth(160)
 
         # Transparent background to blend with main overlay
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -202,14 +219,20 @@ class MainOverlayWidget(QWidget):
         # System tray
         self.tray_icon = None
 
+        # Frames management system
+        self.frames_manager = None
+        self.frames_menu_system = None
+
         # Setup the widget
         self._setup_widget()
         self._setup_system_tray()
         self._setup_grid_overlay()
+        self._setup_frames_system()
         self._start_monitoring()
 
         # Start initialization sequence (combines animation with actual status detection)
-        self.status_manager.start_initialization_sequence()
+        # self.status_manager.start_initialization_sequence()
+        self.status_manager.force_state_detection()
 
         self.logger.info("Main overlay widget initialized")
 
@@ -233,8 +256,8 @@ class MainOverlayWidget(QWidget):
             | Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setFixedWidth(200)
-        self.setMinimumSize(200, 120)
+        self.setFixedWidth(180)
+        self.setMinimumSize(180, 120)
 
         # Layout
         layout = QVBoxLayout(self)
@@ -337,6 +360,22 @@ class MainOverlayWidget(QWidget):
             self.logger.error(f"Failed to setup grid overlay: {e}")
             self.grid_overlay = None
 
+    def _setup_frames_system(self):
+        """Setup the frames management system."""
+        try:
+            # Initialize frames manager with project root path
+            project_root = Path(__file__).parent.parent.parent
+            self.frames_manager = FramesManager(project_root)
+
+            # Initialize frames menu system
+            self.frames_menu_system = FramesMenuSystem(self, self.frames_manager)
+
+            self.logger.debug("Frames management system initialized")
+        except Exception as e:
+            self.logger.error(f"Failed to setup frames system: {e}")
+            self.frames_manager = None
+            self.frames_menu_system = None
+
     def _create_styled_menu(self, parent=None):
         """Create a menu with styling from QSS file."""
         menu = QMenu(parent)
@@ -377,8 +416,13 @@ class MainOverlayWidget(QWidget):
 
     def _start_monitoring(self):
         """Start monitoring for the target window."""
-        self.monitor_timer.start(1000)  # Check every second
+        # Start with fast polling for initial detection
+        self.monitor_timer.start(100)  # Check every 100ms initially
         self.logger.info(f"Started monitoring for {self.target_process}")
+
+        # Perform immediate check to avoid delay in positioning
+        QTimer.singleShot(0, self._check_target_window)  # Immediate check
+        QTimer.singleShot(50, self._check_target_window)  # Quick follow-up
 
     def _check_target_window(self):
         """Check if target window exists and update position using shared utilities."""
@@ -401,10 +445,25 @@ class MainOverlayWidget(QWidget):
 
                 # Update position and coordinates using shared data
                 self._update_position_from_shared_data(target_info)
+
+                # Once we have a target, slow down monitoring to reduce CPU usage
+                if self.monitor_timer.interval() < 500:  # Only change if currently fast
+                    self.monitor_timer.setInterval(500)  # Check every 500ms once found
+                    self.logger.debug(
+                        "Slowed monitoring to 500ms - target window stable"
+                    )
+
             else:
-                # Target not found
+                # Target not found - speed up monitoring if it was slowed down
                 if self.target_hwnd:
                     self._on_target_lost()
+
+                # Speed up monitoring when no target (for faster detection)
+                if self.monitor_timer.interval() > 100:
+                    self.monitor_timer.setInterval(100)  # Fast polling when searching
+                    self.logger.debug(
+                        "Increased monitoring to 100ms - searching for target"
+                    )
 
         except Exception as e:
             self.logger.error(f"Error checking target window: {e}")
@@ -426,6 +485,12 @@ class MainOverlayWidget(QWidget):
         self.status_manager.update_capabilities(target_window=False)
         self.target_found.emit(False)
         self.hide()  # Hide overlay when target is lost
+
+        # Speed up monitoring to quickly detect when target returns
+        if self.monitor_timer.interval() > 100:
+            self.monitor_timer.setInterval(100)
+            self.logger.debug("Increased monitoring to 100ms - target lost, searching")
+
         self.logger.info("Target window lost")
 
     def _on_status_manager_state_changed(self, new_state: ApplicationState):
@@ -550,7 +615,6 @@ class MainOverlayWidget(QWidget):
             # Store playable coordinates
             if playable_area:
                 self.playable_coords = playable_area
-                self.logger.debug(f"Playable area: {self.playable_coords}")
 
             # Position overlay in top-right of client area
             overlay_x = (
@@ -593,27 +657,22 @@ class MainOverlayWidget(QWidget):
         painter.drawRect(self.rect().adjusted(1, 1, -2, -2))
 
     def _on_frames_clicked(self):
-        """Handle FRAMES button click - screenshot functionality."""
+        """Handle FRAMES button click - show frames management menu."""
         self.logger.info("FRAMES button clicked")
         try:
             if not self.target_hwnd:
-                self.logger.warning("No target window for screenshot")
+                self.logger.warning("No target window for frames functionality")
                 return
 
-            # Create output directory
-            output_dir = Path(__file__).parent.parent.parent / "analysis_output"
-            output_dir.mkdir(exist_ok=True)
+            if not self.frames_menu_system:
+                self.logger.error("Frames system not initialized")
+                return
 
-            # Take screenshot of target window
-            screenshot_path = self._capture_window_screenshot(output_dir)
-
-            if screenshot_path:
-                self.logger.info(f"Screenshot saved: {screenshot_path}")
-                # Screenshot successful - no need to change state temporarily
+            # Show the frames menu
+            self.frames_menu_system.show_frames_menu()
 
         except Exception as e:
-            self.logger.error(f"Error taking screenshot: {e}")
-            # Could trigger error state in status manager if needed
+            self.logger.error(f"Error showing frames menu: {e}")
 
     def _capture_window_screenshot(self, output_dir: Path) -> Optional[Path]:
         """Capture screenshot of the target window."""
@@ -621,7 +680,7 @@ class MainOverlayWidget(QWidget):
             return None
 
         try:
-            import time
+            from time import strftime
             from PIL import Image, ImageGrab
 
             # Get window rectangle
@@ -631,7 +690,7 @@ class MainOverlayWidget(QWidget):
             height = y2 - y
 
             # Create timestamp for filename
-            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            timestamp = strftime("%Y%m%d_%H%M%S")
             screenshot_path = output_dir / f"screenshot_{timestamp}.png"
 
             # Take screenshot using PIL

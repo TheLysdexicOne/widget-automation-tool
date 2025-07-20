@@ -14,6 +14,7 @@ Used by main overlay, tracker app, and future mouse tracking.
 
 import logging
 from typing import Optional, Dict, Any, Tuple
+import time
 
 try:
     import win32gui
@@ -25,6 +26,13 @@ except ImportError:
     WIN32_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+# Process cache for performance optimization
+_process_cache = {
+    "pid": None,
+    "timestamp": 0,
+    "cache_duration": 2.0,
+}  # Cache for 2 seconds
 
 # Pixel Art Grid Constants - Single Source of Truth
 # These define the background pixel grid dimensions for the WidgetInc game
@@ -59,6 +67,7 @@ def calculate_pixel_size(playable_width: int, playable_height: int) -> float:
 def find_target_process(target_process_name: str = "WidgetInc.exe") -> Optional[int]:
     """
     Find the target process and return its PID.
+    Optimized for performance with caching and faster Windows-specific enumeration.
 
     Args:
         target_process_name: Name of the process to find
@@ -69,10 +78,69 @@ def find_target_process(target_process_name: str = "WidgetInc.exe") -> Optional[
     if not WIN32_AVAILABLE:
         return None
 
+    # Check cache first
+    current_time = time.time()
+    if (
+        _process_cache["pid"] is not None
+        and current_time - _process_cache["timestamp"]
+        < _process_cache["cache_duration"]
+    ):
+        # Verify cached PID is still valid
+        try:
+            proc = psutil.Process(_process_cache["pid"])
+            if proc.is_running() and proc.name() == target_process_name:
+                return _process_cache["pid"]
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            # Cached process is gone, invalidate cache
+            _process_cache["pid"] = None
+
     try:
+        # Ultra-fast approach: Use win32gui.EnumWindows to find WidgetInc windows directly
+        # This skips process enumeration entirely and goes straight to windows
+        target_pids = []
+
+        def enum_windows_callback(hwnd, _):
+            try:
+                # Get window title first (fastest check)
+                title = win32gui.GetWindowText(hwnd)
+                if "WidgetInc" in title and win32gui.IsWindowVisible(hwnd):
+                    # Only get PID if the window title matches
+                    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                    if pid not in target_pids:
+                        target_pids.append(pid)
+            except:
+                pass  # Skip problematic windows
+            return True
+
+        # Enumerate windows looking for WidgetInc
+        win32gui.EnumWindows(enum_windows_callback, None)
+
+        # Verify we found a valid process
+        for pid in target_pids:
+            try:
+                proc = psutil.Process(pid)
+                if proc.is_running() and proc.name() == target_process_name:
+                    # Cache the result
+                    _process_cache["pid"] = pid
+                    _process_cache["timestamp"] = current_time
+                    return pid
+            except:
+                continue
+
+        # Fallback to traditional method if window enumeration fails
+        logger.debug("Window enumeration failed, falling back to process enumeration")
         for proc in psutil.process_iter(["pid", "name"]):
-            if proc.info["name"] == target_process_name:
-                return proc.info["pid"]
+            try:
+                proc_info = proc.info
+                if proc_info["name"] == target_process_name and proc.is_running():
+                    _process_cache["pid"] = proc_info["pid"]
+                    _process_cache["timestamp"] = current_time
+                    return proc_info["pid"]
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
+            except Exception:
+                continue
+
     except Exception as e:
         logger.error(f"Error finding target process {target_process_name}: {e}")
 
