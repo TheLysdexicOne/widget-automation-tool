@@ -8,13 +8,18 @@
 
 - Industrialesque
 
-## "KISS" Principals
+## Main Principals
 
-- "KISS" stands for "Keep It Simple, Stupid"
-- Keep the code clean and simple as much as possible
-- Use modules when it's easier to do so, don't try to reinvent the wheel
-- Do not overcomplicate code. If it seems complicated, it's probably complicated.
-- If code is used more than once, consider making it a function and possibly a helper file
+- "KISS" = "Keep It Simple, Stupid!"
+- "DRY" = Don't Repeat Yourself!
+- Explicit is better than implicit
+- Keep the code clean, maintainable, and efficient
+
+## Extra Principals
+
+- Make it Work
+- Make it Right
+- Make it Fast
 
 ## Don't Reinvent The Wheel
 

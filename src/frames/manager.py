@@ -14,6 +14,7 @@ import logging
 import json
 import uuid
 import time
+import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 
@@ -66,7 +67,7 @@ class FramesManager:
 
     def __init__(self, base_path: Path):
         self.base_path = base_path
-        self.frames_db_path = base_path / "frames" / "frames_database.json"
+        self.frames_db_path = base_path / "src" / "config" / "frames_database.json"
         self.screenshots_dir = base_path / "assets" / "screenshots"
 
         # Ensure directories exist
@@ -165,19 +166,34 @@ class FramesManager:
 
 
 class FramesDialog(QDialog):
-    """Dialog showing all frames in a dropdown, sorted by tier."""
+    """Comprehensive frames management dialog with all functionality."""
 
-    def __init__(self, frames_list: List[Dict], parent=None):
+    def __init__(self, frames_list: List[Dict], frames_manager, parent=None):
         super().__init__(parent)
         self.frames_list = frames_list
+        self.frames_manager = frames_manager
+        self.parent_widget = parent
         self.selected_frame = None
-        self.setWindowTitle("Frames")
+        self.modified_frame_data = None
+        self.screenshots_to_delete = []
+
+        self.setWindowTitle("Frames Management")
         self.setModal(True)
-        self.resize(800, 150)
+        self.resize(1200, 800)
         self._setup_ui()
 
     def _setup_ui(self):
-        layout = QVBoxLayout(self)
+        """Setup comprehensive frames management UI."""
+        main_layout = QHBoxLayout(self)
+
+        # Left panel - Frame list and actions
+        left_widget = QWidget()
+        left_widget.setMaximumWidth(300)
+        left_panel = QVBoxLayout(left_widget)
+
+        # Frame selection dropdown
+        selection_layout = QVBoxLayout()
+        selection_layout.addWidget(QLabel("Select Frame:"))
 
         # Sort frames by tier numerically
         def tier_key(frame):
@@ -194,24 +210,267 @@ class FramesDialog(QDialog):
             name = frame.get("name", "Unnamed")
             item = frame.get("item", "Unknown")
             self.dropdown.addItem(f"{tier}: {name} - ({item})", frame)
-        frame_selection = QHBoxLayout()
-        frame_selection.addWidget(QLabel("Select Frame:"))
-        frame_selection.addWidget(self.dropdown, 1)
-        layout.addLayout(frame_selection)
+
+        self.dropdown.currentTextChanged.connect(self._on_frame_selected)
+        selection_layout.addWidget(self.dropdown)
+        left_panel.addLayout(selection_layout)
+
+        # Action buttons
+        actions_layout = QVBoxLayout()
+        actions_layout.addWidget(QLabel("Actions:"))
+
+        self.screenshots_btn = QPushButton("Screenshots")
+        self.screenshots_btn.clicked.connect(self._manage_screenshots)
+        self.screenshots_btn.setEnabled(False)
+        actions_layout.addWidget(self.screenshots_btn)
+
+        self.edit_frame_btn = QPushButton("Edit Selected Frame")
+        self.edit_frame_btn.clicked.connect(self._edit_selected_frame)
+        self.edit_frame_btn.setEnabled(False)
+        actions_layout.addWidget(self.edit_frame_btn)
+
+        left_panel.addLayout(actions_layout)
+        left_panel.addStretch()
+
+        # Right panel - Frame details and editing
+        right_widget = QWidget()
+        right_panel = QVBoxLayout(right_widget)
+
+        # Frame details header
+        details_header = QLabel("Frame Details")
+        details_header.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        right_panel.addWidget(details_header)
+
+        # Frame info display
+        self.frame_info_widget = self._create_frame_info_widget()
+        right_panel.addWidget(self.frame_info_widget)
+
+        # Screenshots section
+        screenshots_header = QLabel("Screenshots")
+        screenshots_header.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        right_panel.addWidget(screenshots_header)
+
+        self.screenshots_scroll = QScrollArea()
+        self.screenshots_scroll.setWidgetResizable(True)
+        self.screenshots_scroll.setMaximumHeight(300)
+        right_panel.addWidget(self.screenshots_scroll)
+
+        right_panel.addStretch()
+
+        # Dialog buttons
         button_layout = QHBoxLayout()
         button_layout.addStretch()
-        cancel_button = QPushButton("Cancel")
-        cancel_button.clicked.connect(self.reject)
-        save_button = QPushButton("Save")
-        save_button.clicked.connect(self._on_save)
-        button_layout.addWidget(cancel_button)
-        button_layout.addWidget(save_button)
-        layout.addStretch()
-        layout.addLayout(button_layout)
 
-    def _on_save(self):
-        self.selected_frame = self.dropdown.currentData()
-        self.accept()
+        cancel_button = QPushButton("Close")
+        cancel_button.clicked.connect(self.accept)
+        button_layout.addWidget(cancel_button)
+
+        right_panel.addLayout(button_layout)
+
+        # Add panels to main layout
+        main_layout.addWidget(left_widget, 1)
+        main_layout.addWidget(right_widget, 2)
+
+        # Initialize display
+        if self.frames_list:
+            self.dropdown.setCurrentIndex(0)
+            self._on_frame_selected()
+
+    def _create_frame_info_widget(self) -> QWidget:
+        """Create widget for displaying frame information."""
+        widget = QFrame()
+        widget.setFrameStyle(QFrame.Shape.Box)
+        layout = QFormLayout(widget)
+
+        self.id_label = QLabel("--")
+        self.name_label = QLabel("--")
+        self.item_label = QLabel("--")
+        self.automation_label = QLabel("--")
+        self.text_regions_label = QLabel("--")
+
+        layout.addRow("ID:", self.id_label)
+        layout.addRow("Name:", self.name_label)
+        layout.addRow("Item:", self.item_label)
+        layout.addRow("Automation:", self.automation_label)
+        layout.addRow("Text Regions:", self.text_regions_label)
+
+        return widget
+
+    def _on_frame_selected(self):
+        """Handle frame selection change."""
+        current_data = self.dropdown.currentData()
+        if current_data:
+            self.selected_frame = current_data
+            self._update_frame_display()
+            self.edit_frame_btn.setEnabled(True)
+            self.screenshots_btn.setEnabled(True)
+        else:
+            self.selected_frame = None
+            self.edit_frame_btn.setEnabled(False)
+            self.screenshots_btn.setEnabled(False)
+
+    def _update_frame_display(self):
+        """Update the display with selected frame data."""
+        if not self.selected_frame:
+            return
+
+        # Update frame info
+        self.id_label.setText(self.selected_frame.get("id", "Unknown"))
+        self.name_label.setText(self.selected_frame.get("name", "Unnamed"))
+        self.item_label.setText(self.selected_frame.get("item", "Unknown"))
+
+        automation = "Yes" if self.selected_frame.get("automation", 0) == 1 else "No"
+        self.automation_label.setText(automation)
+
+        text_regions = self.selected_frame.get("text", [])
+        region_count = len([r for r in text_regions if r.get("text", "").strip()])
+        self.text_regions_label.setText(f"{region_count} regions defined")
+
+        # Update screenshots gallery
+        self._update_screenshots_display()
+
+    def _update_screenshots_display(self):
+        """Update screenshots gallery for selected frame."""
+        if not self.selected_frame:
+            return
+
+        screenshots = self.selected_frame.get("screenshots", [])
+        screenshots_widget = ScreenshotGalleryWidget(
+            screenshots, self.frames_manager.screenshots_dir, self
+        )
+        screenshots_widget.screenshot_clicked.connect(self._show_screenshot_popup)
+
+        self.screenshots_scroll.setWidget(screenshots_widget)
+
+    def _show_screenshot_popup(self, screenshot_uuid: str):
+        """Show popup with larger screenshot view."""
+        # Find screenshot file
+        screenshot_path = None
+        for file_path in self.frames_manager.screenshots_dir.glob(
+            f"*{screenshot_uuid}*"
+        ):
+            screenshot_path = file_path
+            break
+
+        if not screenshot_path or not screenshot_path.exists():
+            QMessageBox.warning(self, "Error", "Screenshot file not found")
+            return
+
+        # Create popup dialog
+        popup = QDialog(self)
+        popup.setWindowTitle("Screenshot View")
+        popup.setModal(True)
+
+        layout = QVBoxLayout(popup)
+
+        # Screenshot display
+        screenshot_label = QLabel()
+        pixmap = QPixmap(str(screenshot_path))
+        scaled_pixmap = pixmap.scaled(
+            600,
+            400,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        screenshot_label.setPixmap(scaled_pixmap)
+        screenshot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        layout.addWidget(screenshot_label)
+
+        # Close button
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(popup.accept)
+        layout.addWidget(close_button)
+
+        popup.exec()
+
+    def _manage_screenshots(self):
+        """Open screenshot manager for selected frame."""
+        if not self.selected_frame:
+            QMessageBox.warning(self, "Error", "Please select a frame first")
+            return
+
+        dialog = ScreenshotManagerDialog(
+            self.selected_frame, self.frames_manager, self.parent_widget, self
+        )
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            # Refresh the display to show updated screenshot count
+            self._refresh_frames_list()
+            self._update_frame_display()
+
+    def _edit_selected_frame(self):
+        """Edit the selected frame."""
+        if not self.selected_frame:
+            QMessageBox.warning(self, "Error", "Please select a frame first")
+            return
+
+        # Show edit dialog for single frame
+        dialog = EditFrameDialog(
+            self.selected_frame, self.frames_manager.screenshots_dir, self
+        )
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            modified_data, screenshots_to_delete = dialog.get_modified_data()
+            if modified_data:
+                original_name = self.selected_frame.get("name")
+                if self._save_frame_changes(
+                    original_name, modified_data, screenshots_to_delete
+                ):
+                    self._refresh_frames_list()
+
+    def _save_frame_changes(
+        self, original_name: str, updated_data: Dict, screenshots_to_delete: List[str]
+    ) -> bool:
+        """Save changes to existing frame."""
+        try:
+            menu_system = FramesMenuSystem(self.parent_widget, self.frames_manager)
+            menu_system._save_frame_changes(
+                original_name, updated_data, screenshots_to_delete
+            )
+            return True
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to save changes: {str(e)}")
+            return False
+
+    def _refresh_frames_list(self):
+        """Refresh the frames list and update dropdown."""
+        self.frames_list = self.frames_manager.get_frame_list()
+
+        # Save current selection
+        current_frame_name = None
+        if self.selected_frame:
+            current_frame_name = self.selected_frame.get("name")
+
+        # Clear and repopulate dropdown
+        self.dropdown.clear()
+
+        # Sort frames by tier numerically
+        def tier_key(frame):
+            tid = frame.get("id", "")
+            try:
+                return tuple(int(part) for part in tid.split("."))
+            except Exception:
+                return (9999,)
+
+        sorted_frames = sorted(self.frames_list, key=tier_key)
+
+        # Repopulate
+        for frame in sorted_frames:
+            tier = frame.get("id", "??")
+            name = frame.get("name", "Unnamed")
+            item = frame.get("item", "Unknown")
+            self.dropdown.addItem(f"{tier}: {name} - ({item})", frame)
+
+        # Restore selection if possible
+        if current_frame_name:
+            for i in range(self.dropdown.count()):
+                frame_data = self.dropdown.itemData(i)
+                if frame_data and frame_data.get("name") == current_frame_name:
+                    self.dropdown.setCurrentIndex(i)
+                    break
+
+        self._on_frame_selected()
 
     def get_selected_frame(self) -> Optional[Dict]:
         return self.selected_frame
@@ -635,6 +894,563 @@ class AttachToFrameDialog(QDialog):
         return self.selected_frame
 
 
+class ScreenshotManagerDialog(QDialog):
+    """Dialog for managing frame screenshots with primary selection and staging changes."""
+
+    def __init__(self, frame_data: Dict, frames_manager, parent_widget, parent=None):
+        super().__init__(parent)
+        self.frame_data = frame_data
+        self.frames_manager = frames_manager
+        self.parent_widget = parent_widget  # For screenshot capture
+        self.original_screenshots = frame_data.get("screenshots", []).copy()
+        self.current_screenshots = frame_data.get("screenshots", []).copy()
+        self.marked_for_deletion = set()
+        self.selected_screenshots = set()
+        self.screenshot_widgets = {}
+
+        self.setWindowTitle("Screenshot Manager")
+        self.setModal(True)
+        self.resize(800, 600)
+        self._setup_ui()
+
+    def _setup_ui(self):
+        """Setup screenshot manager UI."""
+        layout = QVBoxLayout(self)
+
+        # Title
+        title_label = QLabel(
+            f"Screenshots for: {self.frame_data.get('name', 'Unnamed Frame')}"
+        )
+        title_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        layout.addWidget(title_label)
+
+        # Action buttons at top
+        action_layout = QHBoxLayout()
+
+        # Left side buttons
+        left_buttons = QHBoxLayout()
+        self.make_primary_btn = QPushButton("Make Primary")
+        self.make_primary_btn.clicked.connect(self._make_primary)
+        self.make_primary_btn.setEnabled(False)
+
+        self.delete_btn = QPushButton("Delete")
+        self.delete_btn.clicked.connect(self._mark_for_deletion)
+        self.delete_btn.setEnabled(False)
+
+        left_buttons.addWidget(self.make_primary_btn)
+        left_buttons.addWidget(self.delete_btn)
+        left_buttons.addStretch()
+
+        # Right side buttons
+        right_buttons = QHBoxLayout()
+        self.regions_btn = QPushButton("Regions")
+        self.regions_btn.clicked.connect(self._view_regions)
+        self.regions_btn.setEnabled(len(self.current_screenshots) > 0)
+
+        self.new_btn = QPushButton("New")
+        self.new_btn.clicked.connect(self._take_new_screenshot)
+
+        right_buttons.addStretch()
+        right_buttons.addWidget(self.regions_btn)
+        right_buttons.addWidget(self.new_btn)
+
+        action_layout.addLayout(left_buttons)
+        action_layout.addLayout(right_buttons)
+        layout.addLayout(action_layout)
+
+        # Screenshots gallery
+        self.screenshots_scroll = QScrollArea()
+        self.screenshots_scroll.setWidgetResizable(True)
+        self._update_screenshots_display()
+        layout.addWidget(self.screenshots_scroll)
+
+        # Bottom buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(self._cancel_changes)
+
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(self._save_changes)
+
+        button_layout.addWidget(cancel_button)
+        button_layout.addWidget(save_button)
+        layout.addLayout(button_layout)
+
+    def _update_screenshots_display(self):
+        """Update the screenshots gallery display."""
+        widget = QWidget()
+        layout = QGridLayout(widget)
+
+        self.screenshot_widgets = {}
+        row, col = 0, 0
+        max_cols = 4
+
+        for i, screenshot_uuid in enumerate(self.current_screenshots):
+            screenshot_widget = self._create_screenshot_widget(
+                screenshot_uuid, i == 0
+            )  # First is primary
+            layout.addWidget(screenshot_widget, row, col)
+            self.screenshot_widgets[screenshot_uuid] = screenshot_widget
+
+            col += 1
+            if col >= max_cols:
+                col = 0
+                row += 1
+
+        if not self.current_screenshots:
+            no_screenshots_label = QLabel(
+                "No screenshots available\nClick 'New' to add a screenshot"
+            )
+            no_screenshots_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            no_screenshots_label.setStyleSheet("color: gray; font-size: 14px;")
+            layout.addWidget(no_screenshots_label, 0, 0, 1, max_cols)
+
+        self.screenshots_scroll.setWidget(widget)
+
+    def _create_screenshot_widget(
+        self, screenshot_uuid: str, is_primary: bool
+    ) -> QWidget:
+        """Create widget for individual screenshot with checkbox."""
+        container = QFrame()
+        container.setFrameStyle(QFrame.Shape.Box)
+        container.setMaximumSize(150, 120)
+        container.setMinimumSize(150, 120)
+
+        # Set border color - green for primary, normal for others
+        if is_primary:
+            container.setStyleSheet("QFrame { border: 3px solid green; }")
+        elif screenshot_uuid in self.marked_for_deletion:
+            container.setStyleSheet(
+                "QFrame { border: 2px solid red; background-color: rgba(255, 0, 0, 30); }"
+            )
+        else:
+            container.setStyleSheet("QFrame { border: 1px solid gray; }")
+
+        # Use absolute positioning for precise control
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(5, 5, 5, 5)
+        container_layout.setSpacing(0)
+
+        # Find screenshot file
+        screenshot_path = None
+        for file_path in self.frames_manager.screenshots_dir.glob(
+            f"*{screenshot_uuid}*"
+        ):
+            screenshot_path = file_path
+            break
+
+        # Create a widget to hold the image and checkbox
+        content_widget = QWidget()
+        content_widget.setFixedSize(140, 110)
+
+        # Screenshot image
+        if screenshot_path and screenshot_path.exists():
+            pixmap = QPixmap(str(screenshot_path))
+            thumbnail = pixmap.scaled(
+                140,
+                110,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+
+            screenshot_label = QLabel(content_widget)
+            screenshot_label.setPixmap(thumbnail)
+            screenshot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            screenshot_label.setGeometry(0, 0, 140, 110)
+            screenshot_label.mousePressEvent = (
+                lambda e, uuid=screenshot_uuid: self._on_screenshot_clicked(uuid, e)
+            )
+        else:
+            # Missing file placeholder
+            placeholder = QLabel("Missing\nFile", content_widget)
+            placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            placeholder.setStyleSheet("color: red;")
+            placeholder.setGeometry(0, 0, 140, 110)
+
+        # Checkbox in upper-left corner (overlay on image)
+        checkbox = QCheckBox(content_widget)
+        checkbox.setGeometry(5, 5, 20, 20)
+        checkbox.setStyleSheet(
+            """
+            QCheckBox {
+                background-color: rgba(255, 255, 255, 200);
+                border: 1px solid gray;
+                border-radius: 3px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+            }
+        """
+        )
+        checkbox.stateChanged.connect(
+            lambda state, uuid=screenshot_uuid: self._on_checkbox_changed(uuid, state)
+        )
+
+        # Set checkbox state based on selection
+        checkbox.setChecked(screenshot_uuid in self.selected_screenshots)
+
+        # Disable checkbox for primary if it's the only screenshot
+        if is_primary and len(self.current_screenshots) == 1:
+            checkbox.setEnabled(False)
+            checkbox.setToolTip(
+                "Cannot select primary screenshot when it's the only one"
+            )
+
+        container_layout.addWidget(content_widget)
+
+        return container
+
+    def _on_screenshot_clicked(self, screenshot_uuid: str, event):
+        """Handle screenshot click for preview."""
+        # Show larger preview
+        self._show_screenshot_popup(screenshot_uuid)
+
+    def _on_checkbox_changed(self, screenshot_uuid: str, state):
+        """Handle checkbox state change."""
+        if state == Qt.CheckState.Checked.value:
+            self.selected_screenshots.add(screenshot_uuid)
+        else:
+            self.selected_screenshots.discard(screenshot_uuid)
+
+        self._update_action_buttons()
+
+    def _update_action_buttons(self):
+        """Update action button states based on selection."""
+        selected_count = len(self.selected_screenshots)
+
+        if selected_count == 0:
+            self.make_primary_btn.setEnabled(False)
+            self.delete_btn.setEnabled(False)
+        elif selected_count == 1:
+            self.make_primary_btn.setEnabled(True)
+            self.delete_btn.setEnabled(True)
+        else:  # Multiple selected
+            self.make_primary_btn.setEnabled(False)  # Can't make multiple primary
+            self.delete_btn.setEnabled(True)
+
+    def _make_primary(self):
+        """Make selected screenshot primary."""
+        if len(self.selected_screenshots) != 1:
+            return
+
+        selected_uuid = next(iter(self.selected_screenshots))
+
+        # Move to front of list
+        if selected_uuid in self.current_screenshots:
+            self.current_screenshots.remove(selected_uuid)
+            self.current_screenshots.insert(0, selected_uuid)
+
+        # Clear selection and refresh
+        self.selected_screenshots.clear()
+        self._update_screenshots_display()
+        self._update_action_buttons()
+
+        # Update regions button state
+        self.regions_btn.setEnabled(len(self.current_screenshots) > 0)
+
+    def _mark_for_deletion(self):
+        """Mark selected screenshots for deletion."""
+        for screenshot_uuid in self.selected_screenshots:
+            # Don't allow deletion of primary if it's the only screenshot
+            if (
+                screenshot_uuid == self.current_screenshots[0]
+                and len(self.current_screenshots) == 1
+            ):
+                QMessageBox.warning(
+                    self,
+                    "Cannot Delete",
+                    "Cannot delete the primary screenshot when it's the only one.",
+                )
+                continue
+
+            self.marked_for_deletion.add(screenshot_uuid)
+
+        # Clear selection and refresh
+        self.selected_screenshots.clear()
+        self._update_screenshots_display()
+        self._update_action_buttons()
+
+    def _take_new_screenshot(self):
+        """Take a new screenshot and add to gallery."""
+        try:
+            # Bring WidgetInc.exe to focus if available
+            if (
+                WIN32_AVAILABLE
+                and hasattr(self.parent_widget, "target_hwnd")
+                and self.parent_widget.target_hwnd
+            ):
+                win32gui.SetForegroundWindow(self.parent_widget.target_hwnd)
+                time.sleep(0.5)  # Give time for window to come to front
+
+            # Capture screenshot using parent's method
+            menu_system = FramesMenuSystem(self.parent_widget, self.frames_manager)
+            screenshot = menu_system._capture_playable_screenshot()
+
+            if screenshot:
+                # Convert to PIL and save
+                screenshot_path = Path.cwd() / "temp_new_screenshot.png"
+                screenshot.save(str(screenshot_path))
+                pil_image = Image.open(screenshot_path)
+
+                # Save screenshot and get UUID
+                screenshot_uuid = self.frames_manager.save_screenshot(
+                    pil_image, self.frame_data.get("name", "unnamed")
+                )
+
+                # Add to current screenshots list
+                self.current_screenshots.append(screenshot_uuid)
+
+                # Clean up temp file
+                screenshot_path.unlink()
+
+                # Refresh display
+                self._update_screenshots_display()
+
+                # Update regions button state
+                self.regions_btn.setEnabled(len(self.current_screenshots) > 0)
+
+                # Bring this dialog back to front
+                self.raise_()
+                self.activateWindow()
+
+                QMessageBox.information(
+                    self, "Success", "New screenshot added successfully!"
+                )
+
+            else:
+                QMessageBox.warning(self, "Error", "Failed to capture screenshot")
+
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to take screenshot: {str(e)}")
+
+    def _view_regions(self):
+        """View regions for the primary screenshot."""
+        if not self.current_screenshots:
+            return
+
+        primary_uuid = self.current_screenshots[0]
+
+        # Find screenshot file
+        screenshot_path = None
+        for file_path in self.frames_manager.screenshots_dir.glob(f"*{primary_uuid}*"):
+            screenshot_path = file_path
+            break
+
+        if not screenshot_path or not screenshot_path.exists():
+            QMessageBox.warning(self, "Error", "Primary screenshot file not found")
+            return
+
+        # Show regions viewer
+        dialog = RegionsViewerDialog(screenshot_path, self.frame_data, self)
+        dialog.exec()
+
+    def _show_screenshot_popup(self, screenshot_uuid: str):
+        """Show popup with larger screenshot view."""
+        screenshot_path = None
+        for file_path in self.frames_manager.screenshots_dir.glob(
+            f"*{screenshot_uuid}*"
+        ):
+            screenshot_path = file_path
+            break
+
+        if not screenshot_path or not screenshot_path.exists():
+            QMessageBox.warning(self, "Error", "Screenshot file not found")
+            return
+
+        # Create popup dialog
+        popup = QDialog(self)
+        popup.setWindowTitle("Screenshot Preview")
+        popup.setModal(True)
+        popup.resize(700, 500)
+
+        layout = QVBoxLayout(popup)
+
+        # Screenshot display
+        screenshot_label = QLabel()
+        pixmap = QPixmap(str(screenshot_path))
+        scaled_pixmap = pixmap.scaled(
+            650,
+            450,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        screenshot_label.setPixmap(scaled_pixmap)
+        screenshot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        layout.addWidget(screenshot_label)
+
+        # Close button
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(popup.accept)
+        layout.addWidget(close_button)
+
+        popup.exec()
+
+    def _cancel_changes(self):
+        """Cancel all changes and close dialog."""
+        self.reject()
+
+    def _save_changes(self):
+        """Save all changes to the frame."""
+        try:
+            # Remove screenshots marked for deletion from current list
+            final_screenshots = [
+                uuid
+                for uuid in self.current_screenshots
+                if uuid not in self.marked_for_deletion
+            ]
+
+            # Update frame data
+            self.frame_data["screenshots"] = final_screenshots
+
+            # Actually delete the marked screenshots
+            for uuid_to_delete in self.marked_for_deletion:
+                try:
+                    self.frames_manager.delete_screenshot(uuid_to_delete)
+                except Exception as e:
+                    print(f"Warning: Could not delete screenshot {uuid_to_delete}: {e}")
+
+            # Save frame changes
+            if self.frames_manager.update_frame(
+                self.frame_data.get("name"), self.frame_data
+            ):
+                QMessageBox.information(
+                    self, "Success", "Screenshots updated successfully!"
+                )
+                self.accept()
+            else:
+                QMessageBox.warning(self, "Error", "Failed to save changes to database")
+
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to save changes: {str(e)}")
+
+
+class RegionsViewerDialog(QDialog):
+    """Dialog for viewing text regions overlaid on primary screenshot."""
+
+    def __init__(self, screenshot_path: Path, frame_data: Dict, parent=None):
+        super().__init__(parent)
+        self.screenshot_path = screenshot_path
+        self.frame_data = frame_data
+
+        self.setWindowTitle("Regions Viewer")
+        self.setModal(True)
+        self.resize(900, 700)
+        self._setup_ui()
+
+    def _setup_ui(self):
+        """Setup regions viewer UI."""
+        layout = QVBoxLayout(self)
+
+        # Title
+        title_label = QLabel(
+            f"Text Regions for: {self.frame_data.get('name', 'Unnamed Frame')}"
+        )
+        title_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        layout.addWidget(title_label)
+
+        # Create a widget to display the screenshot with regions
+        self.regions_widget = RegionsDisplayWidget(
+            self.screenshot_path, self.frame_data
+        )
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(self.regions_widget)
+        scroll_area.setWidgetResizable(True)
+        layout.addWidget(scroll_area)
+
+        # Regions information
+        info_layout = QVBoxLayout()
+        info_label = QLabel("Text Regions:")
+        info_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        info_layout.addWidget(info_label)
+
+        text_regions = self.frame_data.get("text", [])
+        if text_regions:
+            for i, region in enumerate(text_regions):
+                region_info = region.get("region", {})
+                text_info = region.get("text", "")
+                info_text = f"Region {i+1}: \"{text_info}\" at ({region_info.get('x', 0)}, {region_info.get('y', 0)}) {region_info.get('width', 0)}x{region_info.get('height', 0)}"
+                info_layout.addWidget(QLabel(info_text))
+        else:
+            info_layout.addWidget(QLabel("No text regions defined"))
+
+        layout.addLayout(info_layout)
+
+        # Close button
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(self.accept)
+        button_layout.addWidget(close_button)
+        layout.addLayout(button_layout)
+
+
+class RegionsDisplayWidget(QWidget):
+    """Widget to display screenshot with text regions overlaid."""
+
+    def __init__(self, screenshot_path: Path, frame_data: Dict, parent=None):
+        super().__init__(parent)
+        self.screenshot_path = screenshot_path
+        self.frame_data = frame_data
+        self.scale_factor = 0.8  # Scale down for viewing
+
+        # Load screenshot
+        self.pixmap = QPixmap(str(screenshot_path))
+        if not self.pixmap.isNull():
+            # Scale the pixmap
+            self.scaled_pixmap = self.pixmap.scaled(
+                int(self.pixmap.width() * self.scale_factor),
+                int(self.pixmap.height() * self.scale_factor),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+            self.setFixedSize(self.scaled_pixmap.size())
+        else:
+            self.scaled_pixmap = QPixmap()
+            self.setFixedSize(400, 300)
+
+    def paintEvent(self, event):
+        """Paint the screenshot with regions overlaid."""
+        painter = QPainter(self)
+
+        # Draw screenshot
+        if not self.scaled_pixmap.isNull():
+            painter.drawPixmap(0, 0, self.scaled_pixmap)
+
+        # Draw text regions
+        text_regions = self.frame_data.get("text", [])
+        colors = [
+            QColor(0, 255, 255, 120),  # Cyan
+            QColor(255, 165, 0, 120),  # Orange
+            QColor(0, 255, 0, 120),  # Green
+        ]
+
+        for i, region in enumerate(text_regions):
+            region_info = region.get("region", {})
+            if not region_info:
+                continue
+
+            # Scale region coordinates
+            x = int(region_info.get("x", 0) * self.scale_factor)
+            y = int(region_info.get("y", 0) * self.scale_factor)
+            width = int(region_info.get("width", 0) * self.scale_factor)
+            height = int(region_info.get("height", 0) * self.scale_factor)
+
+            # Draw region box
+            color = colors[i % len(colors)]
+            painter.setPen(QPen(color, 2))
+            painter.setBrush(QBrush(color))
+            painter.drawRect(x, y, width, height)
+
+            # Draw region label
+            text = region.get("text", f"Region {i+1}")
+            painter.setPen(QPen(QColor(255, 255, 255), 2))
+            painter.drawText(x + 5, y + 15, text)
+
+
 class ScreenshotGalleryWidget(QWidget):
     """Widget for displaying screenshot gallery with delete functionality."""
 
@@ -757,6 +1573,203 @@ class ScreenshotGalleryWidget(QWidget):
     def get_screenshots_to_delete(self) -> List[str]:
         """Get list of screenshot UUIDs marked for deletion."""
         return list(self.marked_for_deletion)
+
+
+class EditFrameDialog(QDialog):
+    """Dialog for editing a single frame."""
+
+    def __init__(self, frame_data: Dict, screenshots_dir: Path, parent=None):
+        super().__init__(parent)
+        self.frame_data = frame_data
+        self.screenshots_dir = screenshots_dir
+        self.modified_frame_data = None
+        self.screenshots_to_delete = []
+
+        self.setWindowTitle(f"Edit Frame: {frame_data.get('name', 'Unnamed')}")
+        self.setModal(True)
+        self.resize(700, 600)
+        self._setup_ui()
+
+    def _setup_ui(self):
+        """Setup single frame edit UI."""
+        layout = QVBoxLayout(self)
+
+        # Form section
+        form_layout = QFormLayout()
+
+        # Item and Frame fields
+        item_frame_layout = QHBoxLayout()
+        self.item_edit = QLineEdit(self.frame_data.get("item", ""))
+        self.frame_edit = QLineEdit(self.frame_data.get("name", ""))
+        item_frame_layout.addWidget(QLabel("Item:"))
+        item_frame_layout.addWidget(self.item_edit)
+        item_frame_layout.addWidget(QLabel("Frame:"))
+        item_frame_layout.addWidget(self.frame_edit)
+
+        # Can be automated checkbox
+        self.automation_checkbox = QCheckBox("Can be automated")
+        self.automation_checkbox.setChecked(self.frame_data.get("automation", 0) == 1)
+
+        form_layout.addRow(item_frame_layout)
+        form_layout.addRow(self.automation_checkbox)
+
+        # Text regions section
+        regions_label = QLabel("Text Regions:")
+        regions_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        form_layout.addRow(regions_label)
+
+        self.regions_layout = QVBoxLayout()
+        self._setup_regions()
+        form_layout.addRow(self.regions_layout)
+
+        layout.addLayout(form_layout)
+
+        # Screenshots section
+        screenshots_header = QLabel("Screenshots")
+        screenshots_header.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        layout.addWidget(screenshots_header)
+
+        self.screenshots_scroll = QScrollArea()
+        self.screenshots_scroll.setWidgetResizable(True)
+        self.screenshots_scroll.setMaximumHeight(200)
+        self._setup_screenshots()
+        layout.addWidget(self.screenshots_scroll)
+
+        # Dialog buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(self.reject)
+
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(self._save_changes)
+
+        button_layout.addWidget(cancel_button)
+        button_layout.addWidget(save_button)
+        layout.addLayout(button_layout)
+
+    def _setup_regions(self):
+        """Setup text regions editing."""
+        self.regions = []
+        text_regions = self.frame_data.get("text", [])
+
+        for i in range(3):  # Support up to 3 regions
+            self._add_region_row(i, text_regions[i] if i < len(text_regions) else None)
+
+    def _add_region_row(self, index: int, region_data: Optional[Dict]):
+        """Add a text region row."""
+        row_layout = QHBoxLayout()
+
+        text_edit = QLineEdit()
+        if region_data:
+            text_edit.setText(region_data.get("text", ""))
+        text_edit.setPlaceholderText("Enter text description")
+
+        coord_label = QLabel("No region selected")
+        if region_data and region_data.get("region"):
+            region = region_data["region"]
+            coord_label.setText(
+                f"({region['x']}, {region['y']}) {region['width']}x{region['height']}"
+            )
+        coord_label.setMinimumWidth(150)
+
+        row_layout.addWidget(QLabel("Text:"))
+        row_layout.addWidget(text_edit)
+        row_layout.addWidget(QLabel("Region:"))
+        row_layout.addWidget(coord_label)
+
+        # Store references
+        region_info = {
+            "text_edit": text_edit,
+            "coord_label": coord_label,
+            "region": region_data.get("region") if region_data else None,
+        }
+        self.regions.append(region_info)
+        self.regions_layout.addLayout(row_layout)
+
+    def _setup_screenshots(self):
+        """Setup screenshots gallery."""
+        screenshots = self.frame_data.get("screenshots", [])
+        self.screenshots_widget = ScreenshotGalleryWidget(
+            screenshots, self.screenshots_dir, self
+        )
+        self.screenshots_widget.screenshot_clicked.connect(self._show_screenshot_popup)
+        self.screenshots_scroll.setWidget(self.screenshots_widget)
+
+    def _show_screenshot_popup(self, screenshot_uuid: str):
+        """Show popup with larger screenshot view."""
+        # Find screenshot file
+        screenshot_path = None
+        for file_path in self.screenshots_dir.glob(f"*{screenshot_uuid}*"):
+            screenshot_path = file_path
+            break
+
+        if not screenshot_path or not screenshot_path.exists():
+            QMessageBox.warning(self, "Error", "Screenshot file not found")
+            return
+
+        # Create popup dialog
+        popup = QDialog(self)
+        popup.setWindowTitle("Screenshot View")
+        popup.setModal(True)
+
+        layout = QVBoxLayout(popup)
+
+        # Screenshot display
+        screenshot_label = QLabel()
+        pixmap = QPixmap(str(screenshot_path))
+        scaled_pixmap = pixmap.scaled(
+            600,
+            400,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        screenshot_label.setPixmap(scaled_pixmap)
+        screenshot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        layout.addWidget(screenshot_label)
+
+        # Close button
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(popup.accept)
+        layout.addWidget(close_button)
+
+        popup.exec()
+
+    def _save_changes(self):
+        """Save changes to frame data."""
+        # Collect text regions
+        text_regions = []
+        for region_info in self.regions:
+            text = region_info["text_edit"].text().strip()
+            if text and region_info["region"]:
+                text_regions.append({"text": text, "region": region_info["region"]})
+
+        self.modified_frame_data = {
+            "id": self.frame_data.get("id"),  # Keep original ID
+            "name": self.frame_edit.text().strip(),
+            "item": self.item_edit.text().strip(),
+            "automation": 1 if self.automation_checkbox.isChecked() else 0,
+            "text": text_regions,
+            "screenshots": self.frame_data.get("screenshots", []),
+        }
+
+        # Get screenshots marked for deletion
+        if self.screenshots_widget:
+            self.screenshots_to_delete = (
+                self.screenshots_widget.get_screenshots_to_delete()
+            )
+            # Remove deleted screenshots from frame data
+            for uuid_to_delete in self.screenshots_to_delete:
+                if uuid_to_delete in self.modified_frame_data["screenshots"]:
+                    self.modified_frame_data["screenshots"].remove(uuid_to_delete)
+
+        self.accept()
+
+    def get_modified_data(self) -> Tuple[Optional[Dict], List[str]]:
+        """Get modified frame data and deletion list."""
+        return self.modified_frame_data, self.screenshots_to_delete
 
 
 class EditFramesDialog(QDialog):
@@ -1070,41 +2083,8 @@ class FramesMenuSystem:
         self.logger = logging.getLogger(__name__)
 
     def show_frames_menu(self):
-        """Show the main FRAMES menu."""
-        menu = QMenu("FRAMES", self.parent)
-
-        # Frames
-        add_frame_action = menu.addAction("FRAMES")
-        add_frame_action.triggered.connect(self._show_frames_dialog)
-        # Add New Frame
-        add_frame_action = menu.addAction("Add New Frame")
-        add_frame_action.triggered.connect(self._show_add_frame_dialog)
-
-        # Attach to Frame
-        attach_frame_action = menu.addAction("Attach to Frame")
-        attach_frame_action.triggered.connect(self._show_attach_frame_dialog)
-
-        menu.addSeparator()
-
-        # Edit Frames
-        edit_frames_action = menu.addAction("Edit Frames")
-        edit_frames_action.triggered.connect(self._show_edit_frames_dialog)
-
-        # Position menu to not exceed application bounds
-        button_pos = self.parent.frames_button.mapToGlobal(
-            self.parent.frames_button.rect().bottomLeft()
-        )
-        menu_size = menu.sizeHint()
-
-        # Adjust if menu would go outside parent bounds
-        parent_geometry = self.parent.geometry()
-        if button_pos.x() + menu_size.width() > parent_geometry.right():
-            button_pos.setX(parent_geometry.right() - menu_size.width())
-
-        menu.exec(button_pos)
-
-    def _show_frames_dialog(self):
-        """Show Frames dropdown dialog."""
+        """Show the main FRAMES menu - now simplified to just open the comprehensive dialog."""
+        # Directly show the comprehensive frames dialog
         frames_list = self.frames_manager.get_frame_list()
         if not frames_list:
             QMessageBox.information(
@@ -1113,7 +2093,20 @@ class FramesMenuSystem:
                 "No frames available. Create a frame first using 'Add New Frame'.",
             )
             return
-        dialog = FramesDialog(frames_list, self.parent)
+        dialog = FramesDialog(frames_list, self.frames_manager, self.parent)
+        dialog.exec()
+
+    def _show_frames_dialog(self):
+        """Show comprehensive frames management dialog."""
+        frames_list = self.frames_manager.get_frame_list()
+        if not frames_list:
+            QMessageBox.information(
+                self.parent,
+                "No Frames",
+                "No frames available. Create a frame first using 'Add New Frame'.",
+            )
+            return
+        dialog = FramesDialog(frames_list, self.frames_manager, self.parent)
         dialog.exec()
 
     def _show_add_frame_dialog(self):

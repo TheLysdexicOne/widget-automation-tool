@@ -16,7 +16,7 @@ def test_frames_system():
     print("=" * 50)
 
     try:
-        from utility.frames_manager import FramesManager
+        from frames import FramesManager
 
         # Test frames manager initialization
         project_root = Path(__file__).parent

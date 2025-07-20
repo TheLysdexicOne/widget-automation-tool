@@ -80,7 +80,7 @@ from utility.window_utils import (
     is_window_valid,
     get_window_info,
 )
-from utility.frames_manager import FramesManager, FramesMenuSystem
+from frames import FramesManager, FramesMenuSystem
 
 
 class StatusIndicatorWidget(QWidget):

@@ -8,48 +8,72 @@ A professional automation tool for Widget Inc. with dual-mode operation, system 
 
 - **Dual-Mode Operation**: Normal mode (system tray) or Debug mode (GUI visible)
 - **System Tray Integration**: Background operation with quick access menu
-- **Professional Debug Console**: 4-tab interface (Console, Settings, Monitoring, Debug)
+- **🏆 Frames Management System**: Comprehensive frame management with screenshot staging
 - **Smart Overlay System**: Hover expansion, pin/unpin, context menu
 - **Click Recording**: Development tools for automation scripting
 - **Hot Reload**: Ctrl+R to reload application and configurations
 - **Real-time Monitoring**: Live status updates and statistics
 - **Threading Safety**: Robust error handling and thread management
 
+## Frames Management System
+
+The **Frames Management System** is a comprehensive suite for managing Widget Inc. game frames:
+
+### Key Features
+
+- **Screenshot Manager**: Advanced screenshot management with primary selection and staging
+- **Regions Viewer**: Visual overlay system for text regions with scaled display
+- **Frame Database**: JSON-based storage with complete CRUD operations
+- **Staging System**: Preview changes before committing to database
+- **Visual Selection**: Checkbox-based selection with intuitive overlays
+- **Primary Frame Selection**: Designate primary frames for automated detection
+
+### Architecture
+
+- **Dedicated Package**: Elevated from utility status to `src/frames/` package
+- **Modular Design**: Clean separation of concerns with proper imports
+- **PyQt6 Integration**: Professional dialog interfaces with advanced UI components
+- **Database Management**: Robust JSON storage with file management
+
 ## Project Structure
 
 ```
 widget-automation-tool/
 ├── src/
-│   ├── main.py                 # Core application controller
-│   ├── overlay_gui.py          # Consolidated overlay system
-│   ├── debug_gui.py            # Professional debug interface
-│   ├── window_spy.py           # Click recording and cursor tracking
-│   ├── widget_inc_manager.py   # Widget Inc. window management
-│   ├── minigame_detector.py    # Game detection logic
-│   ├── mouse_control.py        # Mouse automation functions
-│   ├── screen_capture.py       # Screen capture utilities
-│   ├── text_recognition.py     # OCR text extraction
-│   ├── game_logic.py           # Game automation logic
-│   └── gui/
-│       ├── __init__.py
-│       └── menu.py
-├── config/
-│   ├── settings.json           # Application configuration
-│   └── minigames.json          # Minigame definitions
+│   ├── main.py                 # Core application entry point
+│   ├── frames/                 # 🏆 Frames Management System
+│   │   ├── __init__.py         #     Package initialization
+│   │   └── manager.py          #     Complete frames management suite
+│   ├── overlay/                # Overlay system
+│   │   ├── __init__.py
+│   │   └── main_overlay.py     # Main overlay interface
+│   ├── utility/                # Utility modules
+│   │   ├── __init__.py
+│   │   ├── logging_utils.py    # Logging configuration
+│   │   ├── widget_utils.py     # Widget utilities
+│   │   └── window_utils.py     # Window management utilities
+│   ├── tracker/                # Tracker applications
+│   │   ├── __init__.py
+│   │   └── tracker_app.py      # Tracker interface
+│   └── config/                 # Configuration management
+│       └── frames_database.json # Frames database
 ├── assets/
+│   ├── screenshots/            # Frame screenshots storage
+│   ├── backgrounds/            # Background templates
 │   ├── sprites/                # Game sprites for detection
-│   └── ui_elements/            # UI element templates
-├── tests/
-│   ├── run_tests.py            # Test runner
-│   ├── test_overlay.py         # Overlay tests
-│   ├── debug_detector.py       # Detector debugging
-│   ├── debug_logic.py          # Logic debugging
-│   └── debug_overlay_colors.py # Color debugging
+│   ├── ui_elements/            # UI element templates
+│   ├── font/                   # Application fonts
+│   ├── glyphs/                 # Text recognition glyphs
+│   └── styles/                 # Application stylesheets
+├── logs/                       # Application logs
+├── analysis_output/            # Analysis and debug output
+├── documents/                  # Project documentation
+│   └── summaries/              # AI generated summaries
 ├── .venv/                      # Python virtual environment
 ├── requirements.txt            # Project dependencies
-├── setup.py                    # Package configuration
-├── run_app.bat                 # Application launcher
-├── DEVELOPMENT_LOG.md          # Development history
+├── start.bat                   # Production startup script
+├── start_debug.bat             # Debug mode startup script
+├── venv.bat                    # Virtual environment setup
 └── README.md                   # Project documentation
 ```
 
@@ -94,12 +118,21 @@ run_app.bat --debug
 - Right-click tray icon for menu options
 - Overlay appears on Widget Inc. window
 
-### Debug Mode
+### Overlay Interface
 
-- **Console Tab**: Real-time logging with adjustable log levels
-- **Settings Tab**: Configuration controls and overlay settings
-- **Monitoring Tab**: Live status updates and statistics
-- **Debug Tab**: Development tools and click recording
+- **FRAMES Button**: Access the comprehensive Frames Management System
+- **TRACKER Button**: Open tracker applications for specific functionality
+- **Smart Positioning**: Overlay adapts to Widget Inc. window location
+- **Context Menus**: Right-click for additional options and settings
+
+### Frames Management
+
+Access via the **FRAMES** button on the overlay:
+
+1. **Screenshot Manager**: Manage frame screenshots with primary selection
+2. **Add New Frame**: Capture and configure new frames
+3. **Regions Viewer**: Visual overlay system for text regions
+4. **Database Operations**: Full CRUD functionality with staging system
 
 ### Development Features
 
