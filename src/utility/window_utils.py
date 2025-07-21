@@ -82,8 +82,7 @@ def find_target_process(target_process_name: str = "WidgetInc.exe") -> Optional[
     current_time = time.time()
     if (
         _process_cache["pid"] is not None
-        and current_time - _process_cache["timestamp"]
-        < _process_cache["cache_duration"]
+        and current_time - _process_cache["timestamp"] < _process_cache["cache_duration"]
     ):
         # Verify cached PID is still valid
         try:
@@ -108,7 +107,7 @@ def find_target_process(target_process_name: str = "WidgetInc.exe") -> Optional[
                     _, pid = win32process.GetWindowThreadProcessId(hwnd)
                     if pid not in target_pids:
                         target_pids.append(pid)
-            except:
+            except Exception:
                 pass  # Skip problematic windows
             return True
 
@@ -124,7 +123,7 @@ def find_target_process(target_process_name: str = "WidgetInc.exe") -> Optional[
                     _process_cache["pid"] = pid
                     _process_cache["timestamp"] = current_time
                     return pid
-            except:
+            except Exception:
                 continue
 
         # Fallback to traditional method if window enumeration fails
@@ -167,7 +166,7 @@ def find_window_by_pid(pid: int) -> Optional[int]:
                 title = win32gui.GetWindowText(hwnd)
                 if "WidgetInc" in title:
                     windows.append(hwnd)
-        except:
+        except Exception:
             pass
         return True
 
@@ -316,8 +315,8 @@ def is_window_valid(hwnd: int) -> bool:
         return False
 
     try:
-        return win32gui.IsWindow(hwnd) and win32gui.IsWindowVisible(hwnd)
-    except:
+        return bool(win32gui.IsWindow(hwnd)) and bool(win32gui.IsWindowVisible(hwnd))
+    except Exception:
         return False
 
 
@@ -389,9 +388,7 @@ def get_client_area_coordinates(hwnd: int) -> Optional[Tuple[int, int, int, int]
         return None
 
 
-def calculate_playable_area_percentages(
-    x: int, y: int, playable_area: Dict[str, int]
-) -> Dict[str, Any]:
+def calculate_playable_area_percentages(x: int, y: int, playable_area: Dict[str, int]) -> Dict[str, Any]:
     """
     Calculate percentage position within playable area - useful for mouse tracking.
 

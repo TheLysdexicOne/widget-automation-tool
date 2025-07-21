@@ -6,7 +6,6 @@ This module provides a simple way to load QSS files for PyQt6 applications.
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 
 def load_stylesheet(filename: str) -> str:

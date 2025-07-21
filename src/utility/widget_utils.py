@@ -8,6 +8,7 @@ from typing import Callable, Optional
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont
+from utility.status_manager import ApplicationState
 
 logger = logging.getLogger(__name__)
 
@@ -34,11 +35,7 @@ def create_floating_button(
     """
     button = QWidget()
     button.setParent(None)  # Make it top-level
-    button.setWindowFlags(
-        Qt.WindowType.FramelessWindowHint
-        | Qt.WindowType.WindowStaysOnTopHint
-        | Qt.WindowType.Tool
-    )
+    button.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
     button.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
     button.setFixedSize(width, height)
 
@@ -59,9 +56,7 @@ def create_floating_button(
 
     # Add click handling if provided
     if click_handler:
-        button.mousePressEvent = lambda event: _handle_button_click(
-            event, click_handler
-        )
+        button.mousePressEvent = lambda event: _handle_button_click(event, click_handler)
 
     # Add paint event for icon
     button.paintEvent = lambda event: _paint_button_icon(button, icon_text)
@@ -97,9 +92,7 @@ def ensure_widget_on_top(widget: QWidget):
         widget.activateWindow()
 
 
-def position_widget_relative(
-    widget: QWidget, reference_widget: QWidget, offset_x: int = 0, offset_y: int = 0
-):
+def position_widget_relative(widget: QWidget, reference_widget: QWidget, offset_x: int = 0, offset_y: int = 0):
     """Position widget relative to reference widget."""
     if not widget or not reference_widget:
         return
@@ -109,3 +102,15 @@ def position_widget_relative(
     new_y = ref_geometry.y() + offset_y
 
     widget.move(new_x, new_y)
+
+
+def get_status_color(state: ApplicationState) -> QColor:
+    """Centralized state-to-color mapping utility."""
+    color_map = {
+        ApplicationState.ACTIVE: QColor(0, 255, 0),  # Bright green - performing automation
+        ApplicationState.READY: QColor(144, 238, 144),  # Light green - ready, waiting for user
+        ApplicationState.ATTENTION: QColor(255, 165, 0),  # Orange - no automation programmed
+        ApplicationState.INACTIVE: QColor(128, 128, 128),  # Gray - no automation available
+        ApplicationState.ERROR: QColor(255, 0, 0),  # Red - application error
+    }
+    return color_map.get(state, QColor(128, 128, 128))

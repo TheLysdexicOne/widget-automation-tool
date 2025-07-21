@@ -100,8 +100,8 @@ The playable area is the actual game content area within the WidgetInc.exe windo
 
 ## STATUS INDICATOR
 
-- ACTIVE = performing automation
+- ACTIVE = "performing automation"
 - READY = "The tool recognizes the current screen/minigame and is waitin for user to activate."
 - ATTENTION (name can be something more relevant) = "The tool recognizes the current screen/minigame, but there is no automation programmed."
 - INACTIVE = "The tool does not recognize the current screen/minigame, therefore there is no automation available on this screen."
-- ERROR = Something wrong with application
+- ERROR = "Something wrong with application or target window cannot be found"

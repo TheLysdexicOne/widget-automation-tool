@@ -3,14 +3,13 @@ Frames Dialog - Main Management Interface
 
 Comprehensive frames management dialog with all functionality:
 - Frame selection and display
-- Screenshot gallery management
+- Frame details display with screenshot count
 - Frame editing operations
 
 Following project standards: KISS, no duplicated calculations, modular design.
 """
 
 from typing import Dict, List, Optional
-from pathlib import Path
 
 from PyQt6.QtWidgets import (
     QDialog,
@@ -21,14 +20,11 @@ from PyQt6.QtWidgets import (
     QLabel,
     QComboBox,
     QPushButton,
-    QScrollArea,
     QFrame,
     QMessageBox,
 )
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont, QPixmap
+from PyQt6.QtGui import QFont
 
-from .screenshot_gallery_widget import ScreenshotGalleryWidget
 from ..screenshot_manager import ScreenshotManagerDialog
 from .edit_frame_dialog import EditFrameDialog
 
@@ -47,7 +43,7 @@ class FramesDialog(QDialog):
 
         self.setWindowTitle("Frames Management")
         self.setModal(True)
-        self.resize(800, 400)
+        # self.resize(800, 400)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -113,16 +109,6 @@ class FramesDialog(QDialog):
         self.frame_info_widget = self._create_frame_info_widget()
         right_panel.addWidget(self.frame_info_widget)
 
-        # Screenshots section
-        screenshots_header = QLabel("Screenshots")
-        screenshots_header.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
-        right_panel.addWidget(screenshots_header)
-
-        self.screenshots_scroll = QScrollArea()
-        self.screenshots_scroll.setWidgetResizable(True)
-        self.screenshots_scroll.setMaximumHeight(300)
-        right_panel.addWidget(self.screenshots_scroll)
-
         right_panel.addStretch()
 
         # Dialog buttons
@@ -156,6 +142,7 @@ class FramesDialog(QDialog):
         self.automation_label = QLabel("--")
         self.text_regions_label = QLabel("--")
         self.interact_regions_label = QLabel("--")
+        self.screenshots_count_label = QLabel("--")
 
         layout.addRow("ID:", self.id_label)
         layout.addRow("Name:", self.name_label)
@@ -163,6 +150,7 @@ class FramesDialog(QDialog):
         layout.addRow("Automation:", self.automation_label)
         layout.addRow("Text Regions:", self.text_regions_label)
         layout.addRow("Interact Regions:", self.interact_regions_label)
+        layout.addRow("Screenshots:", self.screenshots_count_label)
 
         return widget
 
@@ -200,59 +188,9 @@ class FramesDialog(QDialog):
         interact_region_count = len([r for r in interact_regions if r.get("interact", "").strip()])
         self.interact_regions_label.setText(f"{interact_region_count} regions defined")
 
-        # Update screenshots gallery
-        self._update_screenshots_display()
-
-    def _update_screenshots_display(self):
-        """Update screenshots gallery for selected frame."""
-        if not self.selected_frame:
-            return
-
+        # Update screenshots count
         screenshots = self.selected_frame.get("screenshots", [])
-        screenshots_widget = ScreenshotGalleryWidget(screenshots, self.frames_manager.screenshots_dir, self)
-        screenshots_widget.screenshot_clicked.connect(self._show_screenshot_popup)
-
-        self.screenshots_scroll.setWidget(screenshots_widget)
-
-    def _show_screenshot_popup(self, screenshot_uuid: str):
-        """Show popup with larger screenshot view."""
-        # Find screenshot file
-        screenshot_path = None
-        for file_path in self.frames_manager.screenshots_dir.glob(f"*{screenshot_uuid}*"):
-            screenshot_path = file_path
-            break
-
-        if not screenshot_path or not screenshot_path.exists():
-            QMessageBox.warning(self, "Error", "Screenshot file not found")
-            return
-
-        # Create popup dialog
-        popup = QDialog(self)
-        popup.setWindowTitle("Screenshot View")
-        popup.setModal(True)
-
-        layout = QVBoxLayout(popup)
-
-        # Screenshot display
-        screenshot_label = QLabel()
-        pixmap = QPixmap(str(screenshot_path))
-        scaled_pixmap = pixmap.scaled(
-            600,
-            400,
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation,
-        )
-        screenshot_label.setPixmap(scaled_pixmap)
-        screenshot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        layout.addWidget(screenshot_label)
-
-        # Close button
-        close_button = QPushButton("Close")
-        close_button.clicked.connect(popup.accept)
-        layout.addWidget(close_button)
-
-        popup.exec()
+        self.screenshots_count_label.setText(f"{len(screenshots)} screenshots available")
 
     def _manage_screenshots(self):
         """Open screenshot manager for selected frame."""
@@ -286,12 +224,25 @@ class FramesDialog(QDialog):
     def _save_frame_changes(self, original_name: str, updated_data: Dict, screenshots_to_delete: List[str]) -> bool:
         """Save changes to existing frame."""
         try:
-            # Import here to avoid circular dependency
-            from ..menu_system import FramesMenuSystem
+            # Delete marked screenshots first
+            for uuid_to_delete in screenshots_to_delete:
+                try:
+                    self.frames_manager.delete_screenshot(uuid_to_delete)
+                except Exception as e:
+                    print(f"Could not delete screenshot {uuid_to_delete}: {e}")
 
-            menu_system = FramesMenuSystem(self.parent_widget, self.frames_manager)
-            menu_system._save_frame_changes(original_name, updated_data, screenshots_to_delete)
-            return True
+            # Update frame data
+            if self.frames_manager.update_frame(original_name, updated_data):
+                QMessageBox.information(
+                    self,
+                    "Success",
+                    f"Frame '{updated_data.get('name')}' updated successfully!",
+                )
+                return True
+            else:
+                QMessageBox.warning(self, "Error", "Failed to update frame in database")
+                return False
+
         except Exception as e:
             QMessageBox.warning(self, "Error", f"Failed to save changes: {str(e)}")
             return False

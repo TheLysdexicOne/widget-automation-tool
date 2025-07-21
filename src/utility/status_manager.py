@@ -59,11 +59,9 @@ class StatusManager(QObject):
                 new_state = ApplicationState.ERROR
                 reason = "WIN32 API not available"
             elif not self.target_window_found:
-                new_state = ApplicationState.INACTIVE
+                new_state = ApplicationState.ERROR
                 reason = "Target window not found"
             elif not self.has_scene_recognition:
-                # We have target window but no scene recognition capability
-                # Can't determine what screen we're looking at, so stay inactive
                 new_state = ApplicationState.INACTIVE
                 reason = "Target window found, but no scene recognition available"
             else:
