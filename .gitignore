@@ -21,8 +21,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-.old.reference-only/
-.old*/
+**/.old*/
+
 
 
 # Virtual Environment

@@ -1,32 +1,28 @@
 """
 Status Manager - Application State Logic
 
-This module handles the intelligent detection and management of application states
+Handles intelligent detection and management of application states
 based on actual capabilities and current context.
 """
 
 import logging
 from enum import Enum
-from typing import Optional
-from PyQt6.QtCore import QObject, pyqtSignal, QTimer
+from PyQt6.QtCore import QObject, pyqtSignal
 
 
 class ApplicationState(Enum):
-    """Application state tracking with 5-state system from task list."""
+    """Application state tracking with 5-state system."""
 
     ACTIVE = "active"  # Performing automation
-    READY = (
-        "ready"  # Tool recognizes current screen/minigame, waiting for user to activate
-    )
-    ATTENTION = "attention"  # Tool recognizes current screen/minigame, but no automation programmed
-    INACTIVE = "inactive"  # Tool does not recognize current screen/minigame, no automation available
+    READY = "ready"  # Recognizes screen, waiting for user to activate
+    ATTENTION = "attention"  # Recognizes screen, no automation programmed
+    INACTIVE = "inactive"  # Doesn't recognize screen, no automation available
     ERROR = "error"  # Something wrong with application
 
 
 class StatusManager(QObject):
     """Manages application state detection and transitions."""
 
-    # Signals
     state_changed = pyqtSignal(ApplicationState)
 
     def __init__(self):
@@ -34,152 +30,75 @@ class StatusManager(QObject):
         self.logger = logging.getLogger(__name__)
         self.current_state = ApplicationState.INACTIVE
 
-        # Capabilities tracking
+        # Capability tracking
         self.has_scene_recognition = False
         self.has_automation_logic = False
         self.target_window_found = False
         self.win32_available = False
 
-        # Reset animation state
-        self.reset_animation_timer = None
-        self.animation_states = [
-            ApplicationState.ERROR,
-            ApplicationState.INACTIVE,
-            ApplicationState.ATTENTION,
-            ApplicationState.READY,
-            ApplicationState.ACTIVE,
-        ]
-        self.animation_index = 0
-        self.animation_target_state = None
-
     def update_capabilities(self, **kwargs):
         """Update capability flags that affect state detection."""
         if "scene_recognition" in kwargs:
             self.has_scene_recognition = kwargs["scene_recognition"]
-
         if "automation_logic" in kwargs:
             self.has_automation_logic = kwargs["automation_logic"]
-
         if "target_window" in kwargs:
             self.target_window_found = kwargs["target_window"]
-
         if "win32_available" in kwargs:
             self.win32_available = kwargs["win32_available"]
 
         # Recalculate state after capability update
-        self._detect_current_state()
+        # Always emit signal to ensure UI synchronization
+        self._detect_current_state(force_update=True)
 
-    def _detect_current_state(self) -> ApplicationState:
-        """Detect the actual current state based on capabilities and context."""
+    def _detect_current_state(self, force_update=False) -> ApplicationState:
+        """Detect the current state based on capabilities and context."""
         try:
-            # ERROR state - something is fundamentally wrong
+            # Determine state based on capabilities
             if not self.win32_available:
                 new_state = ApplicationState.ERROR
                 reason = "WIN32 API not available"
-
-            # INACTIVE state - tool doesn't recognize current screen/minigame
             elif not self.target_window_found:
                 new_state = ApplicationState.INACTIVE
-                reason = "Target window (WidgetInc.exe) not found"
-
-            # With current capabilities, we can only be INACTIVE or ERROR
-            # since we don't have scene recognition yet
+                reason = "Target window not found"
             elif not self.has_scene_recognition:
+                # We have target window but no scene recognition capability
+                # Can't determine what screen we're looking at, so stay inactive
                 new_state = ApplicationState.INACTIVE
-                reason = (
-                    "No scene recognition - cannot determine current screen/minigame"
-                )
-
-            # Future states (not reachable with current code):
-            # ATTENTION - recognizes screen but no automation programmed
-            # READY - recognizes screen and has automation, waiting for user
-            # ACTIVE - currently performing automation
+                reason = "Target window found, but no scene recognition available"
             else:
-                # This branch won't be reached until we implement scene recognition
-                new_state = ApplicationState.ATTENTION
-                reason = "Scene recognized but no automation implemented"
+                # We have both target window AND scene recognition
+                if self.has_automation_logic:
+                    new_state = ApplicationState.READY
+                    reason = "Scene recognized, automation ready"
+                else:
+                    new_state = ApplicationState.ATTENTION
+                    reason = "Scene recognized, no automation programmed"
 
-            if new_state != self.current_state:
+            # Update state if changed OR if forced (for UI synchronization)
+            if new_state != self.current_state or force_update:
                 old_state = self.current_state
                 self.current_state = new_state
                 self.state_changed.emit(new_state)
-                self.logger.info(
-                    f"State changed: {old_state.value} -> {new_state.value} ({reason})"
-                )
+                if new_state != old_state:  # Only log actual state changes
+                    self.logger.info(f"State: {old_state.value} -> {new_state.value} ({reason})")
+                elif force_update:
+                    self.logger.debug(f"UI sync: {new_state.value} ({reason})")
 
             return new_state
 
         except Exception as e:
             self.logger.error(f"Error detecting state: {e}")
-            return ApplicationState.ERROR
-
-    def start_initialization_sequence(self):
-        """Start the initialization sequence with animation and status detection."""
-        self.logger.info("Starting initialization sequence")
-        self._start_status_sequence(is_initialization=True)
-
-    def start_reset_sequence(self):
-        """Start the reset sequence with animation and status re-detection."""
-        self.logger.info("Starting status reset sequence")
-        self._start_status_sequence(is_initialization=False)
-
-    def _start_status_sequence(self, is_initialization: bool = False):
-        """Start the unified status sequence (initialization or reset)."""
-        if self.reset_animation_timer and self.reset_animation_timer.isActive():
-            self.logger.debug("Status sequence already running")
-            return
-
-        sequence_type = "initialization" if is_initialization else "reset"
-        self.logger.info(f"Starting {sequence_type} status sequence")
-
-        self.animation_index = 0
-        self.animation_target_state = None  # Will be determined after re-detection
-
-        # Create timer for animation
-        self.reset_animation_timer = QTimer()
-        self.reset_animation_timer.timeout.connect(self._animation_step)
-        self.reset_animation_timer.start(100)  # 0.5 seconds per state
-
-        # Start with first animation state
-        self._animation_step()
-
-    def start_reset_animation(self):
-        """Legacy method - now calls the unified reset sequence."""
-        self.start_reset_sequence()
-
-    def _animation_step(self):
-        """Execute one step of the status sequence animation."""
-        if self.animation_index < len(self.animation_states):
-            # Show current animation state (cosmetic)
-            anim_state = self.animation_states[self.animation_index]
-            self.state_changed.emit(anim_state)
-            self.logger.debug(
-                f"Animation step {self.animation_index + 1}: {anim_state.value}"
-            )
-            self.animation_index += 1
-
-        else:
-            # Animation complete - now do the actual work
-            self.reset_animation_timer.stop()
-            self.reset_animation_timer = None
-
-            self.logger.info("Animation complete, re-evaluating actual status...")
-
-            # Force re-detection of the actual state
-            # This is where the real logic happens, not just cosmetic animation
-            actual_state = self._detect_current_state()
-
-            # Ensure UI is updated to show the final state (even if it's the same as before animation)
-            self.state_changed.emit(actual_state)
-
-            self.logger.info(
-                f"Status sequence complete, actual state: {actual_state.value}"
-            )
+            new_state = ApplicationState.ERROR
+            if new_state != self.current_state:
+                self.current_state = new_state
+                self.state_changed.emit(new_state)
+            return new_state
 
     def get_current_state(self) -> ApplicationState:
         """Get the current application state."""
         return self.current_state
 
     def force_state_detection(self):
-        """Force a re-evaluation of the current state."""
+        """Force re-evaluation of the current state."""
         self._detect_current_state()

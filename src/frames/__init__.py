@@ -15,30 +15,14 @@ Key Components:
 Following project standards: KISS, no duplicated calculations, modular design.
 """
 
-from .manager import (
+from .frames_manager import (
     FramesManager,
     FramesDialog,
     FramesMenuSystem,
-    ScreenshotManagerDialog,
-    RegionsViewerDialog,
-    GridSelectionWidget,
-    EditFrameDialog,
-    AddFrameDialog,
-    AttachToFrameDialog,
-    ScreenshotGalleryWidget,
-    RegionsDisplayWidget,
 )
 
 __all__ = [
     "FramesManager",
     "FramesDialog",
     "FramesMenuSystem",
-    "ScreenshotManagerDialog",
-    "RegionsViewerDialog",
-    "GridSelectionWidget",
-    "EditFrameDialog",
-    "AddFrameDialog",
-    "AttachToFrameDialog",
-    "ScreenshotGalleryWidget",
-    "RegionsDisplayWidget",
 ]

@@ -1,47 +1,16 @@
 """
 Main Overlay Widget - Primary Application
 
-This is the main application widget that provides:
-- Status circle and text
-- FRAMES button (screenshot functionality)
-- TRACKER button (launch standalone tracker)
-- GRID button (playable area border toggle)
-- Right-click menu with Close
-- Window tracking and playable area calculations
+Provides status display and control buttons for widget automation.
 """
 
 import logging
 import subprocess
 import sys
-import json
-import uuid
 from pathlib import Path
-from typing import Optional, Dict, Any, List
-from enum import Enum
+from typing import Optional, Dict, Any
 
-from PyQt6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QMenu,
-    QApplication,
-    QSystemTrayIcon,
-    QDialog,
-    QLabel,
-    QLineEdit,
-    QCheckBox,
-    QTextEdit,
-    QListWidget,
-    QListWidgetItem,
-    QScrollArea,
-    QFrame,
-    QGridLayout,
-    QFormLayout,
-    QDialogButtonBox,
-    QMessageBox,
-    QFileDialog,
-)
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QMenu, QApplication, QSystemTrayIcon
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRect
 from PyQt6.QtGui import (
     QPainter,
@@ -50,7 +19,6 @@ from PyQt6.QtGui import (
     QColor,
     QFont,
     QPaintEvent,
-    QMouseEvent,
     QContextMenuEvent,
     QIcon,
     QPixmap,
@@ -61,25 +29,16 @@ from PyQt6.QtGui import (
 
 try:
     import win32gui
-    import win32process
-    import psutil
-    import logging
 
     WIN32_AVAILABLE = True
 except ImportError:
     WIN32_AVAILABLE = False
-    import logging
-
-    logging.warning("win32gui/psutil not available - some features may be limited")
+    logging.getLogger(__name__).warning("win32gui not available - some features limited")
 
 from utility.grid_overlay import create_grid_overlay
 from utility.status_manager import StatusManager, ApplicationState
 from utility.qss_loader import get_main_stylesheet
-from utility.window_utils import (
-    find_target_window,
-    is_window_valid,
-    get_window_info,
-)
+from utility.window_utils import find_target_window, is_window_valid
 from frames import FramesManager, FramesMenuSystem
 
 
@@ -88,7 +47,7 @@ class StatusIndicatorWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.current_state = ApplicationState.READY
+        self.current_state = ApplicationState.READY  # Start with wrong state to force update
         self.setFixedHeight(40)  # Slightly taller than buttons to fit circle and text
         self.setMinimumWidth(160)
 
@@ -97,9 +56,15 @@ class StatusIndicatorWidget(QWidget):
 
     def set_state(self, state: ApplicationState):
         """Update the status state and trigger repaint."""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[WIDGET DEBUG] StatusIndicatorWidget.set_state called: {self.current_state.value} -> {state.value}")
         if self.current_state != state:
             self.current_state = state
+            logger.info(f"[WIDGET DEBUG] State updated, triggering repaint: {state.value}")
             self.update()
+        else:
+            logger.info(f"[WIDGET DEBUG] State unchanged, no repaint needed: {state.value}")
 
     def paintEvent(self, event: QPaintEvent):
         """Paint the status circle and text."""
@@ -121,9 +86,7 @@ class StatusIndicatorWidget(QWidget):
 
         # Draw status text - left-aligned, inline with circle center
         painter.setPen(QPen(QColor(200, 200, 200), 1))  # Light gray text
-        painter.setFont(
-            QFont("Segoe UI", 14, QFont.Weight.Bold)
-        )  # Slightly smaller for widget
+        painter.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))  # Slightly smaller for widget
 
         # Position text inline with circle center
         text_y = circle_y + (circle_size // 2)
@@ -140,38 +103,14 @@ class StatusIndicatorWidget(QWidget):
         if self.current_state == ApplicationState.ACTIVE:
             return QColor(0, 255, 0)  # Bright green - performing automation
         elif self.current_state == ApplicationState.READY:
-            return QColor(
-                144, 238, 144
-            )  # Light green - recognizes screen, waiting for user
+            return QColor(144, 238, 144)  # Light green - recognizes screen, waiting for user
         elif self.current_state == ApplicationState.ATTENTION:
-            return QColor(
-                255, 165, 0
-            )  # Orange - recognizes screen, no automation programmed
+            return QColor(255, 165, 0)  # Orange - recognizes screen, no automation programmed
         elif self.current_state == ApplicationState.INACTIVE:
-            return QColor(
-                128, 128, 128
-            )  # Gray - doesn't recognize screen, no automation available
+            return QColor(128, 128, 128)  # Gray - doesn't recognize screen, no automation available
         elif self.current_state == ApplicationState.ERROR:
             return QColor(255, 0, 0)  # Red - something wrong with application
         return QColor(128, 128, 128)
-
-    def mousePressEvent(self, event: QMouseEvent):
-        """Handle mouse clicks - cycle through states when clicking status circle."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            # Check if click is within status circle area
-            circle_size = 24
-            margin = 10
-            circle_x = self.width() - circle_size - margin
-            circle_y = (self.height() - circle_size) // 2
-            circle_rect = QRect(circle_x, circle_y, circle_size, circle_size)
-
-            if circle_rect.contains(event.pos()):
-                # Notify parent to start reset animation instead of cycling states
-                if hasattr(self.parent(), "_on_status_clicked"):
-                    self.parent()._on_status_clicked(None)  # Parameter not used anymore
-                return
-
-        super().mousePressEvent(event)
 
 
 class MainOverlayWidget(QWidget):
@@ -189,9 +128,8 @@ class MainOverlayWidget(QWidget):
 
         # Status manager for intelligent state detection
         self.status_manager = StatusManager()
-        self.status_manager.state_changed.connect(self._on_status_manager_state_changed)
 
-        # Initialize capabilities
+        # Initialize capabilities first
         self.status_manager.update_capabilities(
             scene_recognition=False,  # Not implemented yet
             automation_logic=False,  # Not implemented yet
@@ -199,8 +137,11 @@ class MainOverlayWidget(QWidget):
             win32_available=WIN32_AVAILABLE,
         )
 
-        # Application state - managed by StatusManager
+        # Application state - managed by StatusManager  
         self.current_state = self.status_manager.get_current_state()
+        
+        # Connect signal AFTER state is initialized
+        self.status_manager.state_changed.connect(self._on_status_manager_state_changed)
         self.target_hwnd = None
         self.target_pid = None
 
@@ -230,8 +171,7 @@ class MainOverlayWidget(QWidget):
         self._setup_frames_system()
         self._start_monitoring()
 
-        # Start initialization sequence (combines animation with actual status detection)
-        # self.status_manager.start_initialization_sequence()
+        # Initialize state detection
         self.status_manager.force_state_detection()
 
         self.logger.info("Main overlay widget initialized")
@@ -243,18 +183,14 @@ class MainOverlayWidget(QWidget):
                 self.monitor_timer.stop()
             if hasattr(self, "tray_icon") and self.tray_icon:
                 self.tray_icon.hide()
-        except:
+        except Exception:
             pass  # Ignore errors during destruction
 
     def _setup_widget(self):
         """Setup the main overlay widget."""
         # Window properties
         self.setWindowTitle("Widget Automation Tool")
-        self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint
-            | Qt.WindowType.WindowStaysOnTopHint
-            | Qt.WindowType.Tool
-        )
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setFixedWidth(180)
         self.setMinimumSize(180, 120)
@@ -267,6 +203,10 @@ class MainOverlayWidget(QWidget):
         # Status indicator widget
         self.status_widget = StatusIndicatorWidget(self)
         layout.addWidget(self.status_widget)
+        
+        # Force initial sync of status widget with current state
+        self.logger.info(f"[UI DEBUG] Forcing initial status widget sync to: {self.current_state.value}")
+        self.status_widget.set_state(self.current_state)
 
         # Buttons section
         buttons_layout = QVBoxLayout()
@@ -274,25 +214,19 @@ class MainOverlayWidget(QWidget):
 
         # FRAMES button
         self.frames_button = QPushButton("FRAMES")
-        self.frames_button.setObjectName(
-            "frames_button"
-        )  # Set object name for QSS targeting
+        self.frames_button.setObjectName("frames_button")  # Set object name for QSS targeting
         self.frames_button.setFixedHeight(30)
         self.frames_button.clicked.connect(self._on_frames_clicked)
 
         # TRACKER button
         self.tracker_button = QPushButton("TRACKER")
-        self.tracker_button.setObjectName(
-            "tracker_button"
-        )  # Set object name for QSS targeting
+        self.tracker_button.setObjectName("tracker_button")  # Set object name for QSS targeting
         self.tracker_button.setFixedHeight(30)
         self.tracker_button.clicked.connect(self._on_tracker_clicked)
 
         # GRID button
         self.grid_button = QPushButton("GRID")
-        self.grid_button.setObjectName(
-            "grid_button"
-        )  # Set object name for QSS targeting
+        self.grid_button.setObjectName("grid_button")  # Set object name for QSS targeting
         self.grid_button.setFixedHeight(30)
         self.grid_button.clicked.connect(self._on_grid_clicked)
 
@@ -417,7 +351,8 @@ class MainOverlayWidget(QWidget):
     def _start_monitoring(self):
         """Start monitoring for the target window."""
         # Start with fast polling for initial detection
-        self.monitor_timer.start(100)  # Check every 100ms initially
+        if self.monitor_timer:
+            self.monitor_timer.start(100)  # Check every 100ms initially
         self.logger.info(f"Started monitoring for {self.target_process}")
 
         # Perform immediate check to avoid delay in positioning
@@ -447,11 +382,9 @@ class MainOverlayWidget(QWidget):
                 self._update_position_from_shared_data(target_info)
 
                 # Once we have a target, slow down monitoring to reduce CPU usage
-                if self.monitor_timer.interval() < 500:  # Only change if currently fast
+                if self.monitor_timer and self.monitor_timer.interval() < 500:  # Only change if currently fast
                     self.monitor_timer.setInterval(500)  # Check every 500ms once found
-                    self.logger.debug(
-                        "Slowed monitoring to 500ms - target window stable"
-                    )
+                    self.logger.debug("Slowed monitoring to 500ms - target window stable")
 
             else:
                 # Target not found - speed up monitoring if it was slowed down
@@ -459,11 +392,9 @@ class MainOverlayWidget(QWidget):
                     self._on_target_lost()
 
                 # Speed up monitoring when no target (for faster detection)
-                if self.monitor_timer.interval() > 100:
+                if self.monitor_timer and self.monitor_timer.interval() > 100:
                     self.monitor_timer.setInterval(100)  # Fast polling when searching
-                    self.logger.debug(
-                        "Increased monitoring to 100ms - searching for target"
-                    )
+                    self.logger.debug("Increased monitoring to 100ms - searching for target")
 
         except Exception as e:
             self.logger.error(f"Error checking target window: {e}")
@@ -487,7 +418,7 @@ class MainOverlayWidget(QWidget):
         self.hide()  # Hide overlay when target is lost
 
         # Speed up monitoring to quickly detect when target returns
-        if self.monitor_timer.interval() > 100:
+        if self.monitor_timer and self.monitor_timer.interval() > 100:
             self.monitor_timer.setInterval(100)
             self.logger.debug("Increased monitoring to 100ms - target lost, searching")
 
@@ -495,21 +426,25 @@ class MainOverlayWidget(QWidget):
 
     def _on_status_manager_state_changed(self, new_state: ApplicationState):
         """Handle state changes from the status manager."""
+        self.logger.info(f"[UI DEBUG] Received state change signal: {new_state.value}")
         if self.current_state != new_state:
             old_state = self.current_state
             self.current_state = new_state
             self.state_changed.emit(new_state)
             # Update the status indicator widget
             if hasattr(self, "status_widget"):
+                self.logger.info(f"[UI DEBUG] Updating status widget: {old_state.value} -> {new_state.value}")
                 self.status_widget.set_state(new_state)
-            self.logger.debug(
-                f"UI updated for state change: {old_state.value} -> {new_state.value}"
-            )
+            else:
+                self.logger.warning("[UI DEBUG] No status_widget found to update!")
+            self.logger.debug(f"UI updated for state change: {old_state.value} -> {new_state.value}")
+        else:
+            self.logger.info(f"[UI DEBUG] State unchanged, skipping UI update: {new_state.value}")
 
     def _on_status_clicked(self, new_state: ApplicationState):
-        """Handle status circle clicked from status widget - start reset sequence."""
-        self.logger.info("Status circle clicked - starting reset sequence")
-        self.status_manager.start_reset_sequence()
+        """Handle status circle clicked from status widget - force state detection."""
+        self.logger.info("Status circle clicked - forcing state detection")
+        self.status_manager.force_state_detection()
 
     def _update_position(self):
         """Update overlay position relative to target window's client area."""
@@ -538,12 +473,7 @@ class MainOverlayWidget(QWidget):
             self._calculate_playable_area()
 
             # Position overlay in top-right of client area
-            overlay_x = (
-                client_top_left[0]
-                + self.window_coords["client_width"]
-                - self.width()
-                - 10
-            )
+            overlay_x = client_top_left[0] + self.window_coords["client_width"] - self.width() - 10
             overlay_y = client_top_left[1] + 40
 
             self.move(overlay_x, overlay_y)
@@ -617,12 +547,7 @@ class MainOverlayWidget(QWidget):
                 self.playable_coords = playable_area
 
             # Position overlay in top-right of client area
-            overlay_x = (
-                window_info["client_x"]
-                + window_info["client_width"]
-                - self.width()
-                - 10
-            )
+            overlay_x = window_info["client_x"] + window_info["client_width"] - self.width() - 10
             overlay_y = window_info["client_y"] + 40
 
             self.move(overlay_x, overlay_y)
@@ -681,13 +606,11 @@ class MainOverlayWidget(QWidget):
 
         try:
             from time import strftime
-            from PIL import Image, ImageGrab
+            from PIL import ImageGrab
 
             # Get window rectangle
             window_rect = win32gui.GetWindowRect(self.target_hwnd)
             x, y, x2, y2 = window_rect
-            width = x2 - x
-            height = y2 - y
 
             # Create timestamp for filename
             timestamp = strftime("%Y%m%d_%H%M%S")
@@ -711,9 +634,7 @@ class MainOverlayWidget(QWidget):
         self.logger.info("TRACKER button clicked")
         try:
             # Launch tracker application from new location
-            tracker_path = (
-                Path(__file__).parent.parent / "tracker_app" / "tracker_app.py"
-            )
+            tracker_path = Path(__file__).parent.parent / "tracker_app" / "tracker_app.py"
             if tracker_path.exists():
                 subprocess.Popen(
                     [
@@ -744,9 +665,7 @@ class MainOverlayWidget(QWidget):
                     self.grid_overlay.show_grid()
                     self.logger.info("Grid overlay shown")
                 else:
-                    self.logger.warning(
-                        "No playable area coordinates available for grid"
-                    )
+                    self.logger.warning("No playable area coordinates available for grid")
                     self.grid_visible = False
             else:
                 self.grid_overlay.hide_grid()
@@ -826,7 +745,7 @@ class MainOverlayWidget(QWidget):
             try:
                 self.target_found.disconnect()
                 self.state_changed.disconnect()
-            except:
+            except Exception:
                 pass  # Ignore if already disconnected
 
             # Hide the widget

@@ -42,7 +42,7 @@
 
 ## Tests
 
-- All tests should be in src/tests
+- All tests should be in tests/
 - One-time tests should be deleted after use
 - Do not move or delete any files with the prefix lyx\__._
 
@@ -97,3 +97,11 @@ The playable area is the actual game content area within the WidgetInc.exe windo
 - Account for window decorations (title bar, borders) when getting client area
 - Playable area coordinates are relative to the client window, not screen coordinates
 - Mouse percentage calculations should be relative to playable area, not full window
+
+## STATUS INDICATOR
+
+- ACTIVE = performing automation
+- READY = "The tool recognizes the current screen/minigame and is waitin for user to activate."
+- ATTENTION (name can be something more relevant) = "The tool recognizes the current screen/minigame, but there is no automation programmed."
+- INACTIVE = "The tool does not recognize the current screen/minigame, therefore there is no automation available on this screen."
+- ERROR = Something wrong with application
