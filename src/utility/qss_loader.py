@@ -13,7 +13,7 @@ def load_stylesheet(filename: str) -> str:
     logger = logging.getLogger(__name__)
 
     # Look for the file in the assets/styles directory
-    styles_dir = Path(__file__).parent.parent.parent / "assets" / "styles"
+    styles_dir = Path(__file__).parent.parent.parent / "src" / "config" / "styles"
     qss_file = styles_dir / filename
 
     if not qss_file.exists():

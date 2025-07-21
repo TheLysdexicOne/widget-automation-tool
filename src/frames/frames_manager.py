@@ -1,508 +1,375 @@
 """
-Frames Manager - Core Data Management
+Frames Manager - Combined UI and Coordination
 
-Handles frame data and screenshot storage:
-- Frame database management (JSON-based)
-- Screenshot storage and retrieval
-- CRUD operations for frames
+Main frames management dialog combining UI and coordination functionality.
+Handles frame management, dialog display, screenshot capture, and database operations.
 
 Following project standards: KISS, no duplicated calculations, modular design.
 """
 
 import logging
-import json
-import uuid
-import time
-import shutil
 from pathlib import Path
 from typing import Dict, List, Optional
 
-try:
-    import win32gui
-    from PIL import Image, ImageGrab
+from PyQt6.QtWidgets import (
+    QDialog,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFormLayout,
+    QLabel,
+    QComboBox,
+    QPushButton,
+    QFrame,
+    QMessageBox,
+)
+from PyQt6.QtGui import QFont
 
-    WIN32_AVAILABLE = True
-except ImportError:
-    WIN32_AVAILABLE = False
-
-from PyQt6.QtWidgets import QDialog, QMessageBox
-from PyQt6.QtGui import QPixmap
-
-from .widgets.frames_dialog import FramesDialog
-from .widgets.add_frame_dialog import AddFrameDialog
-from .widgets.attach_frame_dialog import AttachToFrameDialog
-from .widgets.edit_frames_dialog import EditFramesDialog
+from .utility.frames_management import FramesManagement
+from .screenshot_manager import ScreenshotManagerDialog
+from .widgets.edit_frame_dialog import EditFrameDialog
 
 logger = logging.getLogger(__name__)
 
 
-class FramesManager:
-    """Manages frame data and screenshot storage."""
+class FramesManager(QDialog):
+    """Combined frames management dialog with all functionality"""
 
-    def __init__(self, base_path: Path):
-        self.base_path = base_path
-        self.frames_db_path = base_path / "src" / "config" / "frames_database.json"
-        self.screenshots_dir = base_path / "assets" / "screenshots"
+    def __init__(self, main_widget):
+        super().__init__(main_widget)
+        self.main_widget = main_widget
 
-        # Ensure directories exist
-        self.frames_db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.screenshots_dir.mkdir(parents=True, exist_ok=True)
+        # Initialize data management
+        base_path = Path(__file__).parents[2]  # Go up from src/frames/frames_manager.py to project root
+        self.frames_management = FramesManagement(base_path)
 
-        self.frames_data = self._load_frames_database()
+        # Get frames data and initialize dialog
+        self.frames_list = self.frames_management.get_frame_list()
+        self.selected_frame = None
+        self.modified_frame_data = None
+        self.screenshots_to_delete = []
 
-    def _load_frames_database(self) -> Dict:
-        """Load frames database from JSON file."""
-        if self.frames_db_path.exists():
+        self.setWindowTitle("Frames Management")
+        self.setModal(True)
+        self._setup_ui()
+
+        logger.info("FramesManager initialized")
+
+    def _setup_ui(self):
+        """Setup comprehensive frames management UI."""
+        main_layout = QHBoxLayout(self)
+
+        # Left panel - Frame list and actions
+        left_widget = QWidget()
+        left_widget.setMaximumWidth(300)
+        left_panel = QVBoxLayout(left_widget)
+
+        # Frame selection dropdown
+        selection_layout = QVBoxLayout()
+        selection_layout.addWidget(QLabel("Select Frame:"))
+
+        # Sort frames by tier numerically
+        def tier_key(frame):
+            tid = frame.get("id", "")
             try:
-                with open(self.frames_db_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.error(f"Error loading frames database: {e}")
+                return tuple(int(part) for part in tid.split("."))
+            except Exception:
+                return (9999,)  # fallback for missing/invalid id
 
-        # Return default structure
-        return {"frames": []}
+        sorted_frames = sorted(self.frames_list, key=tier_key)
+        self.dropdown = QComboBox()
+        for frame in sorted_frames:
+            tier = frame.get("id", "??")
+            name = frame.get("name", "Unnamed")
+            item = frame.get("item", "Unknown")
+            self.dropdown.addItem(f"{tier}: {name} - ({item})", frame)
 
-    def _save_frames_database(self) -> bool:
-        """Save frames database to JSON file."""
-        try:
-            # Create backup first
-            if self.frames_db_path.exists():
-                backup_path = self.frames_db_path.with_suffix(".json.backup")
-                shutil.copy2(self.frames_db_path, backup_path)
+        self.dropdown.currentTextChanged.connect(self._on_frame_selected)
+        selection_layout.addWidget(self.dropdown)
+        left_panel.addLayout(selection_layout)
 
-            with open(self.frames_db_path, "w", encoding="utf-8") as f:
-                json.dump(self.frames_data, f, indent=2, ensure_ascii=False)
-            return True
-        except Exception as e:
-            logger.error(f"Error saving frames database: {e}")
-            return False
+        # Action buttons
+        actions_layout = QVBoxLayout()
+        actions_layout.addWidget(QLabel("Actions:"))
 
-    def get_frame_list(self) -> List[Dict]:
-        """Get list of all frames."""
-        return self.frames_data.get("frames", [])
+        self.screenshots_btn = QPushButton("Screenshots")
+        self.screenshots_btn.clicked.connect(self._manage_screenshots)
+        self.screenshots_btn.setEnabled(False)
+        actions_layout.addWidget(self.screenshots_btn)
 
-    def get_frame_by_name(self, name: str) -> Optional[Dict]:
-        """Get frame data by name."""
-        for frame in self.frames_data.get("frames", []):
-            if frame.get("name") == name:
-                return frame
-        return None
+        self.edit_frame_btn = QPushButton("Edit Selected Frame")
+        self.edit_frame_btn.clicked.connect(self._edit_selected_frame)
+        self.edit_frame_btn.setEnabled(False)
+        actions_layout.addWidget(self.edit_frame_btn)
 
-    def save_screenshot(self, screenshot: Image.Image, frame_name: Optional[str] = None) -> str:
-        """Save screenshot and return UUID."""
-        screenshot_uuid = str(uuid.uuid4())
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        filename = f"{timestamp}_{screenshot_uuid}.png"
+        left_panel.addLayout(actions_layout)
+        left_panel.addStretch()
 
-        if frame_name:
-            filename = f"{frame_name}_{filename}"
+        # Right panel - Frame details and editing
+        right_widget = QWidget()
+        right_panel = QVBoxLayout(right_widget)
 
-        screenshot_path = self.screenshots_dir / filename
-        screenshot.save(screenshot_path)
-        logger.info(f"Screenshot saved: {screenshot_path}")
-        return screenshot_uuid
+        # Frame details header
+        details_header = QLabel("Frame Details")
+        details_header.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        right_panel.addWidget(details_header)
 
-    def add_frame(self, frame_data: Dict) -> bool:
-        """Add new frame to database."""
-        try:
-            self.frames_data["frames"].append(frame_data)
-            return self._save_frames_database()
-        except Exception as e:
-            logger.error(f"Error adding frame: {e}")
-            return False
+        # Frame info display
+        self.frame_info_widget = self._create_frame_info_widget()
+        right_panel.addWidget(self.frame_info_widget)
 
-    def update_frame(self, frame_name: str, frame_data: Dict) -> bool:
-        """Update existing frame in database."""
-        try:
-            for i, frame in enumerate(self.frames_data["frames"]):
-                if frame.get("name") == frame_name:
-                    self.frames_data["frames"][i] = frame_data
-                    return self._save_frames_database()
-            return False
-        except Exception as e:
-            logger.error(f"Error updating frame: {e}")
-            return False
+        right_panel.addStretch()
 
-    def delete_screenshot(self, screenshot_uuid: str) -> bool:
-        """Delete screenshot file."""
-        try:
-            # Find and delete the file
-            for screenshot_file in self.screenshots_dir.glob(f"*{screenshot_uuid}*"):
-                screenshot_file.unlink()
-                logger.info(f"Deleted screenshot: {screenshot_file}")
-                return True
-            return False
-        except Exception as e:
-            logger.error(f"Error deleting screenshot: {e}")
-            return False
+        # Dialog buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
 
-    def get_screenshot_data(self, screenshot_uuid: str) -> Optional[Dict]:
-        """Get screenshot metadata. This is a placeholder implementation."""
-        # For now, return basic data structure
-        # In a full implementation, this might load from a metadata file
-        return {"is_primary": False}  # Default implementation
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(self.accept)
 
+        button_layout.addWidget(close_button)
 
-class FramesMenuSystem:
-    """Main system for managing frames functionality."""
+        right_panel.addLayout(button_layout)
 
-    def __init__(self, parent_widget, frames_manager: FramesManager):
-        self.parent = parent_widget
-        self.frames_manager = frames_manager
-        self.logger = logging.getLogger(__name__)
+        # Add panels to main layout
+        main_layout.addWidget(left_widget, 1)
+        main_layout.addWidget(right_widget, 2)
 
-    def show_frames_menu(self):
-        """Show the main FRAMES menu - now simplified to just open the comprehensive dialog."""
-        # Directly show the comprehensive frames dialog
-        frames_list = self.frames_manager.get_frame_list()
-        if not frames_list:
-            QMessageBox.information(
-                self.parent,
-                "No Frames",
-                "No frames available. Create a frame first using 'Add New Frame'.",
-            )
-            return
-        dialog = FramesDialog(frames_list, self.frames_manager, self.parent)
-        dialog.exec()
+        # Set close as default button
+        close_button.setDefault(True)
 
-    def _show_frames_dialog(self):
-        """Show comprehensive frames management dialog."""
-        frames_list = self.frames_manager.get_frame_list()
-        if not frames_list:
-            QMessageBox.information(
-                self.parent,
-                "No Frames",
-                "No frames available. Create a frame first using 'Add New Frame'.",
-            )
-            return
-        dialog = FramesDialog(frames_list, self.frames_manager, self.parent)
-        dialog.exec()
+        # Initialize display
+        if self.frames_list:
+            self.dropdown.setCurrentIndex(0)
+            self._on_frame_selected()
 
-    def _show_add_frame_dialog(self):
-        """Show Add New Frame dialog."""
-        self.logger.info("Opening Add New Frame dialog")
+    def _create_frame_info_widget(self) -> QWidget:
+        """Create widget for displaying frame information."""
+        widget = QFrame()
+        widget.setFrameStyle(QFrame.Shape.Box)
+        layout = QFormLayout(widget)
+        layout.setHorizontalSpacing(24)  # Increase spacing between label and field columns
 
-        # Capture screenshot
-        screenshot = self._capture_playable_screenshot()
-        if not screenshot:
-            QMessageBox.warning(self.parent, "Error", "Failed to capture screenshot")
-            return
+        self.id_label = QLabel("--")
+        self.name_label = QLabel("--")
+        self.item_label = QLabel("--")
+        self.automation_label = QLabel("--")
+        self.screenshots_count_label = QLabel("--")
+        self.text_regions_label = QLabel("--")
+        self.interact_regions_label = QLabel("--")
 
-        # Show dialog
-        dialog = AddFrameDialog(screenshot, self.parent.playable_coords, self.parent)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            self._save_new_frame(dialog.get_frame_data(), screenshot)
+        layout.addRow("ID:", self.id_label)
+        layout.addRow("Name:", self.name_label)
+        layout.addRow("Item:", self.item_label)
 
-    def _show_attach_frame_dialog(self):
-        """Show Attach to Frame dialog."""
-        self.logger.info("Opening Attach to Frame dialog")
+        # Declare horizontal line
+        line1 = QFrame()
+        line1.setFrameShape(QFrame.Shape.HLine)
+        line1.setFrameShadow(QFrame.Shadow.Sunken)
+        line1.setLineWidth(1)
+        layout.addRow(line1)
 
-        # Get existing frames
-        frames_list = self.frames_manager.get_frame_list()
-        if not frames_list:
-            QMessageBox.information(
-                self.parent,
-                "No Frames",
-                "No frames available. Create a frame first using 'Add New Frame'.",
-            )
+        layout.addRow("Automation:", self.automation_label)
+        layout.addRow("Screenshots:", self.screenshots_count_label)
+
+        # Declare horizontal line
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        line.setLineWidth(1)
+        layout.addRow(line)
+
+        # Regions section (indented)
+        regions_header = QLabel("Regions:")
+        layout.addRow(regions_header)
+        layout.addRow("    Text:", self.text_regions_label)
+        layout.addRow("    Interact:", self.interact_regions_label)
+
+        return widget
+
+    def _on_frame_selected(self):
+        """Handle frame selection change."""
+        current_data = self.dropdown.currentData()
+        if current_data:
+            self.selected_frame = current_data
+            self._update_frame_display()
+            self.edit_frame_btn.setEnabled(True)
+            self.screenshots_btn.setEnabled(True)
+        else:
+            self.selected_frame = None
+            self.edit_frame_btn.setEnabled(False)
+            self.screenshots_btn.setEnabled(False)
+
+    def _update_frame_display(self):
+        """Update the display with selected frame data."""
+        if not self.selected_frame:
+            QMessageBox.warning(self, "Error", "Frames Database Failed to load")
             return
 
-        # Capture screenshot
-        screenshot = self._capture_playable_screenshot()
-        if not screenshot:
-            QMessageBox.warning(self.parent, "Error", "Failed to capture screenshot")
+        # Update frame info
+        self.id_label.setText(self.selected_frame.get("id", "Unknown"))
+        self.name_label.setText(self.selected_frame.get("name", "Unnamed"))
+        self.item_label.setText(self.selected_frame.get("item", "Unknown"))
+
+        automation = "Yes" if self.selected_frame.get("automation", 0) == 1 else "No"
+        self.automation_label.setText(automation)
+
+        # Screenshots count
+        screenshots = self.selected_frame.get("screenshots", [])
+        self.screenshots_count_label.setText(str(len(screenshots)))
+
+        # Regions
+        regions = self.selected_frame.get("regions", {})
+        text_regions = regions.get("text", [])
+        text_region_count = len([r for r in text_regions if r.get("text", "").strip()])
+        self.text_regions_label.setText(str(text_region_count))
+
+        interact_regions = regions.get("interact", [])
+        interact_region_count = len(interact_regions)
+        self.interact_regions_label.setText(str(interact_region_count))
+
+    def _manage_screenshots(self):
+        """Open screenshot manager for selected frame."""
+        if not self.selected_frame:
+            QMessageBox.warning(self, "Error", "Please select a frame first")
             return
 
-        # Show dialog
-        dialog = AttachToFrameDialog(screenshot, frames_list, self.parent)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            selected_frame = dialog.get_selected_frame()
-            if selected_frame:
-                # Convert QPixmap to PIL Image and save screenshot
-                screenshot_path = Path.cwd() / "temp_attach_screenshot.png"
-                screenshot.save(str(screenshot_path))
-                pil_image = Image.open(screenshot_path)
-
-                # Save screenshot and get UUID
-                screenshot_uuid = self.frames_manager.save_screenshot(pil_image, selected_frame.get("name", "unnamed"))
-
-                # Attach to frame
-                self._attach_screenshot_to_frame(selected_frame.get("name"), screenshot_uuid)
-
-                # Clean up temp file
-                screenshot_path.unlink()
-
-    def _show_edit_frames_dialog(self):
-        """Show Edit Frames dialog."""
-        self.logger.info("Opening Edit Frames dialog")
-
-        # Get existing frames
-        frames_list = self.frames_manager.get_frame_list()
-        if not frames_list:
-            QMessageBox.information(
-                self.parent,
-                "No Frames",
-                "No frames available. Create a frame first using 'Add New Frame'.",
-            )
-            return
-
-        # Show dialog
-        dialog = EditFramesDialog(frames_list, self.frames_manager.screenshots_dir, self.parent)
+        dialog = ScreenshotManagerDialog(self.selected_frame, self.frames_management, self.main_widget, self)
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            frame_name, modified_data, screenshots_to_delete = dialog.get_modified_data()
-            if frame_name and modified_data:
-                self._save_frame_changes(frame_name, modified_data, screenshots_to_delete)
+            # Refresh the display to show updated screenshot count
+            self._refresh_frames_list()
+            self._update_frame_display()
 
-    def _capture_playable_screenshot(self) -> Optional[QPixmap]:
-        """Capture screenshot of playable area using window-specific capture."""
-        try:
-            # Get playable area coordinates
-            playable = self.parent.playable_coords
-            if not playable or not all(k in playable for k in ["x", "y", "width", "height"]):
-                self.logger.warning("Invalid playable coordinates, using fallback")
-                return self._capture_fallback_screenshot()
+    def _edit_selected_frame(self):
+        """Edit the selected frame."""
+        if not self.selected_frame:
+            QMessageBox.warning(self, "Error", "Please select a frame first")
+            return
 
-            self.logger.info(f"Capturing screenshot of playable area: {playable}")
+        # Show edit dialog for single frame
+        dialog = EditFrameDialog(self.selected_frame, self.frames_management.screenshots_dir, self)
 
-            # Method 1: Try direct coordinate capture with explicit all_screens=True
-            try:
-                self.logger.info("Attempting direct coordinate capture with all_screens=True")
-                screenshot = ImageGrab.grab(
-                    bbox=(
-                        playable["x"],
-                        playable["y"],
-                        playable["x"] + playable["width"],
-                        playable["y"] + playable["height"],
-                    ),
-                    all_screens=True,  # Explicitly capture from all screens including negative coords
-                )
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            modified_data, screenshots_to_delete = dialog.get_modified_data()
+            if modified_data:
+                original_name = self.selected_frame.get("name")
+                if self._save_frame_changes(original_name, modified_data, screenshots_to_delete):
+                    self._refresh_frames_list()
 
-                self.logger.info(f"Direct capture successful, size: {screenshot.size}")
+    def _drawer_test(self):
+        """Drawer Test."""
+        if not self.selected_frame:
+            QMessageBox.warning(self, "Error", "Please select a frame first")
+            return
 
-                # Verify we got the right size
-                if screenshot.size == (playable["width"], playable["height"]):
-                    # Convert to QPixmap
-                    screenshot_path = Path.cwd() / "temp_screenshot.png"
-                    screenshot.save(screenshot_path)
-
-                    # Verify the image has content
-                    if screenshot.getbbox() is not None:
-                        pixmap = QPixmap(str(screenshot_path))
-                        self.logger.info(f"Direct capture QPixmap size: {pixmap.width()}x{pixmap.height()}")
-                        screenshot_path.unlink()  # Clean up temp file
-                        return pixmap
-                    else:
-                        self.logger.warning("Direct capture image appears empty")
-                        screenshot_path.unlink()
-                else:
-                    self.logger.warning(
-                        f"Direct capture size mismatch: got {screenshot.size}, expected ({playable['width']}, {playable['height']})"
-                    )
-
-            except Exception as e:
-                self.logger.warning(f"Direct coordinate capture failed: {e}")
-
-            # Method 2: Window-specific capture if we have hwnd
-            if WIN32_AVAILABLE and self.parent.target_hwnd:
-                try:
-                    self.logger.info("Attempting window-specific capture")
-
-                    # Bring window to foreground first
-                    win32gui.SetForegroundWindow(self.parent.target_hwnd)
-
-                    time.sleep(0.3)  # Longer delay for window activation
-
-                    # Get window rectangle
-                    window_rect = win32gui.GetWindowRect(self.parent.target_hwnd)
-                    self.logger.info(f"Window rectangle: {window_rect}")
-
-                    # Capture the entire window first
-                    window_screenshot = ImageGrab.grab(bbox=window_rect, all_screens=True)
-
-                    # Calculate relative coordinates within the window
-                    # playable coords are absolute, window_rect gives us window position
-                    rel_x = playable["x"] - window_rect[0]
-                    rel_y = playable["y"] - window_rect[1]
-
-                    self.logger.info(
-                        f"Relative playable coords: ({rel_x}, {rel_y}) {playable['width']}x{playable['height']}"
-                    )
-
-                    # Crop to playable area
-                    if (
-                        rel_x >= 0
-                        and rel_y >= 0
-                        and rel_x + playable["width"] <= window_screenshot.width
-                        and rel_y + playable["height"] <= window_screenshot.height
-                    ):
-                        playable_screenshot = window_screenshot.crop(
-                            (
-                                rel_x,
-                                rel_y,
-                                rel_x + playable["width"],
-                                rel_y + playable["height"],
-                            )
-                        )
-
-                        # Convert to QPixmap
-                        screenshot_path = Path.cwd() / "temp_screenshot.png"
-                        playable_screenshot.save(screenshot_path)
-
-                        if playable_screenshot.getbbox() is not None:
-                            pixmap = QPixmap(str(screenshot_path))
-                            self.logger.info(f"Window capture successful: {pixmap.width()}x{pixmap.height()}")
-                            screenshot_path.unlink()
-                            return pixmap
-                        else:
-                            screenshot_path.unlink()
-
-                    else:
-                        self.logger.warning("Playable area extends outside window bounds")
-
-                except Exception as e:
-                    self.logger.warning(f"Window-specific capture failed: {e}")
-
-            # Fall back to full screen approach
-            self.logger.warning("All capture methods failed, using fallback")
-            return self._capture_fallback_screenshot()
-
-        except Exception as e:
-            self.logger.error(f"Error in screenshot capture: {e}")
-            return self._capture_fallback_screenshot()
-
-    def _capture_fallback_screenshot(self) -> Optional[QPixmap]:
-        """Fallback screenshot capture of entire screen for testing."""
-        try:
-            self.logger.info("Using fallback screenshot capture (entire screen)")
-
-            # Capture entire screen
-            screenshot = ImageGrab.grab()
-
-            # Scale down for dialog display
-            screenshot = screenshot.resize((800, 600), Image.Resampling.LANCZOS)
-
-            # Convert to QPixmap
-            screenshot_path = Path.cwd() / "temp_fallback_screenshot.png"
-            screenshot.save(screenshot_path)
-
-            pixmap = QPixmap(str(screenshot_path))
-            self.logger.info(f"Fallback screenshot size: {pixmap.width()}x{pixmap.height()}")
-
-            screenshot_path.unlink()  # Clean up temp file
-
-            return pixmap
-
-        except Exception as e:
-            self.logger.error(f"Error in fallback screenshot capture: {e}")
-            return None
-
-    def _save_new_frame(self, frame_data: Dict, screenshot: QPixmap):
-        """Save new frame with screenshot."""
-        try:
-            # Convert QPixmap to PIL Image for saving
-            screenshot_path = Path.cwd() / "temp_frame_screenshot.png"
-            screenshot.save(str(screenshot_path))
-            pil_image = Image.open(screenshot_path)
-
-            # Save screenshot and get UUID
-            screenshot_uuid = self.frames_manager.save_screenshot(pil_image, frame_data["name"])
-
-            # Add screenshot UUID to frame data
-            frame_data["screenshots"] = [screenshot_uuid]
-
-            # Save frame to database
-            if self.frames_manager.add_frame(frame_data):
-                QMessageBox.information(
-                    self.parent,
-                    "Success",
-                    f"Frame '{frame_data['name']}' saved successfully!",
-                )
-                self.logger.info(f"New frame created: {frame_data['name']}")
-            else:
-                QMessageBox.warning(self.parent, "Error", "Failed to save frame to database")
-
-            # Clean up temp file
-            screenshot_path.unlink()
-
-        except Exception as e:
-            self.logger.error(f"Error saving new frame: {e}")
-            QMessageBox.warning(self.parent, "Error", f"Failed to save frame: {str(e)}")
-
-    def _attach_screenshot_to_frame(self, frame_name: str, screenshot_uuid: str):
-        """Attach screenshot to existing frame."""
-        try:
-            frames_data = self.frames_manager.get_frame_list()
-            for frame_data in frames_data:
-                if frame_data.get("name") == frame_name:
-                    if "screenshots" not in frame_data:
-                        frame_data["screenshots"] = []
-
-                    if screenshot_uuid not in frame_data["screenshots"]:
-                        frame_data["screenshots"].append(screenshot_uuid)
-
-                        # Update frame in database
-                        if self.frames_manager.update_frame(frame_name, frame_data):
-                            QMessageBox.information(
-                                self.parent,
-                                "Success",
-                                f"Screenshot attached to frame '{frame_name}' successfully!",
-                            )
-                            self.logger.info(f"Screenshot attached to frame: {frame_name}")
-                            return True
-                        else:
-                            QMessageBox.warning(
-                                self.parent,
-                                "Error",
-                                "Failed to update frame in database",
-                            )
-                            return False
-                    else:
-                        QMessageBox.information(
-                            self.parent,
-                            "Info",
-                            "Screenshot already attached to this frame.",
-                        )
-                        return True
-
-            QMessageBox.warning(self.parent, "Error", f"Frame '{frame_name}' not found")
-            return False
-
-        except Exception as e:
-            self.logger.error(f"Error attaching screenshot to frame: {e}")
-            QMessageBox.warning(self.parent, "Error", f"Failed to attach screenshot: {str(e)}")
-            return False
-
-    def _save_frame_changes(self, original_name: str, updated_data: Dict, screenshots_to_delete: List[str]):
+    def _save_frame_changes(self, original_name: str, updated_data: Dict, screenshots_to_delete: List[str]) -> bool:
         """Save changes to existing frame."""
         try:
             # Delete marked screenshots first
             for uuid_to_delete in screenshots_to_delete:
                 try:
-                    self.frames_manager.delete_screenshot(uuid_to_delete)
-                    self.logger.info(f"Deleted screenshot: {uuid_to_delete}")
+                    self.frames_management.delete_screenshot(uuid_to_delete)
                 except Exception as e:
-                    self.logger.warning(f"Could not delete screenshot {uuid_to_delete}: {e}")
+                    print(f"Could not delete screenshot {uuid_to_delete}: {e}")
 
-            # Update frame data (name might have changed)
-            if self.frames_manager.update_frame(original_name, updated_data):
-                # If name changed, we need to update the key
-                if original_name != updated_data.get("name"):
-                    # This is handled by the update_frame method in FramesManager
-                    pass
-
+            # Update frame data
+            if self.frames_management.update_frame(original_name, updated_data):
                 QMessageBox.information(
-                    self.parent,
+                    self,
                     "Success",
                     f"Frame '{updated_data.get('name')}' updated successfully!",
                 )
-                self.logger.info(f"Frame updated: {original_name} -> {updated_data.get('name')}")
                 return True
             else:
-                QMessageBox.warning(self.parent, "Error", "Failed to update frame in database")
+                QMessageBox.warning(self, "Error", "Failed to update frame in database")
                 return False
 
         except Exception as e:
-            self.logger.error(f"Error saving frame changes: {e}")
-            QMessageBox.warning(self.parent, "Error", f"Failed to save changes: {str(e)}")
+            QMessageBox.warning(self, "Error", f"Failed to save changes: {str(e)}")
             return False
+
+    def _refresh_frames_list(self):
+        """Refresh the frames list and update dropdown."""
+        self.frames_list = self.frames_management.get_frame_list()
+
+        # Save current selection
+        current_frame_name = None
+        if self.selected_frame:
+            current_frame_name = self.selected_frame.get("name")
+
+        # Clear and repopulate dropdown
+        self.dropdown.clear()
+
+        # Sort frames by tier numerically
+        def tier_key(frame):
+            tid = frame.get("id", "")
+            try:
+                return tuple(int(part) for part in tid.split("."))
+            except Exception:
+                return (9999,)
+
+        sorted_frames = sorted(self.frames_list, key=tier_key)
+
+        # Repopulate
+        for frame in sorted_frames:
+            tier = frame.get("id", "??")
+            name = frame.get("name", "Unnamed")
+            item = frame.get("item", "Unknown")
+            self.dropdown.addItem(f"{tier}: {name} - ({item})", frame)
+
+        # Restore selection if possible
+        if current_frame_name:
+            for i in range(self.dropdown.count()):
+                frame_data = self.dropdown.itemData(i)
+                if frame_data and frame_data.get("name") == current_frame_name:
+                    self.dropdown.setCurrentIndex(i)
+                    break
+
+        self._on_frame_selected()
+
+    # Compatibility methods for the main overlay
+    def show_frames_dialog(self):
+        """Show the frames dialog - compatibility method."""
+        try:
+            self.show()
+            self.activateWindow()
+            self.raise_()
+            logger.info("Frames dialog shown")
+        except Exception as e:
+            logger.error(f"Error showing frames dialog: {e}")
+
+    def capture_playable_screenshot(self):
+        """Capture a screenshot of the playable area"""
+        try:
+            # For now, this is a placeholder - in full implementation would capture screen
+            # and use frames_management.save_screenshot()
+            logger.info("Screenshot capture requested (placeholder)")
+            return None
+        except Exception as e:
+            logger.error(f"Error capturing screenshot: {e}")
+            return None
+
+    def get_frames_data(self):
+        """Get current frames data via utility"""
+        return self.frames_management.get_frame_list()
+
+    def get_selected_frame(self) -> Optional[Dict]:
+        """Get currently selected frame."""
+        return self.selected_frame
+
+    def cleanup(self):
+        """Cleanup resources"""
+        try:
+            self.close()
+            logger.info("FramesManager cleaned up")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+        """Cleanup resources"""
+        try:
+            if self.frames_dialog:
+                self.frames_dialog.close()
+                self.frames_dialog = None
+            logger.info("FramesManager cleaned up")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")

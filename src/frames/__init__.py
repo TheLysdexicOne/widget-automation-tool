@@ -6,8 +6,8 @@ This package handles frame creation, screenshot management, region selection,
 and database operations with pixel art grid snapping.
 
 Key Components:
-- FramesManager: Core database and file management
-- FramesDialog: Main frames management interface
+- FramesManager: Combined UI manager and dialog for frames functionality
+- FramesManagement: Core database and file management utility
 - ScreenshotManagerDialog: Advanced screenshot management with primary selection
 - RegionsViewerDialog: Visual region overlay and inspection
 - GridSelectionWidget: Interactive region selection with grid snapping
@@ -15,14 +15,10 @@ Key Components:
 Following project standards: KISS, no duplicated calculations, modular design.
 """
 
-from .frames_manager import (
-    FramesManager,
-    FramesDialog,
-    FramesMenuSystem,
-)
+from .frames_manager import FramesManager
+from .utility.frames_management import FramesManagement
 
 __all__ = [
     "FramesManager",
-    "FramesDialog",
-    "FramesMenuSystem",
+    "FramesManagement",
 ]

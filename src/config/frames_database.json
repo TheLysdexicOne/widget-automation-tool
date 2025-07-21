@@ -5,7 +5,13 @@
       "name": "Iron Mine",
       "item": "Iron Ore",
       "automation": 1,
-      "screenshots": ["cf62a8e7-6609-46f8-9402-e9141f6ca6ba"],
+      "screenshots": [
+        "cf62a8e7-6609-46f8-9402-e9141f6ca6ba",
+        "cf62a8e7-6609-46f8-9402-e9141f6ca6bb",
+        "cf62a8e7-6609-46f8-9402-e9141f6ca6bc",
+        "cf62a8e7-6609-46f8-9402-e9141f6ca6bd",
+        "cf62a8e7-6609-46f8-9402-e9141f6ca6be"
+      ],
       "regions": {
         "text": [
           {

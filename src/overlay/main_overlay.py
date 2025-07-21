@@ -38,7 +38,7 @@ from utility.grid_overlay import create_grid_overlay
 from utility.status_manager import StatusManager, ApplicationState
 from utility.qss_loader import get_main_stylesheet
 from utility.window_utils import find_target_window, is_window_valid
-from frames import FramesManager, FramesMenuSystem
+from frames import FramesManager
 
 
 def get_status_color(state: ApplicationState) -> QColor:
@@ -107,7 +107,6 @@ class MainOverlayWidget(QWidget):
 
         # Frames management system
         self.frames_manager = None
-        self.frames_menu_system = None
 
         # Setup the widget
         self._setup_widget()
@@ -238,18 +237,13 @@ class MainOverlayWidget(QWidget):
     def _setup_frames_system(self):
         """Setup the frames management system."""
         try:
-            # Initialize frames manager with project root path
-            project_root = Path(__file__).parent.parent.parent
-            self.frames_manager = FramesManager(project_root)
-
-            # Initialize frames menu system
-            self.frames_menu_system = FramesMenuSystem(self, self.frames_manager)
+            # Initialize frames manager (project root is calculated internally)
+            self.frames_manager = FramesManager(self)
 
             self.logger.debug("Frames management system initialized")
         except Exception as e:
             self.logger.error(f"Failed to setup frames system: {e}")
             self.frames_manager = None
-            self.frames_menu_system = None
 
     def _create_standard_menu(self, parent=None):
         """Create a standardized menu with common actions."""
@@ -490,22 +484,22 @@ class MainOverlayWidget(QWidget):
         painter.drawRect(self.rect().adjusted(1, 1, -2, -2))
 
     def _on_frames_clicked(self):
-        """Handle FRAMES button click - show frames management menu."""
+        """Handle FRAMES button click - show frames dialog."""
         self.logger.info("FRAMES button clicked")
         try:
             if not self.target_hwnd:
                 self.logger.warning("No target window for frames functionality")
                 return
 
-            if not self.frames_menu_system:
+            if not self.frames_manager:
                 self.logger.error("Frames system not initialized")
                 return
 
-            # Show the frames menu
-            self.frames_menu_system.show_frames_menu()
+            # Show the frames dialog directly
+            self.frames_manager.show_frames_dialog()
 
         except Exception as e:
-            self.logger.error(f"Error showing frames menu: {e}")
+            self.logger.error(f"Error showing frames dialog: {e}")
 
     def _capture_window_screenshot(self, output_dir: Path) -> Optional[Path]:
         """Capture screenshot of the target window."""

@@ -8,14 +8,14 @@
 
 - Industrialesque
 
-## Main Principals
+## Main Principles
 
 - "KISS" = "Keep It Simple, Stupid!"
 - "DRY" = Don't Repeat Yourself!
 - Explicit is better than implicit
 - Keep the code clean, maintainable, and efficient
 
-## Extra Principals
+## Main Principles 2
 
 - Make it Work
 - Make it Right
@@ -30,6 +30,8 @@
 
 ## Execution
 
+- always use "start.bat" or "start_debug.bat" for starting the application
+- Use the venv for any module installation
 - Anything \_app should be considered a standalone application and should never rely on another application
 - Standalone applications can still use helper functions to reduce risk of error
 - Always use the .venv

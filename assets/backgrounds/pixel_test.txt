@@ -1,3 +1,0 @@
-
-Similar Screens (Hamming distance ≤ 8):
-1BasicWidget_0.png ≈ 7FuelRod.png (distance 8)
