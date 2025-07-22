@@ -116,6 +116,11 @@ class ScreenshotManagerDialog(QDialog):
         # Now that all buttons are created, display screenshots
         self._screenshots_display()
 
+    def closeEvent(self, event):
+        """Ensure cleanup when dialog is closed with X (window close button)."""
+        self._cancel_changes()
+        event.ignore()  # _cancel_changes will call reject(), which closes the dialog
+
     def _cancel_changes(self):
         """Clean up staged screenshots and close dialog."""
         for staged in self.staged_screenshots:
@@ -165,15 +170,18 @@ class ScreenshotManagerDialog(QDialog):
                     self.logger.info(f"Deleted screenshot {staged['uuid']}")
                 except Exception as e:
                     self.logger.error(f"Failed to delete screenshot {staged['uuid']}: {e}")
-        # Set primary if needed
+
+        # Move the new primary screenshot to the front if needed
         primary_uuid = None
         for s in self.staged_screenshots:
             if s.get("is_primary"):
                 primary_uuid = s["uuid"]
-        if primary_uuid:
+        if primary_uuid and primary_uuid in screenshots:
+            screenshots.remove(primary_uuid)
+            screenshots.insert(0, primary_uuid)
             frame_data["primary_screenshot"] = primary_uuid
+
         frame_data["screenshots"] = screenshots
-        # Update frame in DB
         db.update_frame(frame_name, frame_data)
         self.staged_screenshots.clear()
 
@@ -269,7 +277,42 @@ class ScreenshotManagerDialog(QDialog):
             else:
                 label.setText("Missing\nFile")
                 label.setStyleSheet("color: red;" if not border_style else border_style + "color: red;")
-            self.screenshots_layout.addWidget(label, row, col)
+
+            # Add a human-readable timestamp label beneath the screenshot
+            timestamp_label = QLabel()
+            timestamp_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            timestamp_label.setStyleSheet("color: #888; font-size: 10px;")
+            # Only use as much space as needed for the caption
+            from PyQt6.QtWidgets import QSizePolicy
+
+            timestamp_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+            # Try to extract timestamp from filename
+            readable_ts = ""
+            if screenshot_path is not None:
+                # Expecting format: <frame_name>_<timestamp>_<uuid>.png
+                name = screenshot_path.name
+                parts = name.split("_")
+                if len(parts) >= 3:
+                    # Timestamp is expected at -3 and -2 (YYYYMMDD_HHMMSS)
+                    try:
+                        ts_str = parts[-3] + "_" + parts[-2]
+                        from datetime import datetime
+
+                        dt = datetime.strptime(ts_str, "%Y%m%d_%H%M%S")
+                        readable_ts = dt.strftime("%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        readable_ts = ts_str if "ts_str" in locals() else ""
+            timestamp_label.setText(readable_ts)
+
+            # Use a vertical layout for image + timestamp, but don't stretch the caption
+            container = QWidget()
+            vbox = QVBoxLayout(container)
+            vbox.setContentsMargins(0, 0, 0, 0)
+            vbox.setSpacing(2)
+            vbox.addWidget(label)
+            vbox.addWidget(timestamp_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+            vbox.addStretch(1)  # Push caption up, don't stretch it
+            self.screenshots_layout.addWidget(container, row, col)
             col += 1
             if col >= max_cols:
                 col = 0
@@ -314,9 +357,28 @@ class ScreenshotManagerDialog(QDialog):
         selected_uuid = next(iter(self.selected_uuids))
         if selected_uuid == self.current_screenshots[0]:
             return  # Already primary
-        # Stage the primary change: move selected to front on save
+
+        # Move selected to front in current_screenshots for immediate visual feedback
+        if selected_uuid in self.current_screenshots:
+            self.current_screenshots.remove(selected_uuid)
+            self.current_screenshots.insert(0, selected_uuid)
+
+        # Stage the primary change: mark is_primary in staged_screenshots, or add if not present
+        found = False
         for s in self.staged_screenshots:
             s["is_primary"] = s["uuid"] == selected_uuid
+            if s["uuid"] == selected_uuid:
+                found = True
+        if not found:
+            self.staged_screenshots.append(
+                {
+                    "uuid": selected_uuid,
+                    "temp_path": None,
+                    "action": None,  # No add/delete, just primary change
+                    "is_primary": True,
+                }
+            )
+
         self.primary_uuid = selected_uuid
         self._update_action_buttons()
         self._screenshots_display()
@@ -421,7 +483,7 @@ class ScreenshotManagerDialog(QDialog):
         screenshot_uuid = str(uuid.uuid4())
         temp_dir = Path("assets/screenshots/temp")
         temp_dir.mkdir(parents=True, exist_ok=True)
-        temp_filename = f"{frame_name}_{timestamp}_{screenshot_uuid}.temp.png"
+        temp_filename = f"{frame_name}_{timestamp}_{screenshot_uuid}.png"
         temp_path = temp_dir / temp_filename
         try:
             minimize_tools()

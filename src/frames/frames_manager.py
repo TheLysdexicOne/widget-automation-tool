@@ -27,7 +27,6 @@ from PyQt6.QtGui import QFont
 
 from .utility.database_management import DatabaseManagement
 from .screenshot_manager import ScreenshotManagerDialog
-from .widgets.edit_frame_dialog import EditFrameDialog
 
 logger = logging.getLogger(__name__)
 

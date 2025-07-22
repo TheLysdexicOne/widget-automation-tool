@@ -6,11 +6,11 @@
       "item": "Iron Ore",
       "automation": 1,
       "screenshots": [
+        "f6019f11-6fc1-4b41-8943-1affc807baca",
         "cf62a8e7-6609-46f8-9402-e9141f6ca6ba",
         "cf62a8e7-6609-46f8-9402-e9141f6ca6bb",
         "cf62a8e7-6609-46f8-9402-e9141f6ca6bc",
-        "cf62a8e7-6609-46f8-9402-e9141f6ca6bd",
-        "cf62a8e7-6609-46f8-9402-e9141f6ca6be"
+        "cf62a8e7-6609-46f8-9402-e9141f6ca6bd"
       ],
       "regions": {
         "text": [
@@ -25,7 +25,8 @@
           }
         ],
         "interact": []
-      }
+      },
+      "primary_screenshot": "f6019f11-6fc1-4b41-8943-1affc807baca"
     },
     {
       "id": "1.2",
@@ -36,10 +37,7 @@
         "8bac45b7-7560-4b18-8c7a-80ddc1706e99",
         "4563ae99-3251-474f-9d34-83073dc0696e",
         "d4de835f-3da4-4e09-af5c-756a60cc9e62",
-        "732322a9-a385-4c68-b656-a2e8a34477e7",
-        "326d1ba4-3b43-47e4-881a-0057e9398a39",
-        "d73d8eb1-2d90-43f1-96b8-cc32079decbd",
-        "7ba93b4f-3304-478c-9e76-427e07fa04ec"
+        "732322a9-a385-4c68-b656-a2e8a34477e7"
       ],
       "regions": {
         "text": [],
