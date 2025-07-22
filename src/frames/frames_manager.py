@@ -49,8 +49,12 @@ class FramesManager(QDialog):
         self.modified_frame_data = None
         self.screenshots_to_delete = []
 
+        # Track last update check for global update system
+        self.last_frames_check = 0.0
+
         self.setWindowTitle("Frames Managemer")
         self.setModal(True)
+        self.setFixedWidth(600)
         self._setup_ui()
 
         logger.info("FramesManager initialized")
@@ -216,7 +220,11 @@ class FramesManager(QDialog):
 
         # Screenshots count
         screenshots = self.selected_frame.get("screenshots", [])
-        self.screenshots_count_label.setText(str(len(screenshots)))
+        screenshot_count = len(screenshots)
+        self.screenshots_count_label.setText(str(screenshot_count))
+        logger.debug(
+            f"Updated screenshot count display: {screenshot_count} screenshots for {self.selected_frame.get('name')}"
+        )
 
         # Regions
         regions = self.selected_frame.get("regions", {})
@@ -234,11 +242,39 @@ class FramesManager(QDialog):
             QMessageBox.warning(self, "Error", "Please select a frame first")
             return
 
+        # Always get the latest frame data from the DB before opening the dialog
+        frame_name = self.selected_frame.get("name") or ""
+        latest_frame = self.frames_management.get_frame_by_name(frame_name)
+        if latest_frame:
+            self.selected_frame = latest_frame
+        else:
+            QMessageBox.warning(self, "Error", f"Frame '{frame_name}' not found in database")
+            return
+
         dialog = ScreenshotManagerDialog(self.selected_frame, self.frames_management, self.main_widget, self)
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            # Refresh the display to show updated screenshot count
+            # Get the updated frame data from the dialog after saving
+            updated_frame_data = dialog.frame_data.copy()
+
+            # Also get the fresh data directly from the database to be sure
+            fresh_frame = self.frames_management.get_frame_by_name(frame_name)
+            if fresh_frame:
+                self.selected_frame = fresh_frame.copy()
+                logger.debug(
+                    f"Updated selected_frame with fresh DB data: {len(fresh_frame.get('screenshots', []))} screenshots"
+                )
+            else:
+                # Fallback to dialog data
+                self.selected_frame = updated_frame_data
+
+            # Force refresh the frames list and dropdown
             self._refresh_frames_list()
+
+            # Update the display with the new data
+            self._update_frame_display()
+
+            logger.info(f"Screenshot changes saved and display updated for frame '{frame_name}'")
             self._update_frame_display()
 
     def _edit_selected_frame(self):
@@ -282,17 +318,92 @@ class FramesManager(QDialog):
                 frame_data = self.dropdown.itemData(i)
                 if frame_data and frame_data.get("name") == current_frame_name:
                     self.dropdown.setCurrentIndex(i)
+                    # Update selected_frame to the latest database version
+                    self.selected_frame = frame_data.copy()
                     break
 
         self._on_frame_selected()
 
-    # Compatibility methods for the main overlay
-    def show_frames_dialog(self):
-        """Show the frames dialog - compatibility method."""
+    def check_for_updates(self):
+        """Check if frames data needs to be refreshed based on global update signals."""
         try:
+            import time
+            from utility.update_manager import UpdateManager
+
+            update_manager = UpdateManager.instance()
+            if update_manager.needs_update("frames_data", self.last_frames_check):
+                logger.debug("Global frames data update detected, refreshing...")
+
+                # Save current selection name
+                current_frame_name = None
+                if self.selected_frame:
+                    current_frame_name = self.selected_frame.get("name")
+
+                # Force refresh frames list from database
+                self._refresh_frames_list()
+
+                # If we had a selection, get the fresh data from database
+                if current_frame_name:
+                    fresh_frame = self.frames_management.get_frame_by_name(current_frame_name)
+                    if fresh_frame:
+                        self.selected_frame = fresh_frame.copy()
+                        logger.debug(
+                            f"Updated selected_frame with fresh data: {len(fresh_frame.get('screenshots', []))} screenshots"
+                        )
+
+                # Update the display with fresh data
+                self._update_frame_display()
+                self.last_frames_check = time.time()
+                return True
+            return False
+        except Exception as e:
+            logger.warning(f"Failed to check for global updates: {e}")
+            return False  # Compatibility methods for the main overlay
+
+    def show_frames_dialog(self):
+        """Show the frames dialog offset from the main overlay window."""
+        try:
+            # Offset from main overlay if possible
+            if self.main_widget and hasattr(self.main_widget, "geometry"):
+                main_geom = self.main_widget.geometry()
+                x = main_geom.x() - 700
+                y = main_geom.y() + 100
+                self.move(x, y)
+
+            # Check for updates before showing
+            self.check_for_updates()
+
             self.show()
             self.activateWindow()
             self.raise_()
+
+            # Start a timer to periodically check for updates while dialog is open
+            if not hasattr(self, "_update_timer"):
+                from PyQt6.QtCore import QTimer
+
+                self._update_timer = QTimer()
+                self._update_timer.timeout.connect(self.check_for_updates)
+
+            self._update_timer.start(2000)  # Check every 2 seconds
+
             logger.info("Frames dialog shown")
         except Exception as e:
             logger.error(f"Error showing frames dialog: {e}")
+
+    def closeEvent(self, event):
+        """Handle dialog close event to clean up timer."""
+        if hasattr(self, "_update_timer"):
+            self._update_timer.stop()
+        super().closeEvent(event)
+
+    def reject(self):
+        """Handle dialog rejection to clean up timer."""
+        if hasattr(self, "_update_timer"):
+            self._update_timer.stop()
+        super().reject()
+
+    def accept(self):
+        """Handle dialog acceptance to clean up timer."""
+        if hasattr(self, "_update_timer"):
+            self._update_timer.stop()
+        super().accept()

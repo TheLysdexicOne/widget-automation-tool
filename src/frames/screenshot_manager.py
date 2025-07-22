@@ -34,13 +34,16 @@ class ScreenshotManagerDialog(QDialog):
 
     def __init__(self, frame_data, frames_manager, parent_widget, parent=None):
         super().__init__(parent)
-        self.frame_data = frame_data
+        self.frame_data = frame_data.copy()  # Always work on a copy
         self.frames_manager = frames_manager
         self.parent_widget = parent_widget  # Store reference to parent widget for screenshot capture
         self.logger = logging.getLogger(__name__)
 
         # State management
-        self.current_screenshots = frame_data.get("screenshots", []).copy()
+        self.current_screenshots = frame_data.get("screenshots", []).copy()  # UUIDs for gallery
+        self.staged_screenshots = []  # List of dicts: {uuid, temp_path, action, is_primary}
+        self.primary_uuid = self.current_screenshots[0] if self.current_screenshots else None
+        self.selected_uuids = set()  # UUIDs of selected screenshots
 
         self.setWindowTitle(f"Screenshot Manager - {frame_data.get('name', 'Unnamed')}")
         self.setModal(True)
@@ -98,29 +101,96 @@ class ScreenshotManagerDialog(QDialog):
         dialog_button_layout = QHBoxLayout()
         dialog_button_layout.addStretch()
 
-        save_button = QPushButton("Save")
-        save_button.clicked.connect(self._save_changes)
-        save_button.setEnabled(False)
+        self.save_button = QPushButton("Save")
+        self.save_button.clicked.connect(self._save_changes)
+        self.save_button.setEnabled(True)
 
-        cancel_button = QPushButton("Cancel")
-        cancel_button.clicked.connect(self._cancel_changes)
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self._cancel_changes)
 
-        dialog_button_layout.addWidget(save_button)
-        dialog_button_layout.addWidget(cancel_button)
+        dialog_button_layout.addWidget(self.save_button)
+        dialog_button_layout.addWidget(self.cancel_button)
         layout.addLayout(dialog_button_layout)
 
         # set cancel as default button
-        cancel_button.setDefault(True)
+        self.cancel_button.setDefault(True)
 
     def _cancel_changes(self):
-        """Cancel all changes and close dialog."""
+        """Clean up staged screenshots and close dialog."""
+        for staged in self.staged_screenshots:
+            if staged["action"] == "add":
+                try:
+                    if staged["temp_path"].exists():
+                        staged["temp_path"].unlink()
+                        self.logger.info(f"Deleted temp screenshot {staged['temp_path']}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to delete temp screenshot {staged['temp_path']}: {e}")
+        self.staged_screenshots.clear()
         self.reject()
 
     def _save_changes(self):
-        return
+        """Finalize staged screenshots: update DB via DatabaseManagement instance, move/delete files as needed."""
+        from shutil import move
+
+        db = getattr(self.frames_manager, "frames_management", None)
+        if db is None:
+            try:
+                from frames.utility.database_management import DatabaseManagement
+
+                db = DatabaseManagement(Path("."))
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"Could not get database manager: {e}")
+                return
+        screenshots_dir = self.frames_manager.screenshots_dir
+        frame_name = self.frame_data.get("name")
+        # Work on a copy of frame_data
+        frame_data = self.frame_data.copy()
+        screenshots = frame_data.get("screenshots", []).copy()
+        # Apply staged actions
+        for staged in self.staged_screenshots:
+            if staged["action"] == "add":
+                final_path = screenshots_dir / staged["temp_path"].name
+                try:
+                    move(str(staged["temp_path"]), final_path)
+                    screenshots.append(staged["uuid"])
+                    self.logger.info(f"Moved screenshot to {final_path}")
+                except Exception as e:
+                    self.logger.error(f"Failed to move screenshot {staged['temp_path']} to {final_path}: {e}")
+            elif staged["action"] == "delete":
+                try:
+                    if staged["uuid"] in screenshots:
+                        screenshots.remove(staged["uuid"])
+                    db.delete_screenshot(staged["uuid"])
+                    self.logger.info(f"Deleted screenshot {staged['uuid']}")
+                except Exception as e:
+                    self.logger.error(f"Failed to delete screenshot {staged['uuid']}: {e}")
+        # Set primary if needed
+        primary_uuid = None
+        for s in self.staged_screenshots:
+            if s.get("is_primary"):
+                primary_uuid = s["uuid"]
+        if primary_uuid:
+            frame_data["primary_screenshot"] = primary_uuid
+        frame_data["screenshots"] = screenshots
+        # Update frame in DB
+        db.update_frame(frame_name, frame_data)
+        self.staged_screenshots.clear()
+
+        # Update self.frame_data so parent can retrieve latest
+        self.frame_data = frame_data.copy()
+
+        # Signal global update
+        try:
+            from utility.update_manager import UpdateManager
+
+            UpdateManager.instance().signal_update("frames_data", "screenshot_manager")
+        except Exception as e:
+            self.logger.warning(f"Failed to signal global update: {e}")
+
+        self.accept()
 
     def _screenshots_display(self):
-        """Display screenshots in a 4-column grid as 192x128 thumbnails."""
+        """Display screenshots in a 4-column grid as 192x128 thumbnails, with selection and temp support."""
         # Clear existing widgets from the grid
         for i in reversed(range(self.screenshots_layout.count())):
             item = self.screenshots_layout.itemAt(i)
@@ -133,17 +203,48 @@ class ScreenshotManagerDialog(QDialog):
         max_cols = 4
         thumb_width, thumb_height = 192, 128
 
-        for uuid in self.current_screenshots:
-            # Find the screenshot file by UUID
-            screenshot_path = None
-            for file_path in self.frames_manager.screenshots_dir.glob(f"*{uuid}*.png"):
-                screenshot_path = file_path
-                break
+        # Build a map of staged temp files for display
+        staged_temp_map = {s["uuid"]: s["temp_path"] for s in self.staged_screenshots if s["action"] == "add"}
+        staged_delete = {s["uuid"] for s in self.staged_screenshots if s["action"] == "delete"}
 
-            label = QLabel()
+        for uuid in self.current_screenshots:
+            if uuid in staged_delete:
+                continue  # Don't show deleted
+            # Find the screenshot file by UUID, prefer temp if staged
+            screenshot_path = None
+            if uuid in staged_temp_map:
+                screenshot_path = staged_temp_map[uuid]
+            else:
+                for file_path in self.frames_manager.screenshots_dir.glob(f"*{uuid}*.png"):
+                    screenshot_path = file_path
+                    break
+
+            from PyQt6.QtGui import QMouseEvent
+
+            class ClickableLabel(QLabel):
+                def __init__(self, uuid, dialog, parent=None):
+                    super().__init__(parent)
+                    self.uuid = uuid
+                    self.dialog = dialog
+
+                def mousePressEvent(self, ev: "QMouseEvent"):
+                    if ev.button() == Qt.MouseButton.LeftButton:
+                        if self.uuid in self.dialog.selected_uuids:
+                            self.dialog.selected_uuids.remove(self.uuid)
+                        else:
+                            self.dialog.selected_uuids.add(self.uuid)
+                        self.dialog._update_action_buttons()
+                        self.dialog._screenshots_display()
+
+            label = ClickableLabel(uuid, self)
             label.setFixedSize(thumb_width, thumb_height)
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
+            # Selection highlight
+            if uuid in self.selected_uuids:
+                label.setStyleSheet("border: 3px solid #0078d7; border-radius: 6px;")
+            else:
+                label.setStyleSheet("")
+            # Show image or missing
             if screenshot_path and screenshot_path.exists():
                 pixmap = QPixmap(str(screenshot_path))
                 if not pixmap.isNull():
@@ -160,26 +261,80 @@ class ScreenshotManagerDialog(QDialog):
             else:
                 label.setText("Missing\nFile")
                 label.setStyleSheet("color: red;")
-
             self.screenshots_layout.addWidget(label, row, col)
             col += 1
             if col >= max_cols:
                 col = 0
                 row += 1
 
-        if not self.current_screenshots:
+        if not self.current_screenshots or all(u in staged_delete for u in self.current_screenshots):
             no_screenshots_label = QLabel("No screenshots available")
             no_screenshots_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.screenshots_layout.addWidget(no_screenshots_label, 0, 0)
 
+        self._update_action_buttons()
+
+    def _update_action_buttons(self):
+        # Only allow make primary if exactly 1 selected and not already primary
+        if len(self.selected_uuids) == 1:
+            selected_uuid = next(iter(self.selected_uuids))
+            is_primary = self.current_screenshots and selected_uuid == self.current_screenshots[0]
+            self.make_primary_button.setEnabled(not is_primary)
+            # Don't allow delete if primary is selected
+            self.delete_button.setEnabled(not is_primary)
+        elif len(self.selected_uuids) > 0:
+            self.make_primary_button.setEnabled(False)
+            # Don't allow delete if primary is selected
+            if self.current_screenshots and self.current_screenshots[0] in self.selected_uuids:
+                self.delete_button.setEnabled(False)
+            else:
+                self.delete_button.setEnabled(True)
+        else:
+            self.make_primary_button.setEnabled(False)
+            self.delete_button.setEnabled(False)
+
     def _make_primary(self):
-        return
+        # Only allow if exactly 1 selected and not already primary
+        if len(self.selected_uuids) != 1 or not self.current_screenshots:
+            return
+        selected_uuid = next(iter(self.selected_uuids))
+        if selected_uuid == self.current_screenshots[0]:
+            return  # Already primary
+        # Stage the primary change: move selected to front on save
+        for s in self.staged_screenshots:
+            s["is_primary"] = s["uuid"] == selected_uuid
+        self.primary_uuid = selected_uuid
+        self._update_action_buttons()
+        self._screenshots_display()
 
     def _delete_selected(self):
-        return
+        # Only allow if at least one selected and none is primary
+        if not self.selected_uuids:
+            return
+        if self.current_screenshots and self.current_screenshots[0] in self.selected_uuids:
+            return  # Don't allow deleting primary
+        for uuid in list(self.selected_uuids):
+            if uuid in self.current_screenshots:
+                # Mark for delete if staged add, else add staged delete
+                found = False
+                for s in self.staged_screenshots:
+                    if s["uuid"] == uuid:
+                        s["action"] = "delete"
+                        found = True
+                if not found:
+                    self.staged_screenshots.append(
+                        {"uuid": uuid, "temp_path": None, "action": "delete", "is_primary": False}
+                    )
+                self.current_screenshots.remove(uuid)
+        self.selected_uuids.clear()
+        self._update_action_buttons()
+        self._screenshots_display()
 
     def _add_screenshot(self):
-        """Capture the playable area of WidgetInc.exe using PIL ImageGrab with all_screens=True. Minimize tool windows, bring game to front, capture, then restore tools."""
+        """Capture the playable area, stage screenshot in temp, and update gallery. No DB update until Save."""
+        import uuid
+        from datetime import datetime
+
         try:
             from utility.window_utils import find_target_window
             from PIL import ImageGrab
@@ -247,6 +402,13 @@ class ScreenshotManagerDialog(QDialog):
 
         # --- Minimize tools, bring game to front, capture screenshot, restore tools ---
         screenshot = None
+        frame_name = self.frame_data.get("name", "unnamed").replace(" ", "_")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        screenshot_uuid = str(uuid.uuid4())
+        temp_dir = Path("assets/screenshots/temp")
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        temp_filename = f"{frame_name}_{timestamp}_{screenshot_uuid}.temp.png"
+        temp_path = temp_dir / temp_filename
         try:
             minimize_tools()
             # Bring target window to foreground
@@ -271,13 +433,14 @@ class ScreenshotManagerDialog(QDialog):
             time.sleep(0.8)
             screenshot = ImageGrab.grab(bbox=(x, y, x + w, y + h), all_screens=True)
             self.logger.debug(f"Screenshot captured: size={screenshot.size}, mode={screenshot.mode}")
+            screenshot.save(temp_path)
+            self.logger.info(f"Screenshot saved to {temp_path}")
         except Exception as e:
-            self.logger.error(f"Failed to capture screenshot: {e}")
-            QMessageBox.warning(self, "Error", f"Failed to capture screenshot: {e}")
+            self.logger.error(f"Failed to capture/save screenshot: {e}")
+            QMessageBox.warning(self, "Error", f"Failed to capture/save screenshot: {e}")
             return
         finally:
             restore_tools()
-            # Try to restore original foreground window (optional)
             try:
                 if current_foreground and current_foreground != hwnd:
                     win32gui.SetForegroundWindow(current_foreground)
@@ -293,20 +456,9 @@ class ScreenshotManagerDialog(QDialog):
             self.logger.error("Screenshot capture failed - no image data")
             return
 
-        # Save screenshot to temp folder using naming convention: <frame_name>_<timestamp>_<uuid>.png
-        import uuid
-        from datetime import datetime
-
-        temp_dir = Path("assets/screenshots/temp")
-        temp_dir.mkdir(parents=True, exist_ok=True)
-        frame_name = self.frame_data.get("name", "unnamed").replace(" ", "_")
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        screenshot_uuid = str(uuid.uuid4())
-        temp_filename = f"{frame_name}_{timestamp}_{screenshot_uuid}.png"
-        temp_path = temp_dir / temp_filename
-        try:
-            screenshot.save(temp_path)
-            self.logger.info(f"Screenshot saved to {temp_path}")
-        except Exception as e:
-            self.logger.error(f"Failed to save screenshot to {temp_path}: {e}")
-            QMessageBox.warning(self, "Error", f"Failed to save screenshot: {e}")
+        # Stage the screenshot (not finalized)
+        self.staged_screenshots.append(
+            {"uuid": screenshot_uuid, "temp_path": temp_path, "action": "add", "is_primary": False}
+        )
+        self.current_screenshots.append(screenshot_uuid)
+        self._screenshots_display()

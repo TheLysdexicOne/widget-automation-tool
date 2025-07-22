@@ -70,10 +70,14 @@ class DatabaseManagement:
 
     def get_frame_list(self) -> List[Dict]:
         """Get list of all frames."""
+        # Always reload from disk to ensure we have the latest data
+        self.frames_data = self._load_frames_database()
         return self.frames_data.get("frames", [])
 
     def get_frame_by_name(self, name: str) -> Optional[Dict]:
         """Get frame data by name."""
+        # Always reload from disk to ensure we have the latest data
+        self.frames_data = self._load_frames_database()
         for frame in self.frames_data.get("frames", []):
             if frame.get("name") == name:
                 return frame
