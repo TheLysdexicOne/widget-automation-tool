@@ -92,8 +92,6 @@ class ScreenshotManagerDialog(QDialog):
         self.screenshots_layout = QGridLayout(self.screenshots_widget)
         self.screenshots_layout.setSpacing(10)
 
-        self._screenshots_display()
-
         self.screenshots_scroll.setWidget(self.screenshots_widget)
         layout.addWidget(self.screenshots_scroll)
 
@@ -103,7 +101,7 @@ class ScreenshotManagerDialog(QDialog):
 
         self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self._save_changes)
-        self.save_button.setEnabled(True)
+        self.save_button.setEnabled(False)  # Only enabled if there are staged changes
 
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.clicked.connect(self._cancel_changes)
@@ -114,6 +112,9 @@ class ScreenshotManagerDialog(QDialog):
 
         # set cancel as default button
         self.cancel_button.setDefault(True)
+
+        # Now that all buttons are created, display screenshots
+        self._screenshots_display()
 
     def _cancel_changes(self):
         """Clean up staged screenshots and close dialog."""
@@ -207,7 +208,7 @@ class ScreenshotManagerDialog(QDialog):
         staged_temp_map = {s["uuid"]: s["temp_path"] for s in self.staged_screenshots if s["action"] == "add"}
         staged_delete = {s["uuid"] for s in self.staged_screenshots if s["action"] == "delete"}
 
-        for uuid in self.current_screenshots:
+        for idx, uuid in enumerate(self.current_screenshots):
             if uuid in staged_delete:
                 continue  # Don't show deleted
             # Find the screenshot file by UUID, prefer temp if staged
@@ -239,11 +240,18 @@ class ScreenshotManagerDialog(QDialog):
             label = ClickableLabel(uuid, self)
             label.setFixedSize(thumb_width, thumb_height)
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            # Selection highlight
-            if uuid in self.selected_uuids:
-                label.setStyleSheet("border: 3px solid #0078d7; border-radius: 6px;")
+            # Border highlight: green for primary, blue for selection, both if primary and selected
+            if idx == 0 and uuid in self.selected_uuids:
+                # Both primary and selected: double border (green outer, blue inner)
+                border_style = "border: 4px solid #0078d7; border-radius: 6px"
+            elif idx == 0:
+                # Primary screenshot: green border
+                border_style = "border: 2px solid #2ecc40; border-radius: 6px;"
+            elif uuid in self.selected_uuids:
+                border_style = "border: 4px solid #0078d7; border-radius: 6px;"
             else:
-                label.setStyleSheet("")
+                border_style = ""
+            label.setStyleSheet(border_style)
             # Show image or missing
             if screenshot_path and screenshot_path.exists():
                 pixmap = QPixmap(str(screenshot_path))
@@ -257,10 +265,10 @@ class ScreenshotManagerDialog(QDialog):
                     label.setPixmap(scaled)
                 else:
                     label.setText("Invalid\nImage")
-                    label.setStyleSheet("color: red;")
+                    label.setStyleSheet("color: red;" if not border_style else border_style + "color: red;")
             else:
                 label.setText("Missing\nFile")
-                label.setStyleSheet("color: red;")
+                label.setStyleSheet("color: red;" if not border_style else border_style + "color: red;")
             self.screenshots_layout.addWidget(label, row, col)
             col += 1
             if col >= max_cols:
@@ -292,6 +300,12 @@ class ScreenshotManagerDialog(QDialog):
         else:
             self.make_primary_button.setEnabled(False)
             self.delete_button.setEnabled(False)
+
+        # Enable Save only if there are staged changes
+        if self.staged_screenshots:
+            self.save_button.setEnabled(True)
+        else:
+            self.save_button.setEnabled(False)
 
     def _make_primary(self):
         # Only allow if exactly 1 selected and not already primary
