@@ -5,6 +5,8 @@ Screenshots save location: assets/screenshots
 Screenshots filename: <frame_name>_<timestamp>_<uuid>.png
 
 New screenshots are only to be taken of the "playable area"
+
+- Nothing is finalized until "Save" is clicked
 """
 
 import logging
@@ -39,26 +41,10 @@ class ScreenshotManagerDialog(QDialog):
 
         # State management
         self.current_screenshots = frame_data.get("screenshots", []).copy()
-        self.primary_screenshot = None
-        self.marked_for_deletion: Set[str] = set()
-
-        # Find primary screenshot
-        for uuid in self.current_screenshots:
-            screenshot_data = self.frames_manager.get_screenshot_data(uuid)
-            if screenshot_data and screenshot_data.get("is_primary", False):
-                self.primary_screenshot = uuid
-                break
-
-        # If no primary found, use first screenshot as primary
-        if not self.primary_screenshot and self.current_screenshots:
-            self.primary_screenshot = self.current_screenshots[0]
 
         self.setWindowTitle(f"Screenshot Manager - {frame_data.get('name', 'Unnamed')}")
         self.setModal(True)
         self.resize(900, 500)
-
-        # Track selected screenshots (initialize early)
-        self.selected_screenshots: Set[str] = set()
 
         self._setup_ui()
 
@@ -112,7 +98,7 @@ class ScreenshotManagerDialog(QDialog):
         dialog_button_layout = QHBoxLayout()
         dialog_button_layout.addStretch()
 
-        save_button = QPushButton("Save Changes")
+        save_button = QPushButton("Save")
         save_button.clicked.connect(self._save_changes)
         save_button.setEnabled(False)
 
@@ -193,84 +179,78 @@ class ScreenshotManagerDialog(QDialog):
         return
 
     def _add_screenshot(self):
-        """Capture the playable area of WidgetInc.exe using PIL ImageGrab with all_screens=True."""
-
+        """Capture the playable area of WidgetInc.exe using PIL ImageGrab with all_screens=True. Minimize tool windows, bring game to front, capture, then restore tools."""
         try:
             from utility.window_utils import find_target_window
             from PIL import ImageGrab
             import win32gui
             import win32con
             import time
+            from PyQt6.QtWidgets import QApplication
         except ImportError as e:
             self.logger.error(f"Required modules not found: {e}")
             QMessageBox.warning(self, "Error", f"Required modules not found: {e}")
             return
 
-        # Find the playable area using window_utils
+        # --- Find target window and playable area ---
         target_info = find_target_window("WidgetInc.exe")
         self.logger.debug(f"Target window info: {target_info}")
         if not target_info or not target_info.get("window_info"):
             self.logger.error(f"Could not find WidgetInc.exe or its window. target_info={target_info}")
-            QMessageBox.warning(self, "Error", "Could not find WidgetInc.exe or its window.")
             return
-
-        # Use absolute playable area coordinates for screenshot
         area = target_info.get("playable_area")
         if not area:
             self.logger.error(f"Could not find absolute playable area in target_info: {target_info}")
-            QMessageBox.warning(self, "Error", "Could not find absolute playable area for screenshot.")
             return
-
         x, y, w, h = area["x"], area["y"], area["width"], area["height"]
         self.logger.debug(f"Playable area (absolute): x={x}, y={y}, w={w}, h={h}")
 
-        from PyQt6.QtWidgets import QApplication
-
-        # METHOD: Minimize our tools, raise target window, take screenshot, restore tools
-        self.logger.debug("Using raise target window approach")
-
-        # Get hwnd from window_info
         hwnd = target_info["window_info"]["hwnd"]
-
-        # Store current foreground window
         current_foreground = win32gui.GetForegroundWindow()
 
-        screenshot = None
+        # --- Helper: minimize and restore tools ---
+        from PyQt6.QtWidgets import QWidget
 
-        try:
-            # First, minimize our tools completely
-            tools_to_minimize = []
-
-            # Add Screenshot Manager (this dialog)
-            tools_to_minimize.append(self)
-
-            # Add parent FramesManager
-            if hasattr(self, "parent") and self.parent():
-                parent = self.parent()
-                if hasattr(parent, "showMinimized"):
-                    tools_to_minimize.append(parent)
-                    self.logger.debug(f"Added parent to minimize: {parent}")
-
-            # Add Main Overlay
-            if self.parent_widget and hasattr(self.parent_widget, "showMinimized"):
-                tools_to_minimize.append(self.parent_widget)
+        def get_tools_to_minimize() -> list[QWidget]:
+            tools: list[QWidget] = [self]
+            parent = self.parent() if hasattr(self, "parent") and self.parent() else None
+            if isinstance(parent, QWidget) and hasattr(parent, "showMinimized"):
+                tools.append(parent)
+                self.logger.debug(f"Added parent to minimize: {parent}")
+            if isinstance(self.parent_widget, QWidget) and hasattr(self.parent_widget, "showMinimized"):
+                tools.append(self.parent_widget)
                 self.logger.debug(f"Added main overlay to minimize: {self.parent_widget}")
+            return tools
 
-            # Minimize all our tools
+        tools_to_minimize = get_tools_to_minimize()
+
+        def minimize_tools():
             for tool in tools_to_minimize:
                 try:
                     tool.showMinimized()
                     self.logger.debug(f"Minimized tool: {tool}")
                 except Exception as e:
                     self.logger.warning(f"Failed to minimize tool {tool}: {e}")
-
-            # Process events to ensure minimization
             QApplication.processEvents()
             time.sleep(0.3)
 
-            # Bring target window to foreground using multiple approaches
+        def restore_tools():
+            for tool in tools_to_minimize:
+                try:
+                    tool.showNormal()
+                    tool.raise_()
+                    tool.activateWindow()
+                    self.logger.debug(f"Restored tool from minimized: {tool}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to restore tool {tool}: {e}")
+            QApplication.processEvents()
+
+        # --- Minimize tools, bring game to front, capture screenshot, restore tools ---
+        screenshot = None
+        try:
+            minimize_tools()
+            # Bring target window to foreground
             try:
-                # Force window to front using Win32 API
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
                 win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
                 win32gui.SetWindowPos(
@@ -287,39 +267,22 @@ class ScreenshotManagerDialog(QDialog):
                 self.logger.debug("Target window brought to foreground with multiple methods")
             except Exception as e:
                 self.logger.warning(f"Failed to bring target window to foreground: {e}")
-
-            # Give time for window to come to front
             QApplication.processEvents()
-            time.sleep(0.8)  # Wait for window switching
-
-            # Capture using PIL ImageGrab with all_screens=True for negative coordinates
+            time.sleep(0.8)
             screenshot = ImageGrab.grab(bbox=(x, y, x + w, y + h), all_screens=True)
             self.logger.debug(f"Screenshot captured: size={screenshot.size}, mode={screenshot.mode}")
-
         except Exception as e:
             self.logger.error(f"Failed to capture screenshot: {e}")
             QMessageBox.warning(self, "Error", f"Failed to capture screenshot: {e}")
             return
         finally:
-            # Restore all our tools from minimized state
-            for tool in tools_to_minimize:
-                try:
-                    tool.showNormal()
-                    tool.raise_()
-                    tool.activateWindow()
-                    self.logger.debug(f"Restored tool from minimized: {tool}")
-                except Exception as e:
-                    self.logger.warning(f"Failed to restore tool {tool}: {e}")
-
+            restore_tools()
             # Try to restore original foreground window (optional)
             try:
                 if current_foreground and current_foreground != hwnd:
                     win32gui.SetForegroundWindow(current_foreground)
             except Exception as e:
                 self.logger.warning(f"Failed to restore original foreground window: {e}")
-
-            # Bring our screenshot manager to front
-            QApplication.processEvents()
             try:
                 self.raise_()
                 self.activateWindow()
@@ -330,14 +293,20 @@ class ScreenshotManagerDialog(QDialog):
             self.logger.error("Screenshot capture failed - no image data")
             return
 
-        # Save or overwrite screenshot to assets/screenshots/temp/temp.png
+        # Save screenshot to temp folder using naming convention: <frame_name>_<timestamp>_<uuid>.png
+        import uuid
+        from datetime import datetime
+
         temp_dir = Path("assets/screenshots/temp")
         temp_dir.mkdir(parents=True, exist_ok=True)
-        temp_path = temp_dir / "temp.png"
+        frame_name = self.frame_data.get("name", "unnamed").replace(" ", "_")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        screenshot_uuid = str(uuid.uuid4())
+        temp_filename = f"{frame_name}_{timestamp}_{screenshot_uuid}.png"
+        temp_path = temp_dir / temp_filename
         try:
             screenshot.save(temp_path)
             self.logger.info(f"Screenshot saved to {temp_path}")
-
         except Exception as e:
             self.logger.error(f"Failed to save screenshot to {temp_path}: {e}")
             QMessageBox.warning(self, "Error", f"Failed to save screenshot: {e}")

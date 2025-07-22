@@ -1,5 +1,5 @@
 """
-Frames Management - Core Data Operations
+Database Management - Core Data Operations
 
 Handles frame data and screenshot storage operations:
 - Frame database management (JSON-based)
@@ -27,7 +27,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class FramesManagement:
+class DatabaseManagement:
     """Core data management for frames and screenshots."""
 
     def __init__(self, base_path: Path):
@@ -96,15 +96,6 @@ class FramesManagement:
         logger.info(f"Screenshot saved: {screenshot_path}")
         return screenshot_uuid
 
-    def add_frame(self, frame_data: Dict) -> bool:
-        """Add new frame to database."""
-        try:
-            self.frames_data["frames"].append(frame_data)
-            return self._save_frames_database()
-        except Exception as e:
-            logger.error(f"Error adding frame: {e}")
-            return False
-
     def update_frame(self, frame_name: str, frame_data: Dict) -> bool:
         """Update existing frame in database."""
         try:
@@ -129,9 +120,3 @@ class FramesManagement:
         except Exception as e:
             logger.error(f"Error deleting screenshot: {e}")
             return False
-
-    def get_screenshot_data(self, screenshot_uuid: str) -> Optional[Dict]:
-        """Get screenshot metadata. This is a placeholder implementation."""
-        # For now, return basic data structure
-        # In a full implementation, this might load from a metadata file
-        return {"is_primary": False}  # Default implementation

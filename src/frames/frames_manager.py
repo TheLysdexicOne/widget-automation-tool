@@ -25,7 +25,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QFont
 
-from .utility.frames_management import FramesManagement
+from .utility.database_management import DatabaseManagement
 from .screenshot_manager import ScreenshotManagerDialog
 from .widgets.edit_frame_dialog import EditFrameDialog
 
@@ -41,7 +41,7 @@ class FramesManager(QDialog):
 
         # Initialize data management
         base_path = Path(__file__).parents[2]  # Go up from src/frames/frames_manager.py to project root
-        self.frames_management = FramesManagement(base_path)
+        self.frames_management = DatabaseManagement(base_path)
 
         # Get frames data and initialize dialog
         self.frames_list = self.frames_management.get_frame_list()
@@ -247,48 +247,6 @@ class FramesManager(QDialog):
             QMessageBox.warning(self, "Error", "Please select a frame first")
             return
 
-        # Show edit dialog for single frame
-        dialog = EditFrameDialog(self.selected_frame, self.frames_management.screenshots_dir, self)
-
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            modified_data, screenshots_to_delete = dialog.get_modified_data()
-            if modified_data:
-                original_name = self.selected_frame.get("name")
-                if self._save_frame_changes(original_name, modified_data, screenshots_to_delete):
-                    self._refresh_frames_list()
-
-    def _drawer_test(self):
-        """Drawer Test."""
-        if not self.selected_frame:
-            QMessageBox.warning(self, "Error", "Please select a frame first")
-            return
-
-    def _save_frame_changes(self, original_name: str, updated_data: Dict, screenshots_to_delete: List[str]) -> bool:
-        """Save changes to existing frame."""
-        try:
-            # Delete marked screenshots first
-            for uuid_to_delete in screenshots_to_delete:
-                try:
-                    self.frames_management.delete_screenshot(uuid_to_delete)
-                except Exception as e:
-                    print(f"Could not delete screenshot {uuid_to_delete}: {e}")
-
-            # Update frame data
-            if self.frames_management.update_frame(original_name, updated_data):
-                QMessageBox.information(
-                    self,
-                    "Success",
-                    f"Frame '{updated_data.get('name')}' updated successfully!",
-                )
-                return True
-            else:
-                QMessageBox.warning(self, "Error", "Failed to update frame in database")
-                return False
-
-        except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to save changes: {str(e)}")
-            return False
-
     def _refresh_frames_list(self):
         """Refresh the frames list and update dropdown."""
         self.frames_list = self.frames_management.get_frame_list()
@@ -338,38 +296,3 @@ class FramesManager(QDialog):
             logger.info("Frames dialog shown")
         except Exception as e:
             logger.error(f"Error showing frames dialog: {e}")
-
-    def capture_playable_screenshot(self):
-        """Capture a screenshot of the playable area"""
-        try:
-            # For now, this is a placeholder - in full implementation would capture screen
-            # and use frames_management.save_screenshot()
-            logger.info("Screenshot capture requested (placeholder)")
-            return None
-        except Exception as e:
-            logger.error(f"Error capturing screenshot: {e}")
-            return None
-
-    def get_frames_data(self):
-        """Get current frames data via utility"""
-        return self.frames_management.get_frame_list()
-
-    def get_selected_frame(self) -> Optional[Dict]:
-        """Get currently selected frame."""
-        return self.selected_frame
-
-    def cleanup(self):
-        """Cleanup resources"""
-        try:
-            self.close()
-            logger.info("FramesManager cleaned up")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
-        """Cleanup resources"""
-        try:
-            if self.frames_dialog:
-                self.frames_dialog.close()
-                self.frames_dialog = None
-            logger.info("FramesManager cleaned up")
-        except Exception as e:
-            logger.error(f"Error during cleanup: {e}")
