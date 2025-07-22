@@ -264,6 +264,52 @@ def calculate_playable_area(window_info: Dict[str, Any]) -> Optional[Dict[str, i
         return None
 
 
+def calculate_playable_area_relative(window_info: Dict[str, Any]) -> Optional[Dict[str, int]]:
+    """
+    Calculate the playable area coordinates (3:2 aspect ratio centered in client area),
+    but relative to the client area (not screen coordinates).
+
+    Args:
+        window_info: Window information from get_window_info()
+
+    Returns:
+        Dictionary with playable area coordinates relative to client area, or None if failed
+    """
+    if not window_info:
+        return None
+
+    try:
+        client_width = window_info["client_width"]
+        client_height = window_info["client_height"]
+
+        # Calculate 3:2 aspect ratio area centered in client
+        target_ratio = 3.0 / 2.0
+        client_ratio = client_width / client_height if client_height else 1
+
+        if client_ratio > target_ratio:
+            # Client is wider than 3:2 - fit height, center width
+            playable_height = client_height
+            playable_width = int(playable_height * target_ratio)
+            playable_x = (client_width - playable_width) // 2
+            playable_y = 0
+        else:
+            # Client is taller than 3:2 - fit width, center height
+            playable_width = client_width
+            playable_height = int(playable_width / target_ratio)
+            playable_x = 0
+            playable_y = (client_height - playable_height) // 2
+
+        return {
+            "x": playable_x,
+            "y": playable_y,
+            "width": playable_width,
+            "height": playable_height,
+        }
+    except Exception as e:
+        logger.error(f"Error calculating playable area (relative): {e}")
+        return None
+
+
 def find_target_window(
     target_process_name: str = "WidgetInc.exe",
 ) -> Optional[Dict[str, Any]]:
@@ -294,10 +340,14 @@ def find_target_window(
     # Calculate playable area
     playable_area = calculate_playable_area(window_info)
 
+    # Calculate relative playable area
+    playable_area_relative = calculate_playable_area_relative(window_info)
+
     return {
         "pid": pid,
         "window_info": window_info,
         "playable_area": playable_area,
+        "playable_area_relative": playable_area_relative,
     }
 
 

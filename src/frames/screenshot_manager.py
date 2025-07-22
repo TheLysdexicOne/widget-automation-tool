@@ -1,5 +1,10 @@
 """
 Screenshot Manager Dialog Widget
+
+Screenshots save location: assets/screenshots
+Screenshots filename: <frame_name>_<timestamp>_<uuid>.png
+
+New screenshots are only to be taken of the "playable area"
 """
 
 import logging
@@ -50,7 +55,7 @@ class ScreenshotManagerDialog(QDialog):
 
         self.setWindowTitle(f"Screenshot Manager - {frame_data.get('name', 'Unnamed')}")
         self.setModal(True)
-        self.resize(900, 700)
+        self.resize(900, 500)
 
         # Track selected screenshots (initialize early)
         self.selected_screenshots: Set[str] = set()
@@ -79,8 +84,8 @@ class ScreenshotManagerDialog(QDialog):
         self.delete_button.clicked.connect(self._delete_selected)
         self.delete_button.setEnabled(False)
 
-        self.new_screenshot_button = QPushButton("Add New Screenshot")
-        self.new_screenshot_button.clicked.connect(self._add_new_screenshot)
+        self.new_screenshot_button = QPushButton("Add Screenshot")
+        self.new_screenshot_button.clicked.connect(self._add_screenshot)
 
         title_and_buttons_layout.addWidget(self.make_primary_button)
         title_and_buttons_layout.addWidget(self.delete_button)
@@ -98,7 +103,7 @@ class ScreenshotManagerDialog(QDialog):
         self.screenshots_layout = QGridLayout(self.screenshots_widget)
         self.screenshots_layout.setSpacing(10)
 
-        self._refresh_screenshots_display()
+        self._screenshots_display()
 
         self.screenshots_scroll.setWidget(self.screenshots_widget)
         layout.addWidget(self.screenshots_scroll)
@@ -107,22 +112,30 @@ class ScreenshotManagerDialog(QDialog):
         dialog_button_layout = QHBoxLayout()
         dialog_button_layout.addStretch()
 
+        save_button = QPushButton("Save Changes")
+        save_button.clicked.connect(self._save_changes)
+        save_button.setEnabled(False)
+
         cancel_button = QPushButton("Cancel")
         cancel_button.clicked.connect(self._cancel_changes)
 
-        save_button = QPushButton("Save Changes")
-        save_button.clicked.connect(self._save_changes)
-
-        dialog_button_layout.addWidget(cancel_button)
         dialog_button_layout.addWidget(save_button)
+        dialog_button_layout.addWidget(cancel_button)
         layout.addLayout(dialog_button_layout)
 
         # set cancel as default button
         cancel_button.setDefault(True)
 
-    def _refresh_screenshots_display(self):
-        """Refresh the screenshots grid display."""
-        # Clear existing widgets
+    def _cancel_changes(self):
+        """Cancel all changes and close dialog."""
+        self.reject()
+
+    def _save_changes(self):
+        return
+
+    def _screenshots_display(self):
+        """Display screenshots in a 4-column grid as 192x128 thumbnails."""
+        # Clear existing widgets from the grid
         for i in reversed(range(self.screenshots_layout.count())):
             item = self.screenshots_layout.itemAt(i)
             if item and item.widget():
@@ -130,14 +143,39 @@ class ScreenshotManagerDialog(QDialog):
                 if widget:
                     widget.setParent(None)
 
-        # Display screenshots in 4-column grid
         row, col = 0, 0
         max_cols = 4
+        thumb_width, thumb_height = 192, 128
 
-        for screenshot_uuid in self.current_screenshots:
-            screenshot_widget = self._create_screenshot_widget(screenshot_uuid)
-            self.screenshots_layout.addWidget(screenshot_widget, row, col)
+        for uuid in self.current_screenshots:
+            # Find the screenshot file by UUID
+            screenshot_path = None
+            for file_path in self.frames_manager.screenshots_dir.glob(f"*{uuid}*.png"):
+                screenshot_path = file_path
+                break
 
+            label = QLabel()
+            label.setFixedSize(thumb_width, thumb_height)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            if screenshot_path and screenshot_path.exists():
+                pixmap = QPixmap(str(screenshot_path))
+                if not pixmap.isNull():
+                    scaled = pixmap.scaled(
+                        thumb_width,
+                        thumb_height,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
+                    )
+                    label.setPixmap(scaled)
+                else:
+                    label.setText("Invalid\nImage")
+                    label.setStyleSheet("color: red;")
+            else:
+                label.setText("Missing\nFile")
+                label.setStyleSheet("color: red;")
+
+            self.screenshots_layout.addWidget(label, row, col)
             col += 1
             if col >= max_cols:
                 col = 0
@@ -148,240 +186,158 @@ class ScreenshotManagerDialog(QDialog):
             no_screenshots_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.screenshots_layout.addWidget(no_screenshots_label, 0, 0)
 
-    def _create_screenshot_widget(self, screenshot_uuid: str) -> QWidget:
-        """Create widget for individual screenshot."""
-        widget = QWidget()
-        widget.setMaximumSize(200, 180)
-        widget.setProperty("screenshot_uuid", screenshot_uuid)
-
-        # Apply border styling based on state
-        self._update_widget_styling(widget, screenshot_uuid)
-
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(5, 5, 5, 5)
-
-        # Find screenshot file
-        screenshot_path = None
-        screenshots_dir = self.frames_manager.screenshots_dir
-        for file_path in screenshots_dir.glob(f"*{screenshot_uuid}*"):
-            screenshot_path = file_path
-            break
-
-        # Screenshot thumbnail
-        if screenshot_path and screenshot_path.exists():
-            pixmap = QPixmap(str(screenshot_path))
-            thumbnail = pixmap.scaled(
-                150, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
-            )
-
-            screenshot_label = QLabel()
-            screenshot_label.setPixmap(thumbnail)
-            screenshot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            screenshot_label.mousePressEvent = lambda ev, uuid=screenshot_uuid: self._on_screenshot_clicked(uuid)
-            layout.addWidget(screenshot_label)
-        else:
-            # Missing file placeholder
-            placeholder = QLabel("Missing\nFile")
-            placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            placeholder.setStyleSheet("color: red;")
-            layout.addWidget(placeholder)
-
-        # Status label
-        status_text = ""
-        if screenshot_uuid == self.primary_screenshot:
-            status_text += "PRIMARY "
-        if screenshot_uuid in self.marked_for_deletion:
-            status_text += "MARKED FOR DELETION"
-
-        if status_text:
-            status_label = QLabel(status_text)
-            status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            status_label.setStyleSheet("font-weight: bold; color: blue;")
-            layout.addWidget(status_label)
-
-        # Make clickable for selection
-        widget.mousePressEvent = lambda a0, uuid=screenshot_uuid: self._on_screenshot_clicked(uuid)
-
-        return widget
-
-    def _update_widget_styling(self, widget: QWidget, screenshot_uuid: str):
-        """Update widget styling based on screenshot state."""
-        styles = []
-
-        # Primary screenshot gets green border
-        if screenshot_uuid == self.primary_screenshot:
-            styles.append("border: 3px solid green;")
-
-        # Selected screenshots get blue border
-        elif screenshot_uuid in self.selected_screenshots:
-            styles.append("border: 3px solid blue;")
-
-        # Marked for deletion gets red background
-        if screenshot_uuid in self.marked_for_deletion:
-            styles.append("background-color: rgba(255, 0, 0, 50);")
-
-        # Default border
-        if not styles or (
-            screenshot_uuid not in self.selected_screenshots and screenshot_uuid != self.primary_screenshot
-        ):
-            styles.append("border: 1px solid gray;")
-
-        widget.setStyleSheet(" ".join(styles))
-
-    def _on_screenshot_clicked(self, screenshot_uuid: str):
-        """Handle screenshot click for selection."""
-        if screenshot_uuid in self.selected_screenshots:
-            self.selected_screenshots.remove(screenshot_uuid)
-        else:
-            self.selected_screenshots.add(screenshot_uuid)
-
-        # Update UI
-        self._refresh_screenshots_display()
-        self._update_button_states()
-
-    def _update_button_states(self):
-        """Update button enabled states based on selection."""
-        has_selection = bool(self.selected_screenshots)
-        single_selection = len(self.selected_screenshots) == 1
-
-        self.make_primary_button.setEnabled(single_selection)
-        self.delete_button.setEnabled(has_selection)
-
     def _make_primary(self):
-        """Make selected screenshot primary."""
-        if len(self.selected_screenshots) != 1:
-            return
-
-        new_primary = list(self.selected_screenshots)[0]
-        if new_primary != self.primary_screenshot:
-            self.primary_screenshot = new_primary
-            self.selected_screenshots.clear()
-            self._refresh_screenshots_display()
-            self._update_button_states()
-
-            # Enable regions button if we now have a primary
-        # Removed regions_button reference
+        return
 
     def _delete_selected(self):
-        """Mark/unmark selected screenshots for deletion."""
-        for screenshot_uuid in self.selected_screenshots.copy():
-            if screenshot_uuid in self.marked_for_deletion:
-                # Unmark for deletion
-                self.marked_for_deletion.remove(screenshot_uuid)
-            else:
-                # Mark for deletion (but can't delete primary)
-                if screenshot_uuid != self.primary_screenshot:
-                    self.marked_for_deletion.add(screenshot_uuid)
-                else:
-                    QMessageBox.warning(self, "Cannot Delete", "Cannot delete the primary screenshot.")
+        return
 
-        self.selected_screenshots.clear()
-        self._refresh_screenshots_display()
-        self._update_button_states()
+    def _add_screenshot(self):
+        """Capture the playable area of WidgetInc.exe using PIL ImageGrab with all_screens=True."""
 
-        # Removed _view_regions method
-
-    def _add_new_screenshot(self):
-        """Add new screenshot to frame."""
         try:
-            # Get parent widget's screenshot capture method
-            if hasattr(self.parent_widget, "_capture_playable_screenshot"):
-                screenshot = self.parent_widget._capture_playable_screenshot()
-                if screenshot:
-                    # Convert QPixmap to PIL Image for saving
-                    screenshot_path = Path.cwd() / "temp_new_screenshot.png"
-                    screenshot.save(str(screenshot_path))
-                    pil_image = Image.open(screenshot_path)
-
-                    # Save screenshot and get UUID
-                    screenshot_uuid = self.frames_manager.save_screenshot(pil_image, self.frame_data["name"])
-
-                    # Add to current screenshots list
-                    self.current_screenshots.append(screenshot_uuid)
-
-                    # Refresh display
-                    self._refresh_screenshots_display()
-
-                    # Clean up temp file
-                    screenshot_path.unlink()
-
-                    QMessageBox.information(self, "Success", "Screenshot added successfully!")
-                else:
-                    QMessageBox.warning(self, "Error", "Failed to capture screenshot")
-            else:
-                QMessageBox.information(
-                    self, "Feature Not Available", "Screenshot capture not available in this context."
-                )
-
-        except Exception as e:
-            self.logger.error(f"Error adding new screenshot: {e}")
-            QMessageBox.warning(self, "Error", f"Failed to add screenshot: {str(e)}")
-
-    def _show_screenshot_popup(self, screenshot_uuid: str):
-        """Show popup with larger screenshot view."""
-        # Find screenshot file
-        screenshot_path = None
-        screenshots_dir = self.frames_manager.screenshots_dir
-        for file_path in screenshots_dir.glob(f"*{screenshot_uuid}*"):
-            screenshot_path = file_path
-            break
-
-        if not screenshot_path or not screenshot_path.exists():
-            QMessageBox.warning(self, "Error", "Screenshot file not found")
+            from utility.window_utils import find_target_window
+            from PIL import ImageGrab
+            import win32gui
+            import win32con
+            import time
+        except ImportError as e:
+            self.logger.error(f"Required modules not found: {e}")
+            QMessageBox.warning(self, "Error", f"Required modules not found: {e}")
             return
 
-        # Create popup dialog
-        popup = QDialog(self)
-        popup.setWindowTitle("Screenshot Preview")
-        popup.setModal(True)
-        popup.resize(700, 500)
+        # Find the playable area using window_utils
+        target_info = find_target_window("WidgetInc.exe")
+        self.logger.debug(f"Target window info: {target_info}")
+        if not target_info or not target_info.get("window_info"):
+            self.logger.error(f"Could not find WidgetInc.exe or its window. target_info={target_info}")
+            QMessageBox.warning(self, "Error", "Could not find WidgetInc.exe or its window.")
+            return
 
-        layout = QVBoxLayout(popup)
+        # Use absolute playable area coordinates for screenshot
+        area = target_info.get("playable_area")
+        if not area:
+            self.logger.error(f"Could not find absolute playable area in target_info: {target_info}")
+            QMessageBox.warning(self, "Error", "Could not find absolute playable area for screenshot.")
+            return
 
-        # Screenshot display
-        screenshot_label = QLabel()
-        pixmap = QPixmap(str(screenshot_path))
-        scaled_pixmap = pixmap.scaled(
-            650, 450, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
-        )
-        screenshot_label.setPixmap(scaled_pixmap)
-        screenshot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        x, y, w, h = area["x"], area["y"], area["width"], area["height"]
+        self.logger.debug(f"Playable area (absolute): x={x}, y={y}, w={w}, h={h}")
 
-        layout.addWidget(screenshot_label)
+        from PyQt6.QtWidgets import QApplication
 
-        # Close button
-        close_button = QPushButton("Close")
-        close_button.clicked.connect(popup.accept)
-        layout.addWidget(close_button)
+        # METHOD: Minimize our tools, raise target window, take screenshot, restore tools
+        self.logger.debug("Using raise target window approach")
 
-        popup.exec()
+        # Get hwnd from window_info
+        hwnd = target_info["window_info"]["hwnd"]
 
-    def _cancel_changes(self):
-        """Cancel all changes and close dialog."""
-        self.reject()
+        # Store current foreground window
+        current_foreground = win32gui.GetForegroundWindow()
 
-    def _save_changes(self):
-        """Save all changes to the frame."""
+        screenshot = None
+
         try:
-            # Remove screenshots marked for deletion from current list
-            final_screenshots = [uuid for uuid in self.current_screenshots if uuid not in self.marked_for_deletion]
+            # First, minimize our tools completely
+            tools_to_minimize = []
 
-            # Update frame data
-            self.frame_data["screenshots"] = final_screenshots
+            # Add Screenshot Manager (this dialog)
+            tools_to_minimize.append(self)
 
-            # Actually delete the marked screenshots
-            for uuid_to_delete in self.marked_for_deletion:
+            # Add parent FramesManager
+            if hasattr(self, "parent") and self.parent():
+                parent = self.parent()
+                if hasattr(parent, "showMinimized"):
+                    tools_to_minimize.append(parent)
+                    self.logger.debug(f"Added parent to minimize: {parent}")
+
+            # Add Main Overlay
+            if self.parent_widget and hasattr(self.parent_widget, "showMinimized"):
+                tools_to_minimize.append(self.parent_widget)
+                self.logger.debug(f"Added main overlay to minimize: {self.parent_widget}")
+
+            # Minimize all our tools
+            for tool in tools_to_minimize:
                 try:
-                    self.frames_manager.delete_screenshot(uuid_to_delete)
+                    tool.showMinimized()
+                    self.logger.debug(f"Minimized tool: {tool}")
                 except Exception as e:
-                    print(f"Warning: Could not delete screenshot {uuid_to_delete}: {e}")
+                    self.logger.warning(f"Failed to minimize tool {tool}: {e}")
 
-            # Save frame changes
-            if self.frames_manager.update_frame(self.frame_data.get("name"), self.frame_data):
-                QMessageBox.information(self, "Success", "Screenshots updated successfully!")
-                self.accept()
-            else:
-                QMessageBox.warning(self, "Error", "Failed to save changes to database")
+            # Process events to ensure minimization
+            QApplication.processEvents()
+            time.sleep(0.3)
+
+            # Bring target window to foreground using multiple approaches
+            try:
+                # Force window to front using Win32 API
+                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
+                win32gui.SetWindowPos(
+                    hwnd,
+                    win32con.HWND_TOP,
+                    0,
+                    0,
+                    0,
+                    0,
+                    win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW,
+                )
+                win32gui.SetForegroundWindow(hwnd)
+                win32gui.BringWindowToTop(hwnd)
+                self.logger.debug("Target window brought to foreground with multiple methods")
+            except Exception as e:
+                self.logger.warning(f"Failed to bring target window to foreground: {e}")
+
+            # Give time for window to come to front
+            QApplication.processEvents()
+            time.sleep(0.8)  # Wait for window switching
+
+            # Capture using PIL ImageGrab with all_screens=True for negative coordinates
+            screenshot = ImageGrab.grab(bbox=(x, y, x + w, y + h), all_screens=True)
+            self.logger.debug(f"Screenshot captured: size={screenshot.size}, mode={screenshot.mode}")
 
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to save changes: {str(e)}")
+            self.logger.error(f"Failed to capture screenshot: {e}")
+            QMessageBox.warning(self, "Error", f"Failed to capture screenshot: {e}")
+            return
+        finally:
+            # Restore all our tools from minimized state
+            for tool in tools_to_minimize:
+                try:
+                    tool.showNormal()
+                    tool.raise_()
+                    tool.activateWindow()
+                    self.logger.debug(f"Restored tool from minimized: {tool}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to restore tool {tool}: {e}")
+
+            # Try to restore original foreground window (optional)
+            try:
+                if current_foreground and current_foreground != hwnd:
+                    win32gui.SetForegroundWindow(current_foreground)
+            except Exception as e:
+                self.logger.warning(f"Failed to restore original foreground window: {e}")
+
+            # Bring our screenshot manager to front
+            QApplication.processEvents()
+            try:
+                self.raise_()
+                self.activateWindow()
+            except Exception as e:
+                self.logger.warning(f"Failed to restore screenshot manager to front: {e}")
+
+        if not screenshot:
+            self.logger.error("Screenshot capture failed - no image data")
+            return
+
+        # Save or overwrite screenshot to assets/screenshots/temp/temp.png
+        temp_dir = Path("assets/screenshots/temp")
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        temp_path = temp_dir / "temp.png"
+        try:
+            screenshot.save(temp_path)
+            self.logger.info(f"Screenshot saved to {temp_path}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to save screenshot to {temp_path}: {e}")
+            QMessageBox.warning(self, "Error", f"Failed to save screenshot: {e}")

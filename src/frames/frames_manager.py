@@ -49,7 +49,7 @@ class FramesManager(QDialog):
         self.modified_frame_data = None
         self.screenshots_to_delete = []
 
-        self.setWindowTitle("Frames Management")
+        self.setWindowTitle("Frames Managemer")
         self.setModal(True)
         self._setup_ui()
 
@@ -58,6 +58,7 @@ class FramesManager(QDialog):
     def _setup_ui(self):
         """Setup comprehensive frames management UI."""
         main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(2, 2, 2, 2)  # Reduce side/top/bottom margins (try 0, 4, or 8 for your taste)
 
         # Left panel - Frame list and actions
         left_widget = QWidget()
@@ -137,7 +138,6 @@ class FramesManager(QDialog):
 
         # Set close as default button
         close_button.setDefault(True)
-
         # Initialize display
         if self.frames_list:
             self.dropdown.setCurrentIndex(0)
