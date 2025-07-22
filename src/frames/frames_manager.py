@@ -9,7 +9,7 @@ Following project standards: KISS, no duplicated calculations, modular design.
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+
 
 from PyQt6.QtWidgets import (
     QDialog,
