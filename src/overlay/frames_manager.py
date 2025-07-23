@@ -14,19 +14,18 @@ from pathlib import Path
 from PyQt6.QtWidgets import (
     QDialog,
     QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
     QFormLayout,
     QLabel,
-    QComboBox,
-    QPushButton,
     QFrame,
     QMessageBox,
+    QVBoxLayout,
+    QHBoxLayout,
+    QComboBox,
+    QPushButton,
 )
-from PyQt6.QtGui import QFont
 
-from .utility.database_management import DatabaseManagement
-from .screenshot_manager import ScreenshotManagerDialog
+
+from utility.database_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +38,8 @@ class FramesManager(QDialog):
         self.main_widget = main_widget
 
         # Initialize data management
-        base_path = Path(__file__).parents[2]  # Go up from src/frames/frames_manager.py to project root
-        self.frames_management = DatabaseManagement(base_path)
+        base_path = Path(__file__).parents[2]  # Go up from src/overlay/frames_manager.py to project root
+        self.frames_management = DatabaseManager(base_path)
 
         # Get frames data and initialize dialog
         self.frames_list = self.frames_management.get_frame_list()
@@ -52,97 +51,58 @@ class FramesManager(QDialog):
         self.last_frames_check = 0.0
 
         self.setWindowTitle("Frames Managemer")
-        self.setModal(True)
-        self.setFixedWidth(600)
+        # self.setModal(True)
         self._setup_ui()
 
         logger.info("FramesManager initialized")
 
     def _setup_ui(self):
-        """Setup comprehensive frames management UI."""
-        main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(2, 2, 2, 2)  # Reduce side/top/bottom margins (try 0, 4, or 8 for your taste)
+        """Setup simplified single-column frames management UI."""
+        # All required widgets are already imported at the top
 
-        # Left panel - Frame list and actions
-        left_widget = QWidget()
-        left_widget.setMaximumWidth(300)
-        left_panel = QVBoxLayout(left_widget)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setSpacing(10)
 
-        # Frame selection dropdown
-        selection_layout = QVBoxLayout()
-        selection_layout.addWidget(QLabel("Select Frame:"))
+        # Frame selection (top)
+        main_layout.addWidget(QLabel("Select Frame:"))
 
-        # Sort frames by tier numerically
         def tier_key(frame):
             tid = frame.get("id", "")
             try:
                 return tuple(int(part) for part in tid.split("."))
             except Exception:
-                return (9999,)  # fallback for missing/invalid id
+                return (9999,)
 
         sorted_frames = sorted(self.frames_list, key=tier_key)
         self.dropdown = QComboBox()
         for frame in sorted_frames:
-            tier = frame.get("id", "??")
-            name = frame.get("name", "Unnamed")
-            item = frame.get("item", "Unknown")
-            self.dropdown.addItem(f"{tier}: {name} - ({item})", frame)
+            self.dropdown.addItem(
+                f"{frame.get('id', '??')}: {frame.get('name', 'Unnamed')} - ({frame.get('item', 'Unknown')})", frame
+            )
+        self.dropdown.currentIndexChanged.connect(self._on_frame_selected)
+        main_layout.addWidget(self.dropdown)
 
-        self.dropdown.currentTextChanged.connect(self._on_frame_selected)
-        selection_layout.addWidget(self.dropdown)
-        left_panel.addLayout(selection_layout)
-
-        # Action buttons
-        actions_layout = QVBoxLayout()
-        actions_layout.addWidget(QLabel("Actions:"))
-
-        self.screenshots_btn = QPushButton("Screenshots")
-        self.screenshots_btn.clicked.connect(self._manage_screenshots)
-        self.screenshots_btn.setEnabled(False)
-        actions_layout.addWidget(self.screenshots_btn)
-
-        self.edit_frame_btn = QPushButton("Edit Selected Frame")
-        self.edit_frame_btn.clicked.connect(self._edit_selected_frame)
-        self.edit_frame_btn.setEnabled(False)
-        actions_layout.addWidget(self.edit_frame_btn)
-
-        left_panel.addLayout(actions_layout)
-        left_panel.addStretch()
-
-        # Right panel - Frame details and editing
-        right_widget = QWidget()
-        right_panel = QVBoxLayout(right_widget)
-
-        # Frame details header
-        details_header = QLabel("Frame Details")
-        details_header.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
-        right_panel.addWidget(details_header)
-
-        # Frame info display
+        # Frame details (middle)
         self.frame_info_widget = self._create_frame_info_widget()
-        right_panel.addWidget(self.frame_info_widget)
+        main_layout.addWidget(self.frame_info_widget)
 
-        right_panel.addStretch()
-
-        # Dialog buttons
+        # Buttons (bottom)
         button_layout = QHBoxLayout()
         button_layout.addStretch()
-
+        self.edit_frame_btn = QPushButton("Edit Frame")
+        self.edit_frame_btn.setEnabled(False)
+        self.edit_frame_btn.clicked.connect(self._edit_selected_frame)
+        button_layout.addWidget(self.edit_frame_btn)
         close_button = QPushButton("Close")
         close_button.clicked.connect(self.accept)
-
         button_layout.addWidget(close_button)
+        main_layout.addLayout(button_layout)
 
-        right_panel.addLayout(button_layout)
+        main_layout.addStretch()
 
-        # Add panels to main layout
-        main_layout.addWidget(left_widget, 1)
-        main_layout.addWidget(right_widget, 2)
-
-        # Set close as default button
-        close_button.setDefault(True)
-        # Initialize display
-        if self.frames_list:
+        # Initialize display: always select the first frame if available
+        if self.dropdown.count() > 0:
             self.dropdown.setCurrentIndex(0)
             self._on_frame_selected()
 
@@ -196,12 +156,12 @@ class FramesManager(QDialog):
         if current_data:
             self.selected_frame = current_data
             self._update_frame_display()
-            self.edit_frame_btn.setEnabled(True)
-            self.screenshots_btn.setEnabled(True)
+            if hasattr(self, "edit_frame_btn"):
+                self.edit_frame_btn.setEnabled(True)
         else:
             self.selected_frame = None
-            self.edit_frame_btn.setEnabled(False)
-            self.screenshots_btn.setEnabled(False)
+            if hasattr(self, "edit_frame_btn"):
+                self.edit_frame_btn.setEnabled(False)
 
     def _update_frame_display(self):
         """Update the display with selected frame data."""
@@ -235,46 +195,7 @@ class FramesManager(QDialog):
         interact_region_count = len(interact_regions)
         self.interact_regions_label.setText(str(interact_region_count))
 
-    def _manage_screenshots(self):
-        """Open screenshot manager for selected frame."""
-        if not self.selected_frame:
-            QMessageBox.warning(self, "Error", "Please select a frame first")
-            return
-
-        # Always get the latest frame data from the DB before opening the dialog
-        frame_name = self.selected_frame.get("name") or ""
-        latest_frame = self.frames_management.get_frame_by_name(frame_name)
-        if latest_frame:
-            self.selected_frame = latest_frame
-        else:
-            QMessageBox.warning(self, "Error", f"Frame '{frame_name}' not found in database")
-            return
-
-        dialog = ScreenshotManagerDialog(self.selected_frame, self.frames_management, self.main_widget, self)
-
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            # Get the updated frame data from the dialog after saving
-            updated_frame_data = dialog.frame_data.copy()
-
-            # Also get the fresh data directly from the database to be sure
-            fresh_frame = self.frames_management.get_frame_by_name(frame_name)
-            if fresh_frame:
-                self.selected_frame = fresh_frame.copy()
-                logger.debug(
-                    f"Updated selected_frame with fresh DB data: {len(fresh_frame.get('screenshots', []))} screenshots"
-                )
-            else:
-                # Fallback to dialog data
-                self.selected_frame = updated_frame_data
-
-            # Force refresh the frames list and dropdown
-            self._refresh_frames_list()
-
-            # Update the display with the new data
-            self._update_frame_display()
-
-            logger.info(f"Screenshot changes saved and display updated for frame '{frame_name}'")
-            self._update_frame_display()
+        # _manage_screenshots removed: ScreenshotManagerDialog is now launched from MainOverlay only.
 
     def _edit_selected_frame(self):
         """Edit the selected frame."""
@@ -376,14 +297,14 @@ class FramesManager(QDialog):
             self.activateWindow()
             self.raise_()
 
-            # Start a timer to periodically check for updates while dialog is open
-            if not hasattr(self, "_update_timer"):
-                from PyQt6.QtCore import QTimer
+            # Use UpdatePoller for polling updates if needed (decoupled from QTimer)
+            from utility.update_poller import UpdatePoller
 
-                self._update_timer = QTimer()
-                self._update_timer.timeout.connect(self.check_for_updates)
-
-            self._update_timer.start(2000)  # Check every 2 seconds
+            if not hasattr(self, "_update_poller"):
+                self._update_poller = UpdatePoller(
+                    "frames_data", self.check_for_updates, poll_interval=2000, parent=self
+                )
+            self._update_poller.start()
 
             logger.info("Frames dialog shown")
         except Exception as e:
@@ -391,18 +312,18 @@ class FramesManager(QDialog):
 
     def closeEvent(self, event):
         """Handle dialog close event to clean up timer."""
-        if hasattr(self, "_update_timer"):
-            self._update_timer.stop()
+        if hasattr(self, "_update_poller"):
+            self._update_poller.stop()
         super().closeEvent(event)
 
     def reject(self):
         """Handle dialog rejection to clean up timer."""
-        if hasattr(self, "_update_timer"):
-            self._update_timer.stop()
+        if hasattr(self, "_update_poller"):
+            self._update_poller.stop()
         super().reject()
 
     def accept(self):
         """Handle dialog acceptance to clean up timer."""
-        if hasattr(self, "_update_timer"):
-            self._update_timer.stop()
+        if hasattr(self, "_update_poller"):
+            self._update_poller.stop()
         super().accept()

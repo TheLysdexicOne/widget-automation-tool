@@ -2,73 +2,75 @@
 ## applyTo: "_.py_"
 ---
 
-# Project general coding standards
+# Widget Automation Tool: Copilot Instructions (AI-Optimized)
 
-## Aesthetics
+## General Coding Standards
 
-- Industrialesque
+- **Aesthetics:** Favor an "industrialesque" look in UI and code structure.
+- **Principles:**
+  - KISS (Keep It Simple, Stupid)
+  - DRY (Don't Repeat Yourself)
+  - Explicit is better than implicit
+  - Clean, maintainable, and efficient code
+  - Make it Work → Make it Right → Make it Fast
+- **No Reinventing the Wheel:**
+  - Use existing modules/utilities when possible
+  - Never duplicate calculation or utility functions
+  - Suggest or use external libraries if they fit the need
 
-## Main Principles
+## File & Module Roles
 
-- "KISS" = "Keep It Simple, Stupid!"
-- "DRY" = Don't Repeat Yourself!
-- Explicit is better than implicit
-- Keep the code clean, maintainable, and efficient
+- **database_management.py:** All database logic (class: `DatabaseManagement`)
+- **screenshot_management.py:** All screenshot logic (class: `ScreenshotManagement`)
+- **update_manager.py:** Global update notification system (singleton: `UpdateManager`)
+- **update_poller.py:** Polling utility for update signals (`UpdatePoller`)
+- **status_manager.py:** Application state logic (`StatusManager`, `ApplicationState`)
+- **/tests:** All tests live here. One-time tests should be deleted after use.
+- **Never reference or use files in any `/old/` folder.**
 
-## Main Principles 2
+## Execution & Environment
 
-- Make it Work
-- Make it Right
-- Make it Fast
+- Always use `.venv` for Python modules and installation
+- Use `start.bat` or `start_debug.bat` to launch the app (never run main.py directly)
+- Use Powershell 7 commands in the terminal
+- Standalone apps (ending in `_app`) must not depend on other apps, but can use shared helpers
 
-## Don't Reinvent The Wheel
+## Error Handling & Logging
 
-- Don't duplicate calculation functions
-- Every time a calculation is duplicated, the risk of error increases
-- If a calculation is duplicated, then it creates more places to edit said calculation
-- If there is a module that does what we want, suggest it or use it
+- Use appropriate log levels (DEBUG, INFO, WARNING, ERROR)
+- Clean up debug code after use
+- Log to `logs/` directory
 
-## Execution
+## UI/UX
 
-- always use "start.bat" or "start_debug.bat" for starting the application
-- Use the venv for any module installation
-- Anything \_app should be considered a standalone application and should never rely on another application
-- Standalone applications can still use helper functions to reduce risk of error
-- Always use the .venv
-- Always use Powershell 7 commands in the terminal
-- Unless testing for compiling errors, use the "start.bat" or "start_debug.bat" files for executing the application
+- QSS stylesheets are loaded at app startup and apply globally
+- The app may be positioned with negative coordinates (multi-monitor setups)
+- Remove temporary debug UI when done
 
-## Error Handling
+## Status Indicator (ApplicationState)
 
-- Remember there are log levels in the console portion of this application
+- ACTIVE: "performing automation"
+- READY: "tool recognizes current screen/minigame, waiting for user"
+- ATTENTION: "screen recognized, but no automation programmed"
+- INACTIVE: "screen not recognized, no automation available"
+- ERROR: "application or target window error"
 
 ## Tests
 
-- All tests should be in tests/
-- One-time tests should be deleted after use
-- Do not move or delete any files with the prefix lyx\__._
+- All tests in `/tests` folder
+- Do not move/delete files prefixed with `lyx__.`
+- Remove one-time or obsolete tests promptly
 
-## Old Files
+## Miscellaneous
 
-- If a new file is created, move the old file into ./old so that it can be deleted
-- Don't ever reference a file in a {folder}/old/ folder
-- Don't ever use \_old or \_new in a production file
+- Place all AI-generated summaries in `/documents/summaries`
+- If a new file replaces an old one, move the old file to `/old` (never reference `/old` in production)
+- Never use `_old` or `_new` in production filenames
 
-## MISC
+## AI Prompting Efficiency
 
-- The application can and will often be left of the center monitor causing negative coordinates - This is valid!
-- Clean up debug. If it's only needed for testing one part, remove the debugging when done.
-- Place all AI generated "summaries" in /documents/summaries
-
-## File Roles
-
-- Keep all database manipulation functions in database_management.py | class DatabaseManagement
-- Keep all screenshot manipulation functions in screenshot_management.py | Class ScreenshotManagement
-
-## STATUS INDICATOR
-
-- ACTIVE = "performing automation"
-- READY = "The tool recognizes the current screen/minigame and is waitin for user to activate."
-- ATTENTION (name can be something more relevant) = "The tool recognizes the current screen/minigame, but there is no automation programmed."
-- INACTIVE = "The tool does not recognize the current screen/minigame, therefore there is no automation available on this screen."
-- ERROR = "Something wrong with application or target window cannot be found"
+- Be explicit about file roles and boundaries
+- Use and reference the correct utility (update_manager, update_poller, status_manager) for their intended purpose
+- When in doubt, prefer clarity and maintainability over cleverness
+- Always check for and use existing helpers/utilities before writing new code
+- Keep code and prompts focused, direct, and DRY

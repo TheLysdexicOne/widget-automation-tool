@@ -15,10 +15,10 @@ Key Components:
 Following project standards: KISS, no duplicated calculations, modular design.
 """
 
-from .frames_manager import FramesManager
-from .utility.database_management import DatabaseManagement
+from overlay.frames_manager import FramesManager
+from utility.database_manager import DatabaseManager
 
 __all__ = [
     "FramesManager",
-    "DatabaseManagement",
+    "DatabaseManager",
 ]

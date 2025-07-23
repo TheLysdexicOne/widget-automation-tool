@@ -23,6 +23,7 @@ from PyQt6.QtGui import (
     QAction,
     QKeySequence,
     QShortcut,
+    QFont,
 )
 
 try:
@@ -33,7 +34,6 @@ except ImportError:
     WIN32_AVAILABLE = False
     logging.getLogger(__name__).warning("win32gui not available - some features limited")
 
-from overlay.status_indicator_widget import StatusIndicatorWidget
 from utility.grid_overlay import create_grid_overlay
 from utility.status_manager import StatusManager, ApplicationState
 from utility.qss_loader import get_main_stylesheet
@@ -54,6 +54,12 @@ def get_status_color(state: ApplicationState) -> QColor:
 
 
 class MainOverlayWidget(QWidget):
+    def get_current_frame_data(self):
+        """Return the currently selected frame data from frames_manager, or None if unavailable."""
+        if self.frames_manager and hasattr(self.frames_manager, "selected_frame"):
+            return self.frames_manager.selected_frame
+        return None
+
     """Main overlay widget - the primary application interface."""
 
     # Signals
@@ -169,13 +175,29 @@ class MainOverlayWidget(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(8)
 
-        # Status indicator widget
-        self.status_widget = StatusIndicatorWidget(self)
-        layout.addWidget(self.status_widget)
+        # --- Status Row: Indicator + Text ---
+        from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy
 
-        # Force initial sync of status widget with current state
-        self.logger.info(f"[UI DEBUG] Forcing initial status widget sync to: {self.current_state.value}")
-        self.status_widget.set_state(self.current_state)
+        status_row = QHBoxLayout()
+        status_row.setContentsMargins(0, 0, 0, 0)
+        status_row.setSpacing(8)
+
+        self.status_label = QLabel()
+        self.status_label.setObjectName("status_text_label")
+        self.status_label.setText(self.current_state.value.upper())
+        self.status_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        self.status_label.setStyleSheet("color: rgb(200,200,200);")
+        self.status_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        status_row.addWidget(self.status_label, alignment=Qt.AlignmentFlag.AlignVCenter)
+
+        self.status_button = QPushButton()
+        self.status_button.setObjectName("status_indicator_button")
+        self.status_button.setFixedSize(24, 24)
+        self.status_button.setEnabled(True)  # purely decorative
+        status_row.addWidget(self.status_button, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self._update_status_button_style()
+
+        layout.addLayout(status_row)
 
         # Buttons section
         buttons_layout = QVBoxLayout()
@@ -183,13 +205,31 @@ class MainOverlayWidget(QWidget):
 
         # Create buttons using helper method
         self.frames_button = self._create_button("FRAMES", "frames_button", self._on_frames_clicked)
+        self.screenshots_button = self._create_button("SCREENSHOTS", "screenshots_button", self._on_screenshots_clicked)
         self.tracker_button = self._create_button("TRACKER", "tracker_button", self._on_tracker_clicked)
         self.grid_button = self._create_button("GRID", "grid_button", self._on_grid_clicked)
 
         buttons_layout.addWidget(self.frames_button)
+        buttons_layout.addWidget(self.screenshots_button)
         buttons_layout.addWidget(self.tracker_button)
         buttons_layout.addWidget(self.grid_button)
         layout.addLayout(buttons_layout)
+
+    def _on_screenshots_clicked(self):
+        """Handle SCREENSHOTS button click - show screenshot manager dialog for current frame."""
+        try:
+            from overlay.screenshot_manager import ScreenshotManagerDialog
+
+            # You may need to implement get_current_frame_data() to retrieve the current frame context
+            frame_data = self.get_current_frame_data() if hasattr(self, "get_current_frame_data") else None
+            if not frame_data:
+                self.logger.warning("No frame selected for screenshots.")
+                return
+            # Pass the frames_manager or DB manager as needed
+            dialog = ScreenshotManagerDialog(frame_data, self.frames_manager, self)
+            dialog.exec()
+        except Exception as e:
+            self.logger.error(f"Error showing screenshot manager dialog: {e}")
 
         # Add Alt+G shortcut to toggle grid overlay
         grid_shortcut = QShortcut(QKeySequence("Alt+G"), self)
@@ -372,12 +412,29 @@ class MainOverlayWidget(QWidget):
             old_state = self.current_state
             self.current_state = new_state
             self.state_changed.emit(new_state)
-            # Update the status indicator widget
-            if hasattr(self, "status_widget"):
-                self.status_widget.set_state(new_state)
-            else:
-                self.logger.warning("No status_widget found to update!")
+            self._update_status_button_style()
+            self.status_label.setText(self.current_state.value.upper())
+            self.update()
             self.logger.debug(f"UI updated for state change: {old_state.value} -> {new_state.value}")
+
+    def _update_status_button_style(self):
+        """Update the status indicator button's color and tooltip based on state."""
+        color = get_status_color(self.current_state)
+        # Style: circular, flat, colored background, no border
+        qss = f"""
+            QPushButton#status_indicator_button {{
+                background-color: rgba({color.red()}, {color.green()}, {color.blue()}, 255);
+                border: 2px solid rgba({color.darker(120).red()}, {color.darker(120).green()}, {color.darker(120).blue()}, 255);
+                border-radius: 12px;
+                min-width: 24px;
+                max-width: 24px;
+                min-height: 24px;
+                max-height: 24px;
+                padding: 0px;
+            }}
+        """
+        self.status_button.setStyleSheet(qss)
+        self.status_button.setToolTip(self.current_state.value.capitalize())
 
     def _on_status_clicked(self, new_state: ApplicationState):
         """Handle status circle clicked from status widget - force state detection."""
@@ -465,7 +522,7 @@ class MainOverlayWidget(QWidget):
             self.move(100, 100)
 
     def paintEvent(self, event: QPaintEvent):
-        """Paint the overlay with industrial dark mode styling."""
+        """Paint the overlay background and border with industrial dark mode styling."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 

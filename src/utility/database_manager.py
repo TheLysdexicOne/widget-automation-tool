@@ -1,5 +1,5 @@
 """
-Database Management - Core Data Operations
+Database Manager - Core Data Operations
 
 Handles frame data and screenshot storage operations:
 - Frame database management (JSON-based)
@@ -27,7 +27,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class DatabaseManagement:
+class DatabaseManager:
     """Core data management for frames and screenshots."""
 
     def __init__(self, base_path: Path):
@@ -49,7 +49,6 @@ class DatabaseManagement:
                     return json.load(f)
             except Exception as e:
                 logger.error(f"Error loading frames database: {e}")
-
         # Return default structure
         return {"frames": []}
 
@@ -83,7 +82,7 @@ class DatabaseManagement:
                 return frame
         return None
 
-    def save_screenshot(self, screenshot: Image.Image, frame_name: Optional[str] = None) -> str:
+    def save_screenshot(self, screenshot: "Image.Image", frame_name: Optional[str] = None) -> str:
         """Save screenshot and return UUID."""
         if not PIL_AVAILABLE:
             raise RuntimeError("PIL not available for screenshot operations")

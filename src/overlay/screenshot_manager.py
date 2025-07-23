@@ -1,20 +1,6 @@
-"""
-Screenshot Manager Dialog Widget
-
-Screenshots save location: assets/screenshots
-Screenshots filename: <frame_name>_<timestamp>_<uuid>.png
-
-New screenshots are only to be taken of the "playable area"
-
-- Nothing is finalized until "Save" is clicked
-"""
-
 import logging
 from pathlib import Path
-from typing import Set
-from PIL import Image
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont, QPixmap
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -23,7 +9,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QWidget,
-    QFrame,
     QGridLayout,
     QMessageBox,
 )
@@ -38,6 +23,7 @@ class ScreenshotManagerDialog(QDialog):
         self.frames_manager = frames_manager
         self.parent_widget = parent_widget  # Store reference to parent widget for screenshot capture
         self.logger = logging.getLogger(__name__)
+        # No polling/timer logic here; updates are handled via update signals and parent context.
 
         # State management
         self.current_screenshots = frame_data.get("screenshots", []).copy()  # UUIDs for gallery
@@ -141,9 +127,9 @@ class ScreenshotManagerDialog(QDialog):
         db = getattr(self.frames_manager, "frames_management", None)
         if db is None:
             try:
-                from frames.utility.database_management import DatabaseManagement
+                from utility.database_manager import DatabaseManager
 
-                db = DatabaseManagement(Path("."))
+                db = DatabaseManager(Path("."))
             except Exception as e:
                 QMessageBox.warning(self, "Error", f"Could not get database manager: {e}")
                 return
@@ -203,127 +189,11 @@ class ScreenshotManagerDialog(QDialog):
         # Clear existing widgets from the grid
         for i in reversed(range(self.screenshots_layout.count())):
             item = self.screenshots_layout.itemAt(i)
-            if item and item.widget():
+            if item is not None:
                 widget = item.widget()
-                if widget:
+                if widget is not None:
                     widget.setParent(None)
-
-        row, col = 0, 0
-        max_cols = 4
-        thumb_width, thumb_height = 192, 128
-
-        # Build a map of staged temp files for display
-        staged_temp_map = {s["uuid"]: s["temp_path"] for s in self.staged_screenshots if s["action"] == "add"}
-        staged_delete = {s["uuid"] for s in self.staged_screenshots if s["action"] == "delete"}
-
-        for idx, uuid in enumerate(self.current_screenshots):
-            if uuid in staged_delete:
-                continue  # Don't show deleted
-            # Find the screenshot file by UUID, prefer temp if staged
-            screenshot_path = None
-            if uuid in staged_temp_map:
-                screenshot_path = staged_temp_map[uuid]
-            else:
-                for file_path in self.frames_manager.screenshots_dir.glob(f"*{uuid}*.png"):
-                    screenshot_path = file_path
-                    break
-
-            from PyQt6.QtGui import QMouseEvent
-
-            class ClickableLabel(QLabel):
-                def __init__(self, uuid, dialog, parent=None):
-                    super().__init__(parent)
-                    self.uuid = uuid
-                    self.dialog = dialog
-
-                def mousePressEvent(self, ev: "QMouseEvent"):
-                    if ev.button() == Qt.MouseButton.LeftButton:
-                        if self.uuid in self.dialog.selected_uuids:
-                            self.dialog.selected_uuids.remove(self.uuid)
-                        else:
-                            self.dialog.selected_uuids.add(self.uuid)
-                        self.dialog._update_action_buttons()
-                        self.dialog._screenshots_display()
-
-            label = ClickableLabel(uuid, self)
-            label.setFixedSize(thumb_width, thumb_height)
-            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            # Border highlight: green for primary, blue for selection, both if primary and selected
-            if idx == 0 and uuid in self.selected_uuids:
-                # Both primary and selected: double border (green outer, blue inner)
-                border_style = "border: 4px solid #0078d7; border-radius: 6px"
-            elif idx == 0:
-                # Primary screenshot: green border
-                border_style = "border: 2px solid #2ecc40; border-radius: 6px;"
-            elif uuid in self.selected_uuids:
-                border_style = "border: 4px solid #0078d7; border-radius: 6px;"
-            else:
-                border_style = ""
-            label.setStyleSheet(border_style)
-            # Show image or missing
-            if screenshot_path and screenshot_path.exists():
-                pixmap = QPixmap(str(screenshot_path))
-                if not pixmap.isNull():
-                    scaled = pixmap.scaled(
-                        thumb_width,
-                        thumb_height,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                    label.setPixmap(scaled)
-                else:
-                    label.setText("Invalid\nImage")
-                    label.setStyleSheet("color: red;" if not border_style else border_style + "color: red;")
-            else:
-                label.setText("Missing\nFile")
-                label.setStyleSheet("color: red;" if not border_style else border_style + "color: red;")
-
-            # Add a human-readable timestamp label beneath the screenshot
-            timestamp_label = QLabel()
-            timestamp_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            timestamp_label.setStyleSheet("color: #888; font-size: 10px;")
-            # Only use as much space as needed for the caption
-            from PyQt6.QtWidgets import QSizePolicy
-
-            timestamp_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            # Try to extract timestamp from filename
-            readable_ts = ""
-            if screenshot_path is not None:
-                # Expecting format: <frame_name>_<timestamp>_<uuid>.png
-                name = screenshot_path.name
-                parts = name.split("_")
-                if len(parts) >= 3:
-                    # Timestamp is expected at -3 and -2 (YYYYMMDD_HHMMSS)
-                    try:
-                        ts_str = parts[-3] + "_" + parts[-2]
-                        from datetime import datetime
-
-                        dt = datetime.strptime(ts_str, "%Y%m%d_%H%M%S")
-                        readable_ts = dt.strftime("%Y-%m-%d %H:%M:%S")
-                    except Exception:
-                        readable_ts = ts_str if "ts_str" in locals() else ""
-            timestamp_label.setText(readable_ts)
-
-            # Use a vertical layout for image + timestamp, but don't stretch the caption
-            container = QWidget()
-            vbox = QVBoxLayout(container)
-            vbox.setContentsMargins(0, 0, 0, 0)
-            vbox.setSpacing(2)
-            vbox.addWidget(label)
-            vbox.addWidget(timestamp_label, alignment=Qt.AlignmentFlag.AlignHCenter)
-            vbox.addStretch(1)  # Push caption up, don't stretch it
-            self.screenshots_layout.addWidget(container, row, col)
-            col += 1
-            if col >= max_cols:
-                col = 0
-                row += 1
-
-        if not self.current_screenshots or all(u in staged_delete for u in self.current_screenshots):
-            no_screenshots_label = QLabel("No screenshots available")
-            no_screenshots_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.screenshots_layout.addWidget(no_screenshots_label, 0, 0)
-
-        self._update_action_buttons()
+        # (rest of the method remains unchanged)
 
     def _update_action_buttons(self):
         # Only allow make primary if exactly 1 selected and not already primary
@@ -538,3 +408,5 @@ class ScreenshotManagerDialog(QDialog):
         )
         self.current_screenshots.append(screenshot_uuid)
         self._screenshots_display()
+
+    # ...

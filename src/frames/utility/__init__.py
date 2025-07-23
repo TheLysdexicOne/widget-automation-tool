@@ -8,8 +8,4 @@ Core utility classes and functions for frames management:
 Following project standards: KISS, no duplicated calculations, modular design.
 """
 
-from .database_management import DatabaseManagement
-
-__all__ = [
-    "DatabaseManagement",
-]
+__all__ = []

@@ -71,6 +71,12 @@ def main():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
 
+    # Load and apply QSS stylesheet before showing any widgets
+    qss_path = Path(__file__).parent / "config" / "styles" / "main.qss"
+    if qss_path.exists():
+        with open(qss_path, "r", encoding="utf-8") as f:
+            app.setStyleSheet(f.read())
+
     # Create main overlay widget
     overlay = MainOverlayWidget(target_process=args.target, debug_mode=args.debug)
 
