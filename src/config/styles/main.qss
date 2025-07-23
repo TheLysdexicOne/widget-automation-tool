@@ -2,7 +2,8 @@
 
 /* FRAMES Button */
 QPushButton#frames_button,
-QPushButton#screenshots_button {
+QPushButton#screenshots_button,
+QPushButton#region_button {
     background-color: #2a2a2a;
     color: #cccccc;
     border: 1px solid #505050;
@@ -12,14 +13,16 @@ QPushButton#screenshots_button {
 }
 
 QPushButton#frames_button:hover,
-QPushButton#screenshots_button:hover {
+QPushButton#screenshots_button:hover,
+QPushButton#region_button:hover {
     background-color: #3a3a3a;
     color: #ffffff;
     border: 1px solid #606060;
 }
 
 QPushButton#frames_button:pressed,
-QPushButton#screenshots_button:pressed {
+QPushButton#screenshots_button:pressed,
+QPushButton#region_button:pressed {
     background-color: #1a1a1a;
     border: 1px solid #404040;
 }

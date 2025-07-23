@@ -10,4 +10,3 @@ REM Run with virtual environment in debug mode
 
 echo.
 echo Application exited.
-pause

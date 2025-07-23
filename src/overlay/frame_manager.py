@@ -7,6 +7,7 @@ Handles frame management, dialog display, screenshot capture, and database opera
 Following project standards: KISS, no duplicated calculations, modular design.
 """
 
+from PyQt6.QtCore import Qt
 import logging
 from pathlib import Path
 
@@ -30,7 +31,7 @@ from utility.database_manager import DatabaseManager
 logger = logging.getLogger(__name__)
 
 
-class FramesManager(QDialog):
+class FrameManager(QDialog):
     """Combined frames management dialog with all functionality"""
 
     def __init__(self, main_widget):
@@ -38,7 +39,7 @@ class FramesManager(QDialog):
         self.main_widget = main_widget
 
         # Initialize data management
-        base_path = Path(__file__).parents[2]  # Go up from src/overlay/frames_manager.py to project root
+        base_path = Path(__file__).parents[2]  # Go up from src/overlay/frame_manager.py to project root
         self.frames_management = DatabaseManager(base_path)
 
         # Get frames data and initialize dialog
@@ -50,11 +51,12 @@ class FramesManager(QDialog):
         # Track last update check for global update system
         self.last_frames_check = 0.0
 
-        self.setWindowTitle("Frames Managemer")
-        # self.setModal(True)
+        self.setWindowTitle("Frames Manager")
+        # self.setModal(True)  # Make modeless
+        self.setWindowFlags(Qt.WindowType.Dialog)
         self._setup_ui()
 
-        logger.info("FramesManager initialized")
+        logger.info("FrameManager initialized")
 
     def _setup_ui(self):
         """Setup simplified single-column frames management UI."""
@@ -76,6 +78,8 @@ class FramesManager(QDialog):
 
         sorted_frames = sorted(self.frames_list, key=tier_key)
         self.dropdown = QComboBox()
+        self.dropdown.setEnabled(True)
+        self.dropdown.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         for frame in sorted_frames:
             self.dropdown.addItem(
                 f"{frame.get('id', '??')}: {frame.get('name', 'Unnamed')} - ({frame.get('item', 'Unknown')})", frame
@@ -195,7 +199,7 @@ class FramesManager(QDialog):
         interact_region_count = len(interact_regions)
         self.interact_regions_label.setText(str(interact_region_count))
 
-        # _manage_screenshots removed: ScreenshotManagerDialog is now launched from MainOverlay only.
+        # _manage_screenshots removed: ScreenshotManager is now launched from MainOverlay only.
 
     def _edit_selected_frame(self):
         """Edit the selected frame."""

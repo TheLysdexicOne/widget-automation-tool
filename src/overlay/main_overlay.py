@@ -21,8 +21,6 @@ from PyQt6.QtGui import (
     QIcon,
     QPixmap,
     QAction,
-    QKeySequence,
-    QShortcut,
     QFont,
 )
 
@@ -36,30 +34,11 @@ except ImportError:
 
 from utility.grid_overlay import create_grid_overlay
 from utility.status_manager import StatusManager, ApplicationState
-from utility.qss_loader import get_main_stylesheet
 from utility.window_utils import find_target_window, is_window_valid
-from frames import FramesManager
-
-
-def get_status_color(state: ApplicationState) -> QColor:
-    """Centralized state-to-color mapping utility."""
-    color_map = {
-        ApplicationState.ACTIVE: QColor(0, 255, 0),  # Bright green - performing automation
-        ApplicationState.READY: QColor(144, 238, 144),  # Light green - ready, waiting for user
-        ApplicationState.ATTENTION: QColor(255, 165, 0),  # Orange - no automation programmed
-        ApplicationState.INACTIVE: QColor(128, 128, 128),  # Gray - no automation available
-        ApplicationState.ERROR: QColor(255, 0, 0),  # Red - application error
-    }
-    return color_map.get(state, QColor(128, 128, 128))
+from overlay.frame_manager import FrameManager
 
 
 class MainOverlayWidget(QWidget):
-    def get_current_frame_data(self):
-        """Return the currently selected frame data from frames_manager, or None if unavailable."""
-        if self.frames_manager and hasattr(self.frames_manager, "selected_frame"):
-            return self.frames_manager.selected_frame
-        return None
-
     """Main overlay widget - the primary application interface."""
 
     # Signals
@@ -206,43 +185,89 @@ class MainOverlayWidget(QWidget):
         # Create buttons using helper method
         self.frames_button = self._create_button("FRAMES", "frames_button", self._on_frames_clicked)
         self.screenshots_button = self._create_button("SCREENSHOTS", "screenshots_button", self._on_screenshots_clicked)
+        self.region_button = self._create_button("REGION", "region_button", self._on_region_clicked)
         self.tracker_button = self._create_button("TRACKER", "tracker_button", self._on_tracker_clicked)
         self.grid_button = self._create_button("GRID", "grid_button", self._on_grid_clicked)
 
         buttons_layout.addWidget(self.frames_button)
         buttons_layout.addWidget(self.screenshots_button)
+        buttons_layout.addWidget(self.region_button)
         buttons_layout.addWidget(self.tracker_button)
         buttons_layout.addWidget(self.grid_button)
         layout.addLayout(buttons_layout)
 
+    def _on_frames_clicked(self):
+        """Handle FRAMES button click - show frames dialog."""
+        if not self.frames_manager:
+            self.logger.error("Frames system not initialized")
+            return
+        self.show_frames_dialog()
+
+    def show_frames_dialog(self):
+        """Show or refocus the frames dialog (single instance, taskbar icon)."""
+        try:
+            if not hasattr(self, "_frames_dialog") or self._frames_dialog is None:
+                from overlay.frame_manager import FrameManager
+
+                self._frames_dialog = FrameManager(self)
+                self._frames_dialog.setWindowFlags(Qt.WindowType.Window)
+            self._frames_dialog.show()
+            self._frames_dialog.raise_()
+            self._frames_dialog.activateWindow()
+        except Exception as e:
+            self.logger.error(f"Error showing frames dialog: {e}")
+
+    def _on_region_clicked(self):
+        """Handle REGION button click - show region manager dialog for current frame."""
+        frame_data = self.get_current_frame_data() if hasattr(self, "get_current_frame_data") else None
+        if not frame_data:
+            self.logger.warning("No frame selected for region viewer.")
+            return
+        self.show_region_dialog(frame_data)
+
+    def show_region_dialog(self, frame_data):
+        """Show or refocus the region manager dialog (single instance, taskbar icon)."""
+        try:
+            if not hasattr(self, "_region_dialog") or self._region_dialog is None:
+                from overlay.region_manager import RegionManager
+
+                screenshots = frame_data.get("screenshots", [])
+                if not screenshots:
+                    self.logger.warning("No screenshots available for region viewer.")
+                    return
+                screenshot_path = (
+                    Path("assets/screenshots")
+                    / f"{frame_data.get('name', 'Unnamed').replace(' ', '_')}_{screenshots[0]}.png"
+                )
+                self._region_dialog = RegionManager(screenshot_path, frame_data, self)
+                self._region_dialog.setWindowFlags(Qt.WindowType.Window)
+            self._region_dialog.show()
+            self._region_dialog.raise_()
+            self._region_dialog.activateWindow()
+        except Exception as e:
+            self.logger.error(f"Error showing region manager dialog: {e}")
+
     def _on_screenshots_clicked(self):
         """Handle SCREENSHOTS button click - show screenshot manager dialog for current frame."""
-        try:
-            from overlay.screenshot_manager import ScreenshotManagerDialog
+        frame_data = self.get_current_frame_data() if hasattr(self, "get_current_frame_data") else None
+        if not frame_data:
+            self.logger.warning("No frame selected for screenshots.")
+            return
+        self.show_screenshot_dialog(frame_data)
 
-            # You may need to implement get_current_frame_data() to retrieve the current frame context
-            frame_data = self.get_current_frame_data() if hasattr(self, "get_current_frame_data") else None
-            if not frame_data:
-                self.logger.warning("No frame selected for screenshots.")
-                return
-            # Pass the frames_manager or DB manager as needed
-            dialog = ScreenshotManagerDialog(frame_data, self.frames_manager, self)
-            dialog.exec()
+    def show_screenshot_dialog(self, frame_data):
+        """Show or refocus the screenshot manager dialog (single instance, taskbar icon)."""
+        try:
+            if not hasattr(self, "_screenshot_dialog") or self._screenshot_dialog is None:
+                from overlay.screenshot_manager import ScreenshotManager
+
+                self._screenshot_dialog = ScreenshotManager(frame_data, self.frames_manager, self)
+                self._screenshot_dialog.setWindowFlags(Qt.WindowType.Window)
+            self._screenshot_dialog.show()
+            self._screenshot_dialog.raise_()
+            self._screenshot_dialog.activateWindow()
         except Exception as e:
             self.logger.error(f"Error showing screenshot manager dialog: {e}")
-
-        # Add Alt+G shortcut to toggle grid overlay
-        grid_shortcut = QShortcut(QKeySequence("Alt+G"), self)
-        grid_shortcut.activated.connect(self._on_grid_clicked)
-
-        # Load and apply QSS stylesheet
-        stylesheet = get_main_stylesheet()
-        if stylesheet:
-            self.setStyleSheet(stylesheet)
-
-        # Standard context menu with enhanced styling
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
-        self._add_context_actions()
 
     def _setup_system_tray(self):
         """Setup system tray icon for emergency close."""
@@ -278,7 +303,7 @@ class MainOverlayWidget(QWidget):
         """Setup the frames management system."""
         try:
             # Initialize frames manager (project root is calculated internally)
-            self.frames_manager = FramesManager(self)
+            self.frames_manager = FrameManager(self)
 
             self.logger.debug("Frames management system initialized")
         except Exception as e:
@@ -419,7 +444,7 @@ class MainOverlayWidget(QWidget):
 
     def _update_status_button_style(self):
         """Update the status indicator button's color and tooltip based on state."""
-        color = get_status_color(self.current_state)
+        color = self.get_status_color(self.current_state)
         # Style: circular, flat, colored background, no border
         qss = f"""
             QPushButton#status_indicator_button {{
@@ -539,24 +564,6 @@ class MainOverlayWidget(QWidget):
         inner_border = QColor(60, 60, 60, 150)
         painter.setPen(QPen(inner_border, 1))
         painter.drawRect(self.rect().adjusted(1, 1, -2, -2))
-
-    def _on_frames_clicked(self):
-        """Handle FRAMES button click - show frames dialog."""
-        self.logger.info("FRAMES button clicked")
-        try:
-            if not self.target_hwnd:
-                self.logger.warning("No target window for frames functionality")
-                return
-
-            if not self.frames_manager:
-                self.logger.error("Frames system not initialized")
-                return
-
-            # Show the frames dialog directly
-            self.frames_manager.show_frames_dialog()
-
-        except Exception as e:
-            self.logger.error(f"Error showing frames dialog: {e}")
 
     def _capture_window_screenshot(self, output_dir: Path) -> Optional[Path]:
         """Capture screenshot of the target window."""
@@ -731,3 +738,20 @@ class MainOverlayWidget(QWidget):
             "playable_area": self.playable_coords,
             "state": self.current_state.value,
         }
+
+    def get_status_color(self, state: ApplicationState) -> QColor:
+        """Centralized state-to-color mapping utility."""
+        color_map = {
+            ApplicationState.ACTIVE: QColor(0, 255, 0),  # Bright green - performing automation
+            ApplicationState.READY: QColor(144, 238, 144),  # Light green - ready, waiting for user
+            ApplicationState.ATTENTION: QColor(255, 165, 0),  # Orange - no automation programmed
+            ApplicationState.INACTIVE: QColor(128, 128, 128),  # Gray - no automation available
+            ApplicationState.ERROR: QColor(255, 0, 0),  # Red - application error
+        }
+        return color_map.get(state, QColor(128, 128, 128))
+
+    def get_current_frame_data(self):
+        """Return the currently selected frame data from frames_manager, or None if unavailable."""
+        if self.frames_manager and hasattr(self.frames_manager, "selected_frame"):
+            return self.frames_manager.selected_frame
+        return None

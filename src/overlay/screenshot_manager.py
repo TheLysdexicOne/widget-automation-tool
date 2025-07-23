@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -11,10 +12,11 @@ from PyQt6.QtWidgets import (
     QWidget,
     QGridLayout,
     QMessageBox,
+    QComboBox,
 )
 
 
-class ScreenshotManagerDialog(QDialog):
+class ScreenshotManager(QDialog):
     """Dialog for managing screenshots in frames."""
 
     def __init__(self, frame_data, frames_manager, parent_widget, parent=None):
@@ -32,40 +34,51 @@ class ScreenshotManagerDialog(QDialog):
         self.selected_uuids = set()  # UUIDs of selected screenshots
 
         self.setWindowTitle(f"Screenshot Manager - {frame_data.get('name', 'Unnamed')}")
-        self.setModal(True)
+        # self.setModal(True)
         self.resize(900, 500)
 
         self._setup_ui()
 
     def _setup_ui(self):
-        """Setup screenshot manager UI."""
-        layout = QVBoxLayout(self)
+        """Setup screenshot manager UI with synced dropdown."""
+        from utility.frame_selection_model import FrameSelectionModel
 
-        # Title and buttons row
-        title_and_buttons_layout = QHBoxLayout()
+        layout = QVBoxLayout()
 
-        # Title (left)
-        title_label = QLabel(f"Managing Screenshots for: {self.frame_data.get('name', 'Unnamed Frame')}")
+        # Top: Title and dropdown
+        top_layout = QHBoxLayout()
+        title_label = QLabel("Managing Screenshots")
         title_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
-        title_and_buttons_layout.addWidget(title_label)
-        title_and_buttons_layout.addStretch()  # Push buttons to the right
+        top_layout.addWidget(title_label)
 
-        # Action buttons (right)
+        self.dropdown = QComboBox()
+        self.dropdown.setMinimumWidth(220)
+        self.dropdown.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.dropdown.setEnabled(True)
+        self.dropdown.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        top_layout.addWidget(self.dropdown)
+        top_layout.addStretch()
+        layout.addLayout(top_layout)
+
+        # Populate dropdown from FrameSelectionModel
+        self.frame_model = FrameSelectionModel.instance()
+        self._populate_dropdown()
+        self.dropdown.currentIndexChanged.connect(self._on_dropdown_changed)
+        self.frame_model.selection_changed.connect(self._on_external_selection_changed)
+
+        # Action buttons row
+        title_and_buttons_layout = QHBoxLayout()
         self.make_primary_button = QPushButton("Make Primary")
         self.make_primary_button.clicked.connect(self._make_primary)
         self.make_primary_button.setEnabled(False)
-
         self.delete_button = QPushButton("Delete Selected")
         self.delete_button.clicked.connect(self._delete_selected)
         self.delete_button.setEnabled(False)
-
         self.new_screenshot_button = QPushButton("Add Screenshot")
         self.new_screenshot_button.clicked.connect(self._add_screenshot)
-
         title_and_buttons_layout.addWidget(self.make_primary_button)
         title_and_buttons_layout.addWidget(self.delete_button)
         title_and_buttons_layout.addWidget(self.new_screenshot_button)
-
         layout.addLayout(title_and_buttons_layout)
 
         # Screenshots grid
@@ -73,25 +86,20 @@ class ScreenshotManagerDialog(QDialog):
         self.screenshots_scroll.setWidgetResizable(True)
         self.screenshots_scroll.setMinimumHeight(400)
         self.screenshots_scroll.setStyleSheet("QScrollArea { border: 2px solid #888; border-radius: 4px; }")
-
         self.screenshots_widget = QWidget()
         self.screenshots_layout = QGridLayout(self.screenshots_widget)
         self.screenshots_layout.setSpacing(10)
-
         self.screenshots_scroll.setWidget(self.screenshots_widget)
         layout.addWidget(self.screenshots_scroll)
 
         # Dialog buttons (bottom)
         dialog_button_layout = QHBoxLayout()
         dialog_button_layout.addStretch()
-
         self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self._save_changes)
         self.save_button.setEnabled(False)  # Only enabled if there are staged changes
-
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.clicked.connect(self._cancel_changes)
-
         dialog_button_layout.addWidget(self.save_button)
         dialog_button_layout.addWidget(self.cancel_button)
         layout.addLayout(dialog_button_layout)
@@ -99,7 +107,44 @@ class ScreenshotManagerDialog(QDialog):
         # set cancel as default button
         self.cancel_button.setDefault(True)
 
+        # Set the layout for the dialog
+        self.setLayout(layout)
+
         # Now that all buttons are created, display screenshots
+        self._screenshots_display()
+
+    def _populate_dropdown(self):
+        self.dropdown.blockSignals(True)
+        self.dropdown.clear()
+        frames = self.frame_model.get_frames_list()
+        for frame in frames:
+            self.dropdown.addItem(f"{frame.get('id', '??')}: {frame.get('name', 'Unnamed')}", frame)
+        # Set current selection
+        selected = self.frame_model.get_selected_frame()
+        if selected:
+            for i in range(self.dropdown.count()):
+                if self.dropdown.itemData(i) == selected:
+                    self.dropdown.setCurrentIndex(i)
+                    break
+        self.dropdown.blockSignals(False)
+
+    def _on_dropdown_changed(self, idx):
+        frame = self.dropdown.itemData(idx)
+        if frame:
+            self.frame_model.set_selected_frame(frame)
+            self._update_for_frame(frame)
+
+    def _on_external_selection_changed(self, frame):
+        # Update dropdown and UI if selection changed elsewhere
+        self._populate_dropdown()
+        self._update_for_frame(frame)
+
+    def _update_for_frame(self, frame):
+        # Update internal state and UI for new frame
+        self.frame_data = frame.copy()
+        self.current_screenshots = frame.get("screenshots", []).copy()
+        self.primary_uuid = self.current_screenshots[0] if self.current_screenshots else None
+        self.selected_uuids = set()
         self._screenshots_display()
 
     def closeEvent(self, event):
@@ -276,18 +321,18 @@ class ScreenshotManagerDialog(QDialog):
         self._update_action_buttons()
         self._screenshots_display()
 
+    # Duplicate _add_screenshot removed. See below for the correct implementation.
+
     def _add_screenshot(self):
         """Capture the playable area, stage screenshot in temp, and update gallery. No DB update until Save."""
         import uuid
-        from datetime import datetime
 
         try:
             from utility.window_utils import find_target_window
             from PIL import ImageGrab
             import win32gui
-            import win32con
             import time
-            from PyQt6.QtWidgets import QApplication
+            from PyQt6.QtWidgets import QApplication, QWidget
         except ImportError as e:
             self.logger.error(f"Required modules not found: {e}")
             QMessageBox.warning(self, "Error", f"Required modules not found: {e}")
@@ -310,8 +355,6 @@ class ScreenshotManagerDialog(QDialog):
         current_foreground = win32gui.GetForegroundWindow()
 
         # --- Helper: minimize and restore tools ---
-        from PyQt6.QtWidgets import QWidget
-
         def get_tools_to_minimize() -> list[QWidget]:
             tools: list[QWidget] = [self]
             parent = self.parent() if hasattr(self, "parent") and self.parent() else None
@@ -347,34 +390,10 @@ class ScreenshotManagerDialog(QDialog):
             QApplication.processEvents()
 
         # --- Minimize tools, bring game to front, capture screenshot, restore tools ---
-        screenshot = None
-        frame_name = self.frame_data.get("name", "unnamed").replace(" ", "_")
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        temp_path = self._get_temp_screenshot_path()
         screenshot_uuid = str(uuid.uuid4())
-        temp_dir = Path("assets/screenshots/temp")
-        temp_dir.mkdir(parents=True, exist_ok=True)
-        temp_filename = f"{frame_name}_{timestamp}_{screenshot_uuid}.png"
-        temp_path = temp_dir / temp_filename
+        screenshot = None
         try:
-            minimize_tools()
-            # Bring target window to foreground
-            try:
-                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
-                win32gui.SetWindowPos(
-                    hwnd,
-                    win32con.HWND_TOP,
-                    0,
-                    0,
-                    0,
-                    0,
-                    win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW,
-                )
-                win32gui.SetForegroundWindow(hwnd)
-                win32gui.BringWindowToTop(hwnd)
-                self.logger.debug("Target window brought to foreground with multiple methods")
-            except Exception as e:
-                self.logger.warning(f"Failed to bring target window to foreground: {e}")
             QApplication.processEvents()
             time.sleep(0.8)
             screenshot = ImageGrab.grab(bbox=(x, y, x + w, y + h), all_screens=True)
@@ -409,4 +428,11 @@ class ScreenshotManagerDialog(QDialog):
         self.current_screenshots.append(screenshot_uuid)
         self._screenshots_display()
 
-    # ...
+    def _get_temp_screenshot_path(self):
+        """Return a unique temp path for a new screenshot."""
+        from uuid import uuid4
+        from pathlib import Path
+
+        temp_dir = Path("assets/screenshots")
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        return temp_dir / f"screenshot_{uuid4().hex}.temp.png"
