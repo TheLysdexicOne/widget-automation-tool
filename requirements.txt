@@ -8,3 +8,5 @@ pyperclip
 psutil
 pystray
 PyQt6
+pytest
+pytest-qt

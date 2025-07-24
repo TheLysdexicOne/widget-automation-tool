@@ -18,6 +18,16 @@
   - Never duplicate calculation or utility functions
   - Suggest or use external libraries if they fit the need
 
+## Cleanup
+
+- Always clean up linter warnings
+
 ## Execution
 
-- Always launch via start.bat, start_gui.bat, start_overlay.bat
+- Always use the virtual environment
+- Always launch via start\*.bat files
+- gui = GUI = MainWindow or main_window.py and associated classes
+
+## Testing
+
+- pytest-qt for gui testing
