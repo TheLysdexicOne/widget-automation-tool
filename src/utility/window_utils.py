@@ -374,9 +374,7 @@ def calculate_overlay_position(
     window_info: Dict[str, Any],
     overlay_width: int,
     overlay_height: int,
-    offset_x: int = -8,
-    offset_y: int = 40,
-) -> Tuple[int, int]:
+) -> Tuple[int, int, int]:
     """
     Calculate overlay position in top-right corner of target window.
 
@@ -392,20 +390,32 @@ def calculate_overlay_position(
     """
     try:
         # Use client area coordinates from window_info
-        client_x = window_info["client_x"]
+        _client_x = window_info["client_x"]
         client_y = window_info["client_y"]
         client_width = window_info["client_width"]
         client_height = window_info["client_height"]
 
-        target_x = client_x + client_width - overlay_width + offset_x
+        playable = calculate_playable_area(window_info) or {}
+        playable_x = playable["x"]
+        _playable_y = playable["y"]
+        playable_width = playable["width"]
+        _playable_height = playable["height"]
+
+        # target_x = client_x + client_width - overlay_width + offset_x
+        # target_y = client_y + offset_y
+
+        offset_y = max(32, client_width // 80)
+        target_x = playable_x + playable_width + 1
         target_y = client_y + offset_y
 
-        return (target_x, target_y)
+        available_height = client_height - offset_y
+
+        return (target_x, target_y, available_height)
 
     except Exception as e:
         logger.error(f"Error calculating overlay position: {e}")
         # Fallback to basic positioning
-        return (100, 100)
+        return (100, 100, 100)
 
 
 def get_client_area_coordinates(hwnd: int) -> Optional[Tuple[int, int, int, int]]:

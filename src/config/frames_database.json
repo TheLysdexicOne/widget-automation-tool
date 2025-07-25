@@ -260,62 +260,62 @@
     },
     {
       "id": "12.1",
-      "name": "Omega Processor Lab",
+      "name": "Ω Processor Lab",
       "item": "Processor Amalgamation",
       "automation": 0
     },
     {
       "id": "12.2",
-      "name": "Omega Core Foundry",
+      "name": "Ω Core Foundry",
       "item": "Core Amalgamation",
       "automation": 0
     },
     {
       "id": "12.3",
-      "name": "Omega Widget Distiller",
+      "name": "Ω Widget Distiller",
       "item": "Widget Amalgamation",
       "automation": 0
     },
     {
       "id": "12.4",
-      "name": "Omega Casing Factory",
-      "item": "Omega Project Casing",
+      "name": "Ω Casing Factory",
+      "item": "Ω Project Casing",
       "automation": 0
     },
     {
       "id": "12.5",
-      "name": "Omega Shielding Plant",
-      "item": "Omega Project Shielding",
+      "name": "Ω Shielding Plant",
+      "item": "Ω Project Shielding",
       "automation": 0
     },
     {
       "id": "12.6",
-      "name": "Omega Project Assembler",
-      "item": "Omega Widget",
+      "name": "Ω Project Assembler",
+      "item": "Ω Widget",
       "automation": 0
     },
     {
       "id": "13.1",
-      "name": "Rocket Electronics Lab",
-      "item": "Rocket Electronics",
+      "name": "🚀 Electronics Lab",
+      "item": "🚀 Electronics",
       "automation": 0
     },
     {
       "id": "13.2",
-      "name": "Rocket Fuel Distiller",
-      "item": "Rocket Fuel",
+      "name": "🚀 Fuel Distiller",
+      "item": "🚀 Fuel",
       "automation": 0
     },
     {
       "id": "13.3",
-      "name": "Rocket Part Assembler",
-      "item": "Rocket Hull",
+      "name": "🚀 Part Assembler",
+      "item": "🚀 Hull",
       "automation": 0
     },
     {
       "id": "13.4",
-      "name": "Omega Launch Factory",
-      "item": "Rocket Segment",
+      "name": "Ω Launch Factory",
+      "item": "🚀 Segment",
       "automation": 0
     }
   ]
