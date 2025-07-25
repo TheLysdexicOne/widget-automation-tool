@@ -2,6 +2,12 @@
 ## applyTo: "_.py_"
 ---
 
+# General
+
+- **Only the user is to alter this file**
+- **AI is allowed to alter *ai-gen.md or *ai-generated.md**
+- **Always use the venv for execution or installation**
+
 # Widget Automation Tool: AI-Generated Development Instructions
 
 ## Project Overview
@@ -47,6 +53,7 @@ A comprehensive automation overlay for WidgetInc minigames with manual frame sel
 
 ## Key Design Decisions
 
+- **Aesthetics**: Base PyQt6 as much as possible
 - **Manual Frame Selection**: User chooses frame type via dropdown/buttons
 - **No Complex Detection**: Eliminates unreliable automated frame recognition
 - **Real-time Feedback**: Progress bars, status indicators, visual confirmation
