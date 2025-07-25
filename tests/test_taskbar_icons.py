@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../src"))
 
 from gui.main_window import MainWindow
-from overlay.main_overlay import MainOverlayWidget
+from overlay.main_overlay import MainOverlay
 
 
 @pytest.fixture(scope="module")
@@ -42,7 +42,7 @@ class TestTaskbarIcons:
 
     def test_overlay_icon_setting(self, app, qtbot):
         """Test that MainOverlay can set taskbar icon properly."""
-        overlay = MainOverlayWidget()
+        overlay = MainOverlay()
         qtbot.addWidget(overlay)
 
         # Test with a basic icon

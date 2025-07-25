@@ -12,7 +12,7 @@ from PyQt6.QtGui import QPainter, QColor, QBrush, QPen, QFont
 from utility.window_utils import find_target_window
 
 
-class MainOverlayWidget(QWidget):
+class MainOverlay(QWidget):
     """Simple, pretty overlay indicator that attaches to WidgetInc window."""
 
     # Signals

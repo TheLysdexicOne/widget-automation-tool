@@ -17,7 +17,7 @@ from PyQt6.QtGui import QAction
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
 from main import parse_arguments
-from overlay.main_overlay import MainOverlayWidget
+from overlay.main_overlay import MainOverlay
 from gui.main_window import MainWindow
 
 
@@ -80,7 +80,7 @@ class TestSystemTrayExit:
         app_icon = QIcon()
 
         # Create overlay
-        self.overlay = MainOverlayWidget(target_process="WidgetInc.exe", debug_mode=True)
+        self.overlay = MainOverlay(target_process="WidgetInc.exe", debug_mode=True)
         self.overlay.setWindowIcon(app_icon)
         qtbot.addWidget(self.overlay)
 
@@ -212,7 +212,7 @@ class TestSystemTrayExit:
         app_icon = QIcon()
 
         # Create both overlay and GUI
-        self.overlay = MainOverlayWidget(target_process="WidgetInc.exe", debug_mode=True)
+        self.overlay = MainOverlay(target_process="WidgetInc.exe", debug_mode=True)
         self.overlay.setWindowIcon(app_icon)
         qtbot.addWidget(self.overlay)
 
@@ -345,7 +345,7 @@ class TestSystemTrayExit:
 
         app_icon = QIcon()
 
-        self.overlay = MainOverlayWidget(target_process="WidgetInc.exe", debug_mode=True)
+        self.overlay = MainOverlay(target_process="WidgetInc.exe", debug_mode=True)
         self.overlay.setWindowIcon(app_icon)
         qtbot.addWidget(self.overlay)
 
@@ -455,7 +455,7 @@ class TestSystemTrayExit:
         self.app = app
 
         # Create overlay
-        self.overlay = MainOverlayWidget(target_process="WidgetInc.exe", debug_mode=True)
+        self.overlay = MainOverlay(target_process="WidgetInc.exe", debug_mode=True)
         qtbot.addWidget(self.overlay)
 
         # Show overlay

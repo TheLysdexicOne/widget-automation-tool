@@ -11,7 +11,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QTimer, QSize
-from overlay.main_overlay import MainOverlayWidget
+from overlay.main_overlay import MainOverlay
 from gui.main_window import MainWindow
 
 
@@ -106,7 +106,7 @@ def main():
         return 1
 
     # Instantiate windows but do not show yet
-    overlay = MainOverlayWidget(target_process=getattr(args, "target", "WidgetInc.exe"), debug_mode=args.debug)
+    overlay = MainOverlay(target_process=getattr(args, "target", "WidgetInc.exe"), debug_mode=args.debug)
     gui = MainWindow()
 
     # Set taskbar icons properly for each window
