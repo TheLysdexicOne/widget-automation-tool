@@ -1,8 +1,76 @@
-import sys
 import json
+import os
+import re
+import sys
+from collections import defaultdict
 from pathlib import Path
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QScrollArea, QVBoxLayout, QWidget, QPushButton, QMenu
-from PyQt6.QtCore import Qt
+
+from PyQt6.QtCore import QPoint, Qt
+from PyQt6.QtWidgets import (
+    QApplication,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMenu,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
+
+
+class CustomTitleBar(QWidget):
+    """Custom title bar with minimize and close buttons."""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.main_window = parent
+        self.setFixedHeight(30)
+
+        # Track dragging
+        self.dragging = False
+        self.drag_position = QPoint()
+
+        # Create layout
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(8, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Title label
+        self.title_label = QLabel("Widget Automation Tool")
+
+        # Spacer
+        layout.addWidget(self.title_label)
+        layout.addStretch()
+
+        # Minimize button
+        self.minimize_btn = QPushButton("−")
+        self.minimize_btn.setFixedSize(30, 30)
+        self.minimize_btn.clicked.connect(self.main_window.showMinimized)
+
+        # Close button
+        self.close_btn = QPushButton("×")
+        self.close_btn.setFixedSize(30, 30)
+        self.close_btn.clicked.connect(self.main_window.close)
+
+        layout.addWidget(self.minimize_btn)
+        layout.addWidget(self.close_btn)
+
+    def mousePressEvent(self, event):
+        """Start dragging the window."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.dragging = True
+            self.drag_position = event.globalPosition().toPoint() - self.main_window.frameGeometry().topLeft()
+
+    def mouseMoveEvent(self, event):
+        """Drag the window."""
+        if self.dragging and event.buttons() == Qt.MouseButton.LeftButton:
+            self.main_window.move(event.globalPosition().toPoint() - self.drag_position)
+
+    def mouseReleaseEvent(self, event):
+        """Stop dragging."""
+        self.dragging = False
 
 
 class MainWindow(QMainWindow):
@@ -36,8 +104,10 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Widget Automation Tool")
-        self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
-        self.setGeometry(100, 100, 200, 1250)
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Window
+        )
+        self.setMinimumSize(100, 200)  # Set a reasonable minimum size
 
         # Load frames from JSON (adjusted path for our project structure)
         frames_file = Path(__file__).parent / "config" / "frames_database.json"
@@ -62,32 +132,33 @@ class MainWindow(QMainWindow):
                 tier = 0
             tiers[tier].append(frame)
 
+        # Create main widget with custom title bar
+        main_widget = QWidget()
+        main_layout = QVBoxLayout(main_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Add custom title bar
+        self.title_bar = CustomTitleBar(self)
+        main_layout.addWidget(self.title_bar)
+
         # Create title widget
-        self.title_label = QLabel("WIDGETS", self)
+        self.title_label = QLabel("WIDGETS")
         from PyQt6.QtWidgets import QSizePolicy
 
         self.title_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title_label.setStyleSheet("""
-            QLabel {
-                font-size: 32px;
-                font-weight: bold;
-                color: #2c3e50;
-                padding: 4px;
-            }
-        """)
 
         # Main content widget
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
         content_layout.setSpacing(8)
-        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setContentsMargins(8, 8, 8, 8)
 
         for tier in sorted(tiers.keys()):
             # Tier header
             tier_label = QLabel(f"TIER {tier}")
             tier_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            tier_label.setStyleSheet("font-size: 14px; font-weight: bold; padding: 4px 0 2px 4px;")
             content_layout.addWidget(tier_label)
 
             # Buttons for this tier
@@ -107,13 +178,24 @@ class MainWindow(QMainWindow):
         scroll.setWidget(content_widget)
 
         # Layout
-        layout = QVBoxLayout()
-        layout.addWidget(self.title_label)
-        layout.addWidget(scroll)
+        content_container_layout = QVBoxLayout()
+        content_container_layout.addWidget(self.title_label)
+        content_container_layout.addWidget(scroll)
 
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
+        content_container = QWidget()
+        content_container.setLayout(content_container_layout)
+
+        main_layout.addWidget(content_container)
+
+        self.setCentralWidget(main_widget)
+
+        # Auto-resize width to fit content, allow manual resizing
+        self.adjustSize()
+        # Set width to fit contents
+        content_width = content_container.sizeHint().width() + 15  # Add padding for scroll area and layout
+        self.resize(content_width, 600)  # Set reasonable height, auto width
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.move(100, 100)
 
     def create_frame_button(self, frame):
         """Create a button for a frame with automation status styling."""
@@ -124,45 +206,13 @@ class MainWindow(QMainWindow):
         btn = QPushButton(name)
         btn.setToolTip(f"ID: {frame_id}\nAutomation: {'Available' if automation else 'Not Implemented'}")
 
-        # Style based on automation status
-        if automation:
-            btn.setStyleSheet("""
-                QPushButton {
-                    font-family: 'NotoMono', 'monospace'; 
-                    font-size: 12px;
-                    background-color: #27ae60;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    padding: 8px 4px;
-                    text-align: left;
-                }
-                QPushButton:hover {
-                    background-color: #2ecc71;
-                }
-                QPushButton:pressed {
-                    background-color: #1e8449;
-                }
-            """)
-        else:
-            btn.setStyleSheet("""
-                QPushButton {
-                    font-family: 'NotoMono', 'monospace'; 
-                    font-size: 12px;
-                    background-color: #95a5a6;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    padding: 8px 4px;
-                    text-align: left;
-                }
-                QPushButton:hover {
-                    background-color: #7f8c8d;
-                }
-                QPushButton:pressed {
-                    background-color: #5d6d7e;
-                }
-            """)
+        # Only minimal font styling as per copilot instructions
+        btn.setStyleSheet("""
+            QPushButton {
+                font-family: 'Noto Sans', 'Segoe UI';
+                font-size: 12px;
+            }
+        """)
 
         # Connect button click to automation
         btn.clicked.connect(lambda checked, f=frame: self.start_automation(f))
