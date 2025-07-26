@@ -7,6 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -20,7 +21,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from utility.window_utils import find_target_window, calculate_overlay_position
+from automation.automation_controller import AutomationController
+from automation.global_hotkey_manager import GlobalHotkeyManager
+from utility.window_utils import calculate_overlay_position, find_target_window
 
 
 def setup_logging():
@@ -113,10 +116,32 @@ class MainWindow(QMainWindow):
         # Relaunch the current script
         os.execv(sys.executable, [sys.executable] + sys.argv)
 
+    def closeEvent(self, event):
+        """Handle window closing - ensure cleanup."""
+        self.logger.info("Application closing - cleaning up")
+
+        # Stop hotkey monitoring
+        self.hotkey_manager.stop_monitoring()
+
+        # Stop all automations
+        self.automation_controller.stop_all_automations()
+
+        # Accept the close event
+        event.accept()
+
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger(f"{__name__}.MainWindow")
         self.logger.info("Initializing main window")
+
+        # Initialize automation controller and global hotkeys
+        self.automation_controller = AutomationController()
+        self.automation_controller.set_ui_callback(self.handle_automation_event)
+        self.hotkey_manager = GlobalHotkeyManager()
+        self.hotkey_manager.set_stop_callback(self.stop_all_automations)
+
+        # Track button states for toggle functionality
+        self.automation_buttons = {}  # frame_id -> button mapping
 
         self.setWindowTitle("Widget Automation Tool")
         self.setWindowFlags(
@@ -124,6 +149,9 @@ class MainWindow(QMainWindow):
         )
         self.setMinimumSize(100, 200)  # Set a reasonable minimum size
         self.logger.debug("Window flags and size configured")
+
+        # Disable context menu to prevent interference with right-click hotkey
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 
         # Initialize window snapping
         self.setup_window_snapping()
@@ -182,25 +210,37 @@ class MainWindow(QMainWindow):
         content_layout.setContentsMargins(4, 4, 4, 4)
 
         for tier in sorted(tiers.keys()):
-            # Tier header
-            tier_label = QLabel(f"TIER {tier}")
-            tier_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            content_layout.addWidget(tier_label)
-            self.logger.debug(f"Created tier {tier} with {len(tiers[tier])} frames")
-
-            # Buttons for this tier
-            row_widget = QWidget()
-            row_layout = QVBoxLayout(row_widget)
-            row_layout.setSpacing(8)
-            row_layout.setContentsMargins(8, 0, 0, 0)
-
+            # Collect buttons for this tier first to check if any will be created
+            tier_buttons = []
             for frame in tiers[tier]:
                 btn = self.create_frame_button(frame)
-                row_layout.addWidget(btn)
-            content_layout.addWidget(row_widget)
+                if btn is not None:  # Only collect created buttons
+                    tier_buttons.append(btn)
+
+            # Only create tier section if there are buttons to show
+            if tier_buttons:
+                # Tier header
+                tier_label = QLabel(f"TIER {tier}")
+                tier_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                content_layout.addWidget(tier_label)
+                self.logger.debug(f"Created tier {tier} with {len(tier_buttons)} buttons")
+
+                # Buttons for this tier
+                row_widget = QWidget()
+                row_layout = QVBoxLayout(row_widget)
+                row_layout.setSpacing(8)
+                row_layout.setContentsMargins(8, 0, 0, 0)
+
+                for btn in tier_buttons:
+                    row_layout.addWidget(btn)
+                content_layout.addWidget(row_widget)
+            else:
+                self.logger.debug(f"Skipping tier {tier} - no automatable frames")
 
         # Scroll area for content
         scroll = QScrollArea()
+        # Enable vertical scroll bar and allow overscroll
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         scroll.setWidgetResizable(True)
         scroll.setWidget(content_widget)
 
@@ -216,17 +256,19 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(main_widget)
 
-        # Auto-resize width to fit content, allow manual resizing
+        # Calculate content size first
+        content_container.adjustSize()
         self.adjustSize()
-        # Set width to fit contents
-        content_width = content_container.sizeHint().width() + 15  # Add padding for scroll area and layout
-        self.resize(content_width, self.height())  # Resize only width, keep current height
+
+        # Get preferred content dimensions
+        preferred_width = content_container.sizeHint().width() + 15  # Add padding for scroll area
+        preferred_height = content_container.sizeHint().height() + self.title_bar.height()
+
+        # Set initial size to preferred content size
+        self.resize(preferred_width, preferred_height)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        # Don't set initial position here - let window snapping handle it
-        # self.move(100, 100)  # Removed - this was overriding the snap positioning
-
-        self.logger.info(f"Window initialized with size: {self.width()}x{self.height()}")
+        self.logger.info(f"Window initialized with preferred size: {preferred_width}x{preferred_height}")
 
     def setup_window_snapping(self):
         """Setup window snapping to WidgetInc application."""
@@ -255,13 +297,26 @@ class MainWindow(QMainWindow):
                     overlay_height=self.height(),
                 )
 
+                # Calculate optimal height: smaller of content size or available space
+                central_widget = self.centralWidget()
+                if central_widget:
+                    content_height = central_widget.sizeHint().height()
+                    optimal_height = min(content_height, available_height)
+                else:
+                    optimal_height = available_height
+
                 # Only log and move if position changed
                 current_position = (overlay_x, overlay_y)
-                self.resize(self.width(), available_height)
                 if self.last_snap_position != current_position:
                     self.move(overlay_x, overlay_y)
-                    self.logger.debug(f"Snapped overlay to WidgetInc window at position: {overlay_x}, {overlay_y}")
+                    self.resize(self.width(), optimal_height)
+                    self.logger.debug(
+                        f"Snapped overlay to WidgetInc window at position: {overlay_x}, {overlay_y} (height: {optimal_height})"
+                    )
                     self.last_snap_position = current_position
+                elif self.height() != optimal_height:
+                    # Update height even if position hasn't changed
+                    self.resize(self.width(), optimal_height)
             else:
                 # Only log "not found" once when it changes state
                 if self.last_snap_position is not None:
@@ -276,45 +331,152 @@ class MainWindow(QMainWindow):
     def create_frame_button(self, frame):
         """Create a button for a frame with automation status styling."""
         name = frame.get("name", "Unknown")
-        automation = frame.get("automation", 0)
+        automation = frame.get("automation", {})
         frame_id = frame.get("id", "")
+        item = frame.get("item", "")
+
+        # Extract automation flags
+        can_automate = automation.get("can_automate", 0) if isinstance(automation, dict) else automation
+        programmed = automation.get("programmed", 0) if isinstance(automation, dict) else automation
 
         # Safe logging that handles emojis by encoding them as text
         safe_name = name.encode("ascii", "replace").decode("ascii")
-        self.logger.debug(f"Creating button for frame: {safe_name} (ID: {frame_id}, Automation: {automation})")
+        self.logger.debug(
+            f"Creating button for frame: {safe_name} (ID: {frame_id}, Can Automate: {can_automate}, Programmed: {programmed})"
+        )
 
-        btn = QPushButton(name)
-        btn.setToolTip(f"ID: {frame_id}\nAutomation: {'Available' if automation else 'Not Implemented'}")
+        # Skip button creation if automation is not possible
+        if not can_automate:
+            self.logger.debug(f"Skipping button for {safe_name} - automation not possible")
+            return None
 
-        # Only minimal font styling as per copilot instructions
-        btn.setStyleSheet("""
+        # Create button with appropriate text and functionality
+        if programmed:
+            btn = QPushButton(name)
+            tooltip = f"ID: {frame_id}\nItem: {item}\nAutomation: Ready"
+            # Connect to actual automation
+            btn.clicked.connect(lambda checked, f=frame: self.toggle_automation(f))
+            # Store button reference for state tracking
+            self.automation_buttons[frame_id] = btn
+            # Standard button styling (no extra CSS needed)
+            button_style = """
             QPushButton {
                 font-family: 'Noto Sans', 'Segoe UI';
                 font-size: 12px;
             }
-        """)
+            """
+        else:
+            btn = QPushButton(name)  # Remove "(Not Programmed)" text
+            tooltip = f"ID: {frame_id}\nItem: {item}\nAutomation: Not Implemented Yet"
+            # Don't connect any click signal for unprogrammed buttons
+            # Disable the button to show it's not ready
+            btn.setEnabled(False)
+            # Styling with explicit disabled state handling to prevent visual focus bugs
+            button_style = """
+            QPushButton {
+                font-family: 'Noto Sans', 'Segoe UI';
+                font-size: 12px;
+            }
+            """
 
-        # Connect button click to automation
-        btn.clicked.connect(lambda checked, f=frame: self.start_automation(f))
+        btn.setToolTip(tooltip)
+
+        # Prevent spacebar from activating this button (interferes with global hotkey)
+        btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+        # Apply styling
+        btn.setStyleSheet(button_style)
 
         return btn
 
-    def start_automation(self, frame):
-        """Handle frame automation start."""
+    def set_buttons_disabled(self, disabled: bool, exclude_frame_id: str | None = None):
+        """Enable/disable all automation buttons, optionally excluding one."""
+        for frame_id, button in self.automation_buttons.items():
+            if exclude_frame_id and frame_id == exclude_frame_id:
+                continue  # Skip the excluded button
+            button.setEnabled(not disabled)
+
+    def toggle_automation(self, frame):
+        """Toggle automation start/stop for a frame."""
+        frame_id = frame.get("id", "")
+
+        # Check if automation is currently running
+        if self.automation_controller.is_automation_running(frame_id):
+            # Stop automation
+            self.stop_automation(frame)
+        else:
+            # Start automation
+            self.start_automation(frame)
+
+    def stop_automation(self, frame):
+        """Stop automation for a specific frame."""
         name = frame.get("name", "Unknown")
-        automation = frame.get("automation", 0)
+        frame_id = frame.get("id", "")
+
+        safe_name = name.encode("ascii", "replace").decode("ascii")
+        self.logger.info(f"Stopping automation for: {safe_name} (ID: {frame_id})")
+        print(f"🛑 Stopping automation for: {name} (ID: {frame_id})")
+
+        # Stop the specific automation
+        success = self.automation_controller.stop_automation(frame_id)
+        if success:
+            print(f"✅ Automation stopped successfully for: {name}")
+            # Re-enable all buttons when automation stops
+            self.set_buttons_disabled(False)
+        else:
+            print(f"❌ Failed to stop automation for: {name}")
+
+    def start_automation(self, frame):
+        """Handle frame automation start - only called for programmed automations."""
+        name = frame.get("name", "Unknown")
         frame_id = frame.get("id", "")
 
         # Safe logging that handles emojis by encoding them as text
         safe_name = name.encode("ascii", "replace").decode("ascii")
 
-        if automation:
-            self.logger.info(f"Starting automation for: {safe_name} (ID: {frame_id})")
-            print(f"🤖 Starting automation for: {name} (ID: {frame_id})")
-            # TODO: Implement actual automation logic here
+        self.logger.info(f"Starting automation for: {safe_name} (ID: {frame_id})")
+        print(f"🤖 Starting automation for: {name} (ID: {frame_id})")
+
+        # Use automation controller to start automation
+        success = self.automation_controller.start_automation(frame)
+        if success:
+            print(f"✅ Automation started successfully for: {name}")
+            # Disable all buttons except the one running automation
+            self.set_buttons_disabled(True, exclude_frame_id=frame_id)
+            # Start global hotkey monitoring when automation starts
+            self.hotkey_manager.start_monitoring()
         else:
-            self.logger.info(f"Automation not implemented for: {safe_name} (ID: {frame_id})")
-            print(f"⚠️  Automation not implemented for: {name} (ID: {frame_id})")
+            print(f"❌ Failed to start automation for: {name}")
+
+    def handle_automation_event(self, event_type: str, frame_id: str, data: str | None = None):
+        """Handle automation events from automators (failsafe, etc.)."""
+        if event_type == "failsafe_stop":
+            self.logger.warning(f"Failsafe triggered for {frame_id}: {data}")
+            print(f"🛑 Failsafe triggered for frame {frame_id}: {data}")
+
+            # Re-enable all buttons immediately when failsafe is triggered
+            self.set_buttons_disabled(False)
+
+            # Stop hotkey monitoring since automation stopped
+            self.hotkey_manager.stop_monitoring()
+
+            print("✅ Automation safely stopped and buttons re-enabled")
+
+    def stop_all_automations(self):
+        """Stop all running automations (called by global hotkeys)."""
+        self.logger.info("Stopping all automations via global hotkey")
+        print("🛑 Stopping all automations (global hotkey detected)")
+
+        # Stop hotkey monitoring
+        self.hotkey_manager.stop_monitoring()
+
+        # Re-enable all buttons when all automations stop
+        self.set_buttons_disabled(False)
+
+        # Stop all automations
+        self.automation_controller.stop_all_automations()
+
+        print("✅ All automations stopped")
 
 
 def main():

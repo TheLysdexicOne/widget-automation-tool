@@ -13,6 +13,28 @@
         "miner2": [33, 99, "red"],
         "miner3": [155, 24, "red"],
         "miner4": [158, 98, "red"]
+      },
+      "buttons_converted": {
+        "miner1": {
+          "grid": [32, 33],
+          "screen": [262, 267],
+          "color": "red"
+        },
+        "miner2": {
+          "grid": [33, 99],
+          "screen": [267, 597],
+          "color": "red"
+        },
+        "miner3": {
+          "grid": [155, 24],
+          "screen": [877, 222],
+          "color": "red"
+        },
+        "miner4": {
+          "grid": [158, 98],
+          "screen": [892, 592],
+          "color": "red"
+        }
       }
     },
     {
@@ -26,6 +48,18 @@
       "buttons": {
         "load": [104, 32, "red"],
         "smelt": [122, 98, "red"]
+      },
+      "buttons_converted": {
+        "load": {
+          "grid": [104, 32],
+          "screen": [622, 262],
+          "color": "red"
+        },
+        "smelt": {
+          "grid": [122, 98],
+          "screen": [712, 592],
+          "color": "red"
+        }
       }
     },
     {
@@ -38,6 +72,13 @@
       },
       "buttons": {
         "create": [94, 68, "blue"]
+      },
+      "buttons_converted": {
+        "create": {
+          "grid": [94, 68],
+          "screen": [572, 442],
+          "color": "blue"
+        }
       }
     },
     {
@@ -402,7 +443,7 @@
     },
     {
       "id": "12.1",
-      "name": "Ω Processor Lab",
+      "name": "\u00ce\u00a9 Processor Lab",
       "item": "Processor Amalgamation",
       "automation": {
         "can_automate": 0,
@@ -411,7 +452,7 @@
     },
     {
       "id": "12.2",
-      "name": "Ω Core Foundry",
+      "name": "\u00ce\u00a9 Core Foundry",
       "item": "Core Amalgamation",
       "automation": {
         "can_automate": 0,
@@ -420,7 +461,7 @@
     },
     {
       "id": "12.3",
-      "name": "Ω Widget Distiller",
+      "name": "\u00ce\u00a9 Widget Distiller",
       "item": "Widget Amalgamation",
       "automation": {
         "can_automate": 0,
@@ -429,8 +470,8 @@
     },
     {
       "id": "12.4",
-      "name": "Ω Casing Factory",
-      "item": "Ω Project Casing",
+      "name": "\u00ce\u00a9 Casing Factory",
+      "item": "\u00ce\u00a9 Project Casing",
       "automation": {
         "can_automate": 0,
         "programmed": 0
@@ -438,8 +479,8 @@
     },
     {
       "id": "12.5",
-      "name": "Ω Shielding Plant",
-      "item": "Ω Project Shielding",
+      "name": "\u00ce\u00a9 Shielding Plant",
+      "item": "\u00ce\u00a9 Project Shielding",
       "automation": {
         "can_automate": 0,
         "programmed": 0
@@ -447,8 +488,8 @@
     },
     {
       "id": "12.6",
-      "name": "Ω Project Assembler",
-      "item": "Ω Widget",
+      "name": "\u00ce\u00a9 Project Assembler",
+      "item": "\u00ce\u00a9 Widget",
       "automation": {
         "can_automate": 0,
         "programmed": 0
@@ -456,8 +497,8 @@
     },
     {
       "id": "13.1",
-      "name": "🚀 Electronics Lab",
-      "item": "🚀 Electronics",
+      "name": "\u00f0\u0178\u0161\u20ac Electronics Lab",
+      "item": "\u00f0\u0178\u0161\u20ac Electronics",
       "automation": {
         "can_automate": 0,
         "programmed": 0
@@ -465,8 +506,8 @@
     },
     {
       "id": "13.2",
-      "name": "🚀 Fuel Distiller",
-      "item": "🚀 Fuel",
+      "name": "\u00f0\u0178\u0161\u20ac Fuel Distiller",
+      "item": "\u00f0\u0178\u0161\u20ac Fuel",
       "automation": {
         "can_automate": 0,
         "programmed": 0
@@ -474,8 +515,8 @@
     },
     {
       "id": "13.3",
-      "name": "🚀 Part Assembler",
-      "item": "🚀 Hull",
+      "name": "\u00f0\u0178\u0161\u20ac Part Assembler",
+      "item": "\u00f0\u0178\u0161\u20ac Hull",
       "automation": {
         "can_automate": 0,
         "programmed": 0
@@ -483,12 +524,19 @@
     },
     {
       "id": "13.4",
-      "name": "Ω Launch Factory",
-      "item": "🚀 Segment",
+      "name": "\u00ce\u00a9 Launch Factory",
+      "item": "\u00f0\u0178\u0161\u20ac Segment",
       "automation": {
         "can_automate": 0,
         "programmed": 0
       }
     }
-  ]
+  ],
+  "generated_at": "mock_generation",
+  "playable_area": {
+    "x": 100,
+    "y": 100,
+    "width": 960,
+    "height": 640
+  }
 }

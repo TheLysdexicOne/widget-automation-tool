@@ -4,9 +4,15 @@
 
 # General
 
-- **Only the user is to alter this file**
-- **AI is allowed to alter *ai-gen.md or *ai-generated.md**
-- **Always use the venv or start.bat files for execution or installation**
+- Only the user is to alter this file
+- AI is allowed to alter \*ai-gen.md or \*ai-generated.md
+- ONly perform tasts explicitly as told unless permission is granted for creativity
+- Always use the venv or start.bat files for execution or installation
+- Put all imports at the top of each file
+- Avoid "code vomit" (cluttering code with excessive try: except or "log every action")
+- Don't need to take into account every aspect of failure, let the application fail, we can debug when it does
+- I'm an amateur coder and these are amateur projects
+- This is an unserious project, a project for fun
 
 # Widget Automation Tool: AI-Generated Development Instructions
 

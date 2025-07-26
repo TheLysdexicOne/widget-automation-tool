@@ -13,13 +13,13 @@ Used by main overlay, tracker app, and future mouse tracking.
 """
 
 import logging
-from typing import Optional, Dict, Any, Tuple
 import time
+from typing import Any, Dict, Optional, Tuple
 
 try:
+    import psutil
     import win32gui
     import win32process
-    import psutil
 
     WIN32_AVAILABLE = True
 except ImportError:
@@ -351,23 +351,23 @@ def find_target_window(
     }
 
 
-def is_window_valid(hwnd: int) -> bool:
+def get_playable_area(target_process_name: str = "WidgetInc.exe") -> Optional[Dict[str, int]]:
     """
-    Check if window handle is still valid.
+    Get the playable area coordinates for automation.
+
+    This is a convenience function that extracts just the playable area
+    from find_target_window() for automation purposes.
 
     Args:
-        hwnd: Window handle to check
+        target_process_name: Name of the process to find
 
     Returns:
-        True if window is valid and visible, False otherwise
+        Playable area dictionary with x, y, width, height or None if not found
     """
-    if not WIN32_AVAILABLE or not hwnd:
-        return False
-
-    try:
-        return bool(win32gui.IsWindow(hwnd)) and bool(win32gui.IsWindowVisible(hwnd))
-    except Exception:
-        return False
+    target_info = find_target_window(target_process_name)
+    if target_info and target_info.get("playable_area"):
+        return target_info["playable_area"]
+    return None
 
 
 def calculate_overlay_position(
@@ -418,159 +418,62 @@ def calculate_overlay_position(
         return (100, 100, 100)
 
 
-def get_client_area_coordinates(hwnd: int) -> Optional[Tuple[int, int, int, int]]:
-    """
-    Legacy compatibility function - get client area coordinates for a window handle.
-
-    Args:
-        hwnd: Window handle
-
-    Returns:
-        Tuple of (x, y, width, height) or None if failed
-    """
-    if not WIN32_AVAILABLE or not hwnd:
-        return None
-
-    try:
-        # Get client rectangle (content area without decorations)
-        client_rect = win32gui.GetClientRect(hwnd)
-        client_screen_pos = win32gui.ClientToScreen(hwnd, (0, 0))
-
-        # Calculate dimensions
-        client_width = client_rect[2] - client_rect[0]
-        client_height = client_rect[3] - client_rect[1]
-        client_x, client_y = client_screen_pos
-
-        return (client_x, client_y, client_width, client_height)
-
-    except Exception as e:
-        logger.warning(f"Client area detection failed: {e}")
-        return None
-
-
-def calculate_playable_area_percentages(x: int, y: int, playable_area: Dict[str, int]) -> Dict[str, Any]:
-    """
-    Calculate percentage position within playable area - useful for mouse tracking.
-
-    Args:
-        x: Screen x coordinate
-        y: Screen y coordinate
-        playable_area: Playable area dictionary with x, y, width, height
-
-    Returns:
-        Dictionary with inside_playable bool and x_percent, y_percent if inside
-    """
-    try:
-        if not playable_area:
-            return {"inside_playable": False, "x_percent": 0.0, "y_percent": 0.0}
-
-        px = playable_area.get("x", 0)
-        py = playable_area.get("y", 0)
-        pw = playable_area.get("width", 0)
-        ph = playable_area.get("height", 0)
-
-        if px <= x <= px + pw and py <= y <= py + ph:
-            # Calculate percentage within playable area
-            x_percent = ((x - px) / pw) * 100
-            y_percent = ((y - py) / ph) * 100
-
-            return {
-                "inside_playable": True,
-                "x_percent": x_percent,
-                "y_percent": y_percent,
-                "playable_area": playable_area,
-            }
-        else:
-            return {"inside_playable": False, "x_percent": 0.0, "y_percent": 0.0}
-
-    except Exception as e:
-        logger.error(f"Error calculating playable area percentages: {e}")
-        return {"inside_playable": False, "x_percent": 0.0, "y_percent": 0.0}
-
-
-def calculate_pixel_art_grid_position(
-    x: int,
-    y: int,
-    playable_area: Dict[str, int],
+def grid_to_screen_coordinates(
+    grid_x: int,
+    grid_y: int,
+    playable_area: Optional[Dict[str, int]] = None,
     grid_width: int = PIXEL_ART_GRID_WIDTH,
     grid_height: int = PIXEL_ART_GRID_HEIGHT,
-) -> Dict[str, Any]:
+) -> Tuple[int, int]:
     """
-    Calculate pixel art grid position for a screen coordinate.
+    Convert grid coordinates to screen coordinates for clicking.
+
+    Takes grid coordinates and returns the center pixel of that grid cell in screen coordinates.
 
     Args:
-        x: Screen x coordinate
-        y: Screen y coordinate
-        playable_area: Playable area dictionary with x, y, width, height
+        grid_x: Grid X coordinate (0 to grid_width-1)
+        grid_y: Grid Y coordinate (0 to grid_height-1)
+        playable_area: Playable area dictionary with x, y, width, height (auto-detected if None)
         grid_width: Background pixel grid width (default 192)
         grid_height: Background pixel grid height (default 128)
 
     Returns:
-        Dictionary with grid position and detailed pixel art information
+        Tuple of (screen_x, screen_y) coordinates for clicking
     """
     try:
+        # Auto-detect playable area if not provided
         if not playable_area:
-            return {
-                "inside_playable": False,
-                "grid_x": 0,
-                "grid_y": 0,
-                "pixel_size": 0.0,
-                "x_percent": 0.0,
-                "y_percent": 0.0,
-            }
+            playable_area = get_playable_area()
+            if not playable_area:
+                logger.error("Could not find playable area for grid to screen conversion")
+                return (0, 0)
 
         px = playable_area.get("x", 0)
         py = playable_area.get("y", 0)
         pw = playable_area.get("width", 0)
         ph = playable_area.get("height", 0)
 
-        if px <= x <= px + pw and py <= y <= py + ph:
-            # Calculate pixel size using consolidated function
-            pixel_size = calculate_pixel_size(pw, ph)
+        # Calculate pixel size using existing function
+        pixel_size = calculate_pixel_size(pw, ph)
 
-            # Calculate relative position within playable area
-            rel_x = x - px
-            rel_y = y - py
+        if pixel_size <= 0:
+            logger.error("Invalid pixel size calculated")
+            return (0, 0)
 
-            # Calculate grid position (which background pixel we're in)
-            grid_x = int(rel_x / pixel_size)
-            grid_y = int(rel_y / pixel_size)
+        # Clamp grid coordinates to valid range
+        grid_x = max(0, min(grid_width - 1, grid_x))
+        grid_y = max(0, min(grid_height - 1, grid_y))
 
-            # Clamp to grid bounds
-            grid_x = max(0, min(grid_width - 1, grid_x))
-            grid_y = max(0, min(grid_height - 1, grid_y))
+        # Calculate center of grid cell in playable area coordinates
+        cell_center_x = (grid_x + 0.5) * pixel_size
+        cell_center_y = (grid_y + 0.5) * pixel_size
 
-            # Calculate percentage within playable area
-            x_percent = (rel_x / pw) * 100
-            y_percent = (rel_y / ph) * 100
+        # Convert to screen coordinates
+        screen_x = int(px + cell_center_x)
+        screen_y = int(py + cell_center_y)
 
-            return {
-                "inside_playable": True,
-                "grid_x": grid_x,
-                "grid_y": grid_y,
-                "pixel_size": pixel_size,
-                "x_percent": x_percent,
-                "y_percent": y_percent,
-                "playable_area": playable_area,
-                "grid_dimensions": {"width": grid_width, "height": grid_height},
-            }
-        else:
-            return {
-                "inside_playable": False,
-                "grid_x": 0,
-                "grid_y": 0,
-                "pixel_size": 0.0,
-                "x_percent": 0.0,
-                "y_percent": 0.0,
-            }
+        return (screen_x, screen_y)
 
     except Exception as e:
-        logger.error(f"Error calculating pixel art grid position: {e}")
-        return {
-            "inside_playable": False,
-            "grid_x": 0,
-            "grid_y": 0,
-            "pixel_size": 0.0,
-            "x_percent": 0.0,
-            "y_percent": 0.0,
-        }
+        logger.error(f"Error converting grid ({grid_x}, {grid_y}) to screen coordinates: {e}")
+        return (0, 0)
