@@ -7,7 +7,6 @@ from collections import defaultdict
 from pathlib import Path
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -24,33 +23,8 @@ from PyQt6.QtWidgets import (
 from automation.automation_controller import AutomationController
 from automation.global_hotkey_manager import GlobalHotkeyManager
 from utility.window_utils import calculate_overlay_position, find_target_window
-
-
-def setup_logging():
-    """Setup logging configuration based on command line arguments."""
-    # Check if debug argument is passed
-    debug_mode = "--debug" in sys.argv or "-d" in sys.argv
-
-    # Create logs directory
-    logs_dir = Path(__file__).parent.parent / "logs"
-    logs_dir.mkdir(exist_ok=True)
-
-    # Configure logging level
-    log_level = logging.DEBUG if debug_mode else logging.INFO
-
-    # Setup logging format
-    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
-    # Configure root logger
-    logging.basicConfig(
-        level=log_level,
-        format=log_format,
-        handlers=[logging.FileHandler(logs_dir / "automation_overlay.log"), logging.StreamHandler(sys.stdout)],
-    )
-
-    logger = logging.getLogger(__name__)
-    logger.info(f"Starting Widget Automation Tool - Debug mode: {debug_mode}")
-    return logger
+from utility.coordinate_utils import generate_db_cache
+from utility.logging_utils import setup_logging
 
 
 class CustomTitleBar(QWidget):
@@ -155,6 +129,7 @@ class MainWindow(QMainWindow):
 
         # Initialize window snapping
         self.setup_window_snapping()
+        generate_db_cache()
 
         # Load frames from JSON (adjusted path for our project structure)
         frames_file = Path(__file__).parent / "config" / "frames_database.json"
@@ -314,6 +289,8 @@ class MainWindow(QMainWindow):
                         f"Snapped overlay to WidgetInc window at position: {overlay_x}, {overlay_y} (height: {optimal_height})"
                     )
                     self.last_snap_position = current_position
+                    generate_db_cache()
+
                 elif self.height() != optimal_height:
                     # Update height even if position hasn't changed
                     self.resize(self.width(), optimal_height)

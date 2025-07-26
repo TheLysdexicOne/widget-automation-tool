@@ -32,36 +32,6 @@ class AutomationEngine:
             self.logger.error(f"Failed to click at ({x}, {y}): {e}")
             return False
 
-    def find_image_on_screen(self, image_path: str, confidence: float = 0.8) -> Optional[Tuple[int, int]]:
-        """Find image on screen and return center coordinates."""
-        try:
-            location = pyautogui.locateOnScreen(image_path, confidence=confidence)
-            if location:
-                center = pyautogui.center(location)
-                self.logger.debug(f"Found image {image_path} at {center}")
-                return (center.x, center.y)
-            else:
-                self.logger.debug(f"Image {image_path} not found on screen")
-                return None
-        except Exception as e:
-            self.logger.error(f"Error finding image {image_path}: {e}")
-            return None
-
-    def wait_for_image(
-        self, image_path: str, timeout: float = 10.0, confidence: float = 0.8
-    ) -> Optional[Tuple[int, int]]:
-        """Wait for image to appear on screen within timeout."""
-        start_time = time.time()
-
-        while time.time() - start_time < timeout:
-            location = self.find_image_on_screen(image_path, confidence)
-            if location:
-                return location
-            time.sleep(0.5)  # Check every 500ms
-
-        self.logger.debug(f"Timeout waiting for image {image_path}")
-        return None
-
     def safe_sleep(self, duration: float, check_stop_callback=None) -> bool:
         """
         Sleep for given duration while optionally checking for stop signal.
@@ -73,27 +43,6 @@ class AutomationEngine:
                 return False
             time.sleep(0.1)  # Check every 100ms
         return True
-
-    def get_screen_size(self) -> Tuple[int, int]:
-        """Get screen dimensions."""
-        try:
-            size = pyautogui.size()
-            return (size.width, size.height)
-        except Exception as e:
-            self.logger.error(f"Error getting screen size: {e}")
-            return (1920, 1080)
-
-    def take_screenshot(self, filename: Optional[str] = None) -> bool:
-        """Take a screenshot and optionally save to file."""
-        try:
-            screenshot = pyautogui.screenshot()
-            if filename:
-                screenshot.save(filename)
-                self.logger.debug(f"Screenshot saved to {filename}")
-            return True
-        except Exception as e:
-            self.logger.error(f"Error taking screenshot: {e}")
-            return False
 
     def get_grid_click_position(self, grid_x: int, grid_y: int) -> Optional[Tuple[int, int]]:
         """
@@ -263,3 +212,138 @@ class AutomationEngine:
             f"Expected any {button_color} state, got color: {actual_color}"
         )
         return False
+
+    def click_button(self, button_data: list, button_name: str = "button") -> bool:
+        """
+        Click a button using simplified button data format.
+
+        Args:
+            button_data: List in format [screen_x, screen_y, color]
+            button_name: Name for logging purposes
+
+        Returns:
+            True if click successful, False otherwise
+        """
+        if not button_data or len(button_data) < 3:
+            self.logger.error(f"Invalid button data for {button_name}: {button_data}")
+            return False
+
+        screen_x, screen_y, color = button_data[0], button_data[1], button_data[2]
+
+        try:
+            pyautogui.click(screen_x, screen_y)
+            self.logger.info(f"Clicked {color} {button_name} at ({screen_x}, {screen_y})")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to click {color} {button_name} at ({screen_x}, {screen_y}): {e}")
+            return False
+
+    def is_valid_button_color_screen(self, button_data: list) -> bool:
+        """
+        Check if a button is any valid state of the expected color using screen coordinates.
+
+        Args:
+            button_data: List in format [screen_x, screen_y, color]
+
+        Returns:
+            True if button matches any state of the expected color, False otherwise
+        """
+        if not button_data or len(button_data) < 3:
+            self.logger.error(f"Invalid button data: {button_data}")
+            return False
+
+        screen_x, screen_y, button_color = button_data[0], button_data[1], button_data[2]
+
+        # Define button state colors from automation.md
+        button_colors = {
+            "red": {
+                "default": (199, 35, 21),  # #c72315
+                "focus": (251, 36, 18),  # #fb2412
+                "inactive": (57, 23, 20),  # #391714
+            },
+            "blue": {
+                "default": (21, 87, 199),  # #1557c7
+                "focus": (18, 104, 251),  # #1268fb
+                "inactive": (20, 34, 57),  # #142239
+            },
+            "green": {
+                "default": (17, 162, 40),  # #11a228
+                "focus": (15, 204, 45),  # #0fcc2d
+                "inactive": (16, 46, 22),  # #102e16
+            },
+            "yellow": {
+                "default": (242, 151, 0),  # #f29700
+                "focus": (198, 125, 0),  # #c67d00
+                "inactive": (60, 39, 8),  # #3c2708
+            },
+        }
+
+        if button_color not in button_colors:
+            self.logger.error(f"Invalid button color '{button_color}'")
+            return False
+
+        try:
+            actual_color = pyautogui.pixel(screen_x, screen_y)
+        except Exception as e:
+            self.logger.error(f"Error getting pixel color at screen ({screen_x}, {screen_y}): {e}")
+            return False
+
+        # Check if button matches any of the three states (default, focus, inactive)
+        tolerance = 5
+        for state, expected_color in button_colors[button_color].items():
+            color_match = all(abs(actual_color[i] - expected_color[i]) <= tolerance for i in range(3))
+            if color_match:
+                self.logger.debug(f"Button at screen ({screen_x}, {screen_y}) is valid {button_color} ({state} state)")
+                return True
+
+        # If we get here, the button doesn't match any expected state
+        self.logger.warning(
+            f"Button at screen ({screen_x}, {screen_y}) is not a valid {button_color} button. "
+            f"Expected any {button_color} state, got color: {actual_color}"
+        )
+        return False
+
+    def is_button_inactive_screen(self, button_data: list) -> bool:
+        """
+        Check if a button is in inactive state using screen coordinates.
+
+        Args:
+            button_data: List in format [screen_x, screen_y, color]
+
+        Returns:
+            True if button is inactive, False if clickable
+        """
+        if not button_data or len(button_data) < 3:
+            self.logger.error(f"Invalid button data: {button_data}")
+            return False
+
+        screen_x, screen_y, button_color = button_data[0], button_data[1], button_data[2]
+
+        # Define button inactive colors
+        inactive_colors = {
+            "red": (57, 23, 20),  # #391714
+            "blue": (20, 34, 57),  # #142239
+            "green": (16, 46, 22),  # #102e16
+            "yellow": (60, 39, 8),  # #3c2708
+        }
+
+        if button_color not in inactive_colors:
+            self.logger.error(f"Invalid button color '{button_color}'")
+            return False
+
+        try:
+            actual_color = pyautogui.pixel(screen_x, screen_y)
+        except Exception as e:
+            self.logger.error(f"Error getting pixel color at screen ({screen_x}, {screen_y}): {e}")
+            return False
+
+        expected_color = inactive_colors[button_color]
+        tolerance = 5
+        color_match = all(abs(actual_color[i] - expected_color[i]) <= tolerance for i in range(3))
+
+        self.logger.debug(
+            f"Button at screen ({screen_x}, {screen_y}): expected {expected_color}, got {actual_color}, "
+            f"inactive: {color_match}"
+        )
+
+        return color_match

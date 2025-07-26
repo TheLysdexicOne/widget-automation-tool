@@ -59,32 +59,27 @@ class WidgetFactoryAutomator(BaseAutomator):
             self.trigger_failsafe_stop(failsafe_reason)
             return False
 
-        # Get button data once
-        create_grid = self.button_manager.get_button_grid_coords("create")
-        create_screen = self.button_manager.get_button_screen_coords("create")
-        create_color = self.button_manager.get_button_color("create")
+        # Get simplified button data once
+        create_button = self.button_manager.get_button("create")
 
         # Validate button data
-        if not all([create_grid, create_screen, create_color]):
-            failsafe_reason = "Missing create button coordinate or color data"
+        if not create_button:
+            failsafe_reason = "Missing create button data"
             self.trigger_failsafe_stop(failsafe_reason)
             return False
-
-        # Type assertions for safety (we've already validated above)
-        assert create_grid is not None and create_screen is not None and create_color is not None
 
         try:
             while self.is_running and not self.should_stop and (time.time() - start_time) < self.max_run_time:
                 # FAILSAFE: Check if Create button is a valid button
-                if not self.engine.is_valid_button_color(create_grid[0], create_grid[1], create_color):
-                    failsafe_reason = f"Create button at grid {create_grid} is not a {create_color} button"
+                if not self.engine.is_valid_button_color_screen(create_button):
+                    failsafe_reason = f"Create button at screen ({create_button[0]}, {create_button[1]}) is not a valid {create_button[2]} button"
                     self.trigger_failsafe_stop(failsafe_reason)
                     break
 
                 # Check if Create button is available (not inactive)
-                if not self.engine.is_button_inactive(create_grid[0], create_grid[1], create_color):
-                    # Click create button using button manager coordinates
-                    create_success = self.engine.click_at(create_screen[0], create_screen[1])
+                if not self.engine.is_button_inactive_screen(create_button):
+                    # Click create button
+                    create_success = self.engine.click_button(create_button, "create")
                     if not create_success:
                         self.log_error("Failed to click Create button")
 

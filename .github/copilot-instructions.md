@@ -81,3 +81,56 @@ src/
 ├── utility/                     # Shared utilities (database, logging, etc.)
 └── config/                      # Configuration and frame definitions
 ```
+
+# Code Style & Error Handling
+
+## Clarity Over Cleverness
+
+- **Clear, concise, and to the point**: Prefer simple, readable code over clever one-liners
+- **Obvious naming**: Variables and functions should be self-documenting
+- **Minimal abstraction**: Don't abstract until you need to repeat code 3+ times
+- **Direct approach**: If something needs to happen, make it happen directly
+
+## Error Handling Philosophy
+
+- **Fail fast on data corruption**: If core data is invalid (wrong array length, missing required fields), crash immediately with `sys.exit()`
+- **Valid errors worth catching**: File not found, network issues, user input validation
+- **Invalid errors to ignore**: Don't catch errors that indicate broken logic or corrupted data
+- **No defensive programming**: Don't code around problems that shouldn't exist
+
+## Examples of Good vs Bad Error Handling
+
+### Good (Fail Fast):
+
+```python
+if len(button_data) != 3:
+    logger.error(f"Invalid button data for {button_name}: {button_data}")
+    sys.exit("Exiting due to invalid database")
+```
+
+### Bad (Defensive):
+
+```python
+try:
+    if len(button_data) == 3:
+        grid_x, grid_y, color = button_data
+    else:
+        logger.warning("Invalid button data, using defaults")
+        grid_x, grid_y, color = 0, 0, "red"  # WHY?!
+except Exception as e:
+    logger.error(f"Button processing failed: {e}")
+    continue  # Skip broken data and pretend it's fine
+```
+
+## Function Design
+
+- **Single responsibility**: One function, one job
+- **Minimal parameters**: If a function needs lots of data, it should get it itself
+- **No parameter passing for the sake of it**: `grid_to_screen_coordinates(x, y)` not `grid_to_screen_coordinates(x, y, playable_area, window_info, config)`
+- **Internal dependencies**: Let functions handle their own requirements
+
+## Keep It Simple
+
+- **Don't anticipate problems**: Write code for the happy path, fix issues when they actually happen
+- **Crash is better than corrupt**: Better to crash and debug than silently produce wrong results
+- **User will report actual issues**: Don't code around theoretical edge cases

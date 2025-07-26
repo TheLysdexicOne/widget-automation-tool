@@ -48,35 +48,33 @@ class IronMineAutomator(BaseAutomator):
                 return False
 
         try:
-            # Main automation loop with button manager
+            # Main automation loop with simplified button management
             while self.is_running and not self.should_stop:
                 # Check if max time exceeded
                 if time.time() - start_time > self.max_automation_time:
                     self.log_info(f"Iron Mine automation stopped - max time ({self.max_automation_time}s) reached")
                     break
 
-                # Check each miner using button manager
+                # Check each miner using simplified button data
                 for miner_name in miner_buttons:
-                    grid_coords = self.button_manager.get_button_grid_coords(miner_name)
-                    screen_coords = self.button_manager.get_button_screen_coords(miner_name)
-                    color = self.button_manager.get_button_color(miner_name)
+                    button_data = self.button_manager.get_button(miner_name)
 
-                    # Skip if any coordinate data is missing
-                    if not grid_coords or not screen_coords or not color:
-                        self.log_error(f"Missing coordinate data for {miner_name}")
+                    # Skip if button data is missing
+                    if not button_data:
+                        self.log_error(f"Missing button data for {miner_name}")
                         continue
 
                     # FAILSAFE: Check if this is a valid button
-                    if not self.engine.is_valid_button_color(grid_coords[0], grid_coords[1], color):
-                        failsafe_reason = f"{miner_name} at grid {grid_coords} is not a valid {color} button"
+                    if not self.engine.is_valid_button_color_screen(button_data):
+                        failsafe_reason = f"{miner_name} at screen ({button_data[0]}, {button_data[1]}) is not a valid {button_data[2]} button"
                         self.trigger_failsafe_stop(failsafe_reason)
                         break
 
                     # Check if button is not inactive
-                    if not self.engine.is_button_inactive(grid_coords[0], grid_coords[1], color):
-                        success = self.engine.click_at(screen_coords[0], screen_coords[1])
+                    if not self.engine.is_button_inactive_screen(button_data):
+                        success = self.engine.click_button(button_data, miner_name)
                         if not success:
-                            self.log_error(f"Failed to click {miner_name} at screen {screen_coords}")
+                            self.log_error(f"Failed to click {miner_name}")
 
                 # If failsafe was triggered, break out of main loop
                 if self.should_stop:

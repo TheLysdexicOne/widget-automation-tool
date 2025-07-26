@@ -6,7 +6,9 @@ Implements smart logging with throttling and level management.
 import logging
 import logging.handlers
 import os
+import sys
 import time
+from pathlib import Path
 from typing import Any, Dict
 
 
@@ -142,3 +144,30 @@ def setup_automation_logging(debug_mode: bool = False):
         # Keep important automation events at INFO level
         logging.getLogger("automation").setLevel(logging.INFO)
         logging.getLogger("__main__").setLevel(logging.INFO)
+
+
+def setup_logging():
+    """Setup logging configuration based on command line arguments."""
+    # Check if debug argument is passed
+    debug_mode = "--debug" in sys.argv or "-d" in sys.argv
+
+    # Create logs directory
+    logs_dir = Path(__file__).parent.parent / "logs"
+    logs_dir.mkdir(exist_ok=True)
+
+    # Configure logging level
+    log_level = logging.DEBUG if debug_mode else logging.INFO
+
+    # Setup logging format
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+    # Configure root logger
+    logging.basicConfig(
+        level=log_level,
+        format=log_format,
+        handlers=[logging.FileHandler(logs_dir / "automation_overlay.log"), logging.StreamHandler(sys.stdout)],
+    )
+
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting Widget Automation Tool - Debug mode: {debug_mode}")
+    return logger
