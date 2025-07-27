@@ -53,11 +53,11 @@ miners:
 **Loop**:
 
 ```
-for miner in miners:
-  if miner not red
-    break
-  if miner not red.inactive - left click miner
-sleep: 0.1s
+while {args}:
+  for miner in miners:
+    if miner active
+      CLICK miner
+  sleep: 0.1s
 ```
 
 ## Iron Smelter
@@ -65,6 +65,7 @@ sleep: 0.1s
 Click red Load button until full, then click red Smelt button
 
 ```
+timer = true
 load = (104,32)
 smelt = (122,98)
 ```
@@ -72,13 +73,22 @@ smelt = (122,98)
 **Loop**
 
 ```
-if load not red
-  break
-if load not red.inactive
-  left click load
-  wait 50ms
-  if load not red.inactive - if smelt not red - break - click smelt - wait until smelt not red.inactive
-sleep: 0s
+while {running}:
+  if load_button active
+    click load_button
+    sleep 50ms
+    if load_button active
+      if smelt_button active
+        click smelt_button
+        wait 50ms
+        if smelt_button active
+          print "Button behavior suggests storage is full. Stopping."
+          break
+      else
+        print "Likely on wrong frame. Stopping."
+        break
+    else
+      sleep 100
 ```
 
 ## Widget Factory

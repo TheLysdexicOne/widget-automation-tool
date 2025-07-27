@@ -6,7 +6,6 @@ Handles automation for the Iron Smelter frame in WidgetInc.
 import time
 from typing import Any, Dict
 
-from ...automation_engine import AutomationEngine
 from ..base_automator import BaseAutomator
 
 
@@ -15,45 +14,48 @@ class IronSmelterAutomator(BaseAutomator):
 
     def __init__(self, frame_data: Dict[str, Any]):
         super().__init__(frame_data)
-        self.engine = AutomationEngine()
-        self.max_run_time = 300  # 5 minutes max
 
-    def run_automation(self):
-        """Load then smelt repeatedly."""
-        start_time = time.time()
 
-        # Get button data
-        load_button = self.button_manager.get_button("load")
-        smelt_button = self.button_manager.get_button("smelt")
+def run_automation(self):
+    """Load then smelt repeatedly with storage full detection via button behavior."""
+    start_time = time.time()
 
-        # Main automation loop
-        while self.is_running and not self.should_stop:
-            # Stop after 5 minutes
-            if time.time() - start_time > 300:
-                break
+    # Get button data
+    load_button = self.button_manager.get_button("load")
+    smelt_button = self.button_manager.get_button("smelt")
 
-            # FAILSAFE: Check if we're on the right frame
-            if not self.engine.is_button_color_valid(load_button):
-                self.trigger_failsafe_stop("Wrong frame detected - load button not valid")
-                return
+    # Main automation loop
+    while self.is_running and not self.should_stop:
+        # Stop after configured time limit
+        if time.time() - start_time > self.max_run_time:
+            break
 
-            # Check if Load button is available (not inactive)
-            if not self.engine.is_button_inactive(load_button):
-                # Click load button
-                self.engine.click_button(load_button)
-                self.safe_sleep(0.05)  # 50ms delay
+        # Check if Load button is active
+        if self.engine.is_button_active(load_button):
+            self.engine.click_button(load_button)  # Built-in safety validation
+            self.safe_sleep(0.05)  # 50ms as specified
 
-                # If Load button is still active, click Smelt button
-                if not self.engine.is_button_inactive(load_button):
-                    self.engine.click_button(smelt_button)
+            # Check if load button is still active after clicking
+            if self.engine.is_button_active(load_button):
+                # Load button still active - check if smelt is available
+                if self.engine.is_button_active(smelt_button):
+                    self.engine.click_button(smelt_button)  # Built-in safety validation
+                    self.safe_sleep(0.05)  # 50ms wait
 
-                    # Wait until smelt button becomes active again
-                    while self.is_running and not self.should_stop:
-                        if not self.engine.is_button_inactive(smelt_button):
-                            break
-                        if not self.safe_sleep(0.1):
-                            break
+                    # If smelt button is still active after clicking, storage is full
+                    if self.engine.is_button_active(smelt_button):
+                        self.log_info("Button behavior suggests storage is full. Stopping.")
+                        break
+                else:
+                    self.log_error("Likely on wrong frame. Stopping.")
+                    break
+            else:
+                # Load button became inactive - normal behavior, continue with short sleep
+                self.safe_sleep(0.1)  # 100ms as specified
+        else:
+            # Load button inactive - wait a bit
+            self.safe_sleep(0.1)
 
-            # Use safe_sleep for right-click detection between cycles
-            if not self.safe_sleep(0.1):
-                break
+        # Use safe_sleep for right-click detection between cycles
+        if not self.safe_sleep(0.1):
+            break

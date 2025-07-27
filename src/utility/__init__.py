@@ -3,12 +3,14 @@ Utility module for common functionality.
 Centralizes reusable components following KISS principles.
 """
 
-from .logging_utils import get_smart_logger, log_position_change, log_state_change
-from .window_utils import calculate_overlay_position
+from .coordinate_utils import ButtonManager, generate_db_cache
+from .logging_utils import setup_logging
+from .window_utils import calculate_overlay_position, find_target_window
 
 __all__ = [
+    "ButtonManager",
+    "generate_db_cache",
+    "setup_logging",
     "calculate_overlay_position",
-    "get_smart_logger",
-    "log_position_change",
-    "log_state_change",
+    "find_target_window",
 ]

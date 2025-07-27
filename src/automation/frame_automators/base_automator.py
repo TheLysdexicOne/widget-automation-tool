@@ -33,6 +33,14 @@ class BaseAutomator(ABC):
         self.is_running = False
         self.should_stop = False
 
+        # Default timeout for automations (can be overridden by subclasses)
+        self.max_run_time = 300  # 5 minutes default
+
+        # Standard timing constants for consistent behavior
+        self.click_delay = 0.05  # 50ms delay after clicks
+        self.cycle_delay = 0.1  # 100ms delay between cycles
+        self.factory_delay = 0.5  # 500ms delay for factory operations
+
         # UI callback for failsafe/emergency stop
         self.ui_callback = None
 
@@ -124,13 +132,7 @@ class BaseAutomator(ABC):
                 self.log_error(f"Error calling UI callback: {e}")
 
     def check_button_failsafe(self, button_data: list, button_name: str) -> bool:
-        """
-        Check if button is valid and trigger failsafe if not.
-        """
-        if not self.engine.is_button_color_valid(button_data):
-            failsafe_reason = (
-                f"{button_name} at screen ({button_data[0]}, {button_data[1]}) is not a valid {button_data[2]} button"
-            )
-            self.trigger_failsafe_stop(failsafe_reason)
-            return False
-        return True
+        """Check if button is valid and trigger failsafe if not."""
+        return self.engine.failsafe_color_validation(
+            button_data, button_name, trigger_failsafe_callback=self.trigger_failsafe_stop
+        )
