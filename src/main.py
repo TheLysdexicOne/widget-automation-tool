@@ -133,7 +133,7 @@ class MainWindow(QMainWindow):
         generate_db_cache()
 
         # Load frames from converted cache (screen coordinates)
-        frames_file = Path(__file__).parent / "config" / "frames.json"
+        frames_file = Path(__file__).parent.parent / "config" / "database" / "frames.json"
         self.logger.debug(f"Loading frames from: {frames_file}")
         try:
             with open(frames_file, "r", encoding="utf-8") as f:

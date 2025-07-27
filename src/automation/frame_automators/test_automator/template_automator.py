@@ -126,7 +126,7 @@ class ExampleFrameAutomator(TemplateAutomator):
 
             # Try each button
             for i, button in enumerate(buttons):
-                if self.engine.is_button_active(button):
+                if self.engine.button_active(button):
                     self.engine.click_button(button, button_names[i])  # Built-in safety
                     self.safe_sleep(self.click_delay)
                     actions_performed += 1

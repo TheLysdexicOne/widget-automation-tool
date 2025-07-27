@@ -285,10 +285,10 @@ class TrackerWidget(QWidget):
         layout.setSpacing(8)
 
         # Title
-        title_label = QLabel("Widget Tracker")
-        title_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_label.setStyleSheet(
+        self.title_label = QLabel("Widget Tracker")  # <-- Make this an instance attribute
+        self.title_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label.setStyleSheet(
             """
             QLabel {
                 color: #ffffff;
@@ -453,7 +453,7 @@ class TrackerWidget(QWidget):
         )
 
         # Add all widgets to layout
-        layout.addWidget(title_label)
+        layout.addWidget(self.title_label)
         layout.addWidget(hotkey_label)
         layout.addLayout(status_layout)
         layout.addWidget(self.info_area)
@@ -521,68 +521,74 @@ class TrackerWidget(QWidget):
 
     def _update_status(self, found: bool, target_info: dict):
         """Update status display."""
-        if found != self.target_found:
-            self.target_found = found
-
-            if found:
-                self.status_label.setText("TARGET FOUND")
-                self.status_circle.setStyleSheet(
-                    """
-                    QLabel {
-                        background-color: #4CAF50;
-                        border-radius: 10px;
-                        border: 2px solid #66BB6A;
-                    }
+        if found:
+            # Always update when target is found
+            self.status_label.setText("TARGET FOUND")
+            self.status_circle.setStyleSheet(
                 """
-                )
+                QLabel {
+                    background-color: #4CAF50;
+                    border-radius: 10px;
+                    border: 2px solid #66BB6A;
+                }
+            """
+            )
 
-                # Update info area
-                info_text = f"Process: {self.target_process}\n"
-                info_text += f"PID: {target_info.get('pid', 'N/A')}\n"
-                info_text += f"HWND: {target_info.get('hwnd', 'N/A')}\n"
-                info_text += f"Title: {target_info.get('title', 'N/A')}"
-                self.info_area.setPlainText(info_text)
+            # Update info area
+            info_text = f"Process: {self.target_process}\n"
+            info_text += f"PID: {target_info.get('pid', 'N/A')}\n"
+            info_text += f"HWND: {target_info.get('hwnd', 'N/A')}\n"
+            info_text += f"Title: {target_info.get('title', 'N/A')}"
+            self.info_area.setPlainText(info_text)
 
-                # Update coordinates - include playable area if available
-                if "rect" in target_info and "client_rect" in target_info:
-                    rect = target_info["rect"]
-                    client_rect = target_info["client_rect"]
+            # Always update coordinates when found
+            if "rect" in target_info and "client_rect" in target_info:
+                rect = target_info["rect"]
+                client_rect = target_info["client_rect"]
 
-                    coords_text = f"Window: {rect[0]}, {rect[1]}, {rect[2] - rect[0]}x{rect[3] - rect[1]}\n"
-                    coords_text += f"Client: {client_rect[2]}x{client_rect[3]}"
+                coords_text = f"Window: {rect[0]}, {rect[1]}, {rect[2] - rect[0]}x{rect[3] - rect[1]}\n"
+                coords_text += f"Client: {client_rect[2]}x{client_rect[3]}"
 
-                    # Add playable area if available
-                    if "playable_area" in target_info and target_info["playable_area"]:
-                        playable = target_info["playable_area"]
-                        coords_text += (
-                            f"\nPlayable: {playable['x']}, {playable['y']}, {playable['width']}x{playable['height']}"
-                        )
+                if "playable_area" in target_info and target_info["playable_area"]:
+                    playable = target_info["playable_area"]
+                    coords_text += (
+                        f"\nPlayable: {playable['x']}, {playable['y']}, {playable['width']}x{playable['height']}"
+                    )
 
-                        # Update tracker state for mouse tracker
-                        self.window_coords = target_info["window_info"]
-                        self.playable_coords = playable
+                    # Always update tracker coordinates
+                    self.window_coords = target_info["window_info"]
+                    self.playable_coords = playable
 
-                    self.coords_label.setText(coords_text)
+                self.coords_label.setText(coords_text)
 
-            else:
-                self.status_label.setText("SEARCHING...")
-                self.status_circle.setStyleSheet(
-                    """
-                    QLabel {
-                        background-color: #FFA500;
-                        border-radius: 10px;
-                        border: 2px solid #FF8C00;
-                    }
+        elif self.target_found:
+            # Only update UI when going from found to not found
+            self.status_label.setText("SEARCHING...")
+            self.status_circle.setStyleSheet(
                 """
-                )
-                self.info_area.setPlainText("No target process found")
-                self.coords_label.setText("No coordinates available")
-                self.window_coords = {}
-                self.playable_coords = {}
+                QLabel {
+                    background-color: #FFA500;
+                    border-radius: 10px;
+                    border: 2px solid #FF8C00;
+                }
+            """
+            )
+            self.info_area.setPlainText("No target process found")
+            self.coords_label.setText("No coordinates available")
+            self.window_coords = {}
+            self.playable_coords = {}
+
+        # Update status flag
+        self.target_found = found
 
     def _refresh_target(self):
         """Manually refresh target search."""
         self.logger.info("Manual refresh requested")
+        # Clear cached coordinates to force fresh calculation
+        self.window_coords = {}
+        self.playable_coords = {}
+
+        # Force a fresh target check
         self._check_target()
 
     def _get_window_coords(self) -> Dict:
@@ -636,7 +642,7 @@ class TrackerWidget(QWidget):
         if event.key() == Qt.Key.Key_G and event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # Copy grid coordinates to clipboard (Ctrl+G)
             grid_x, grid_y = self.mouse_tracker.current_grid_coords
-            grid_text = f"({grid_x},{grid_y})"
+            grid_text = f"{grid_x}, {grid_y}"
             clipboard = QApplication.clipboard()
             if clipboard:
                 clipboard.setText(grid_text)
@@ -644,9 +650,44 @@ class TrackerWidget(QWidget):
                 # Also show a brief visual feedback in the window title
                 original_title = self.windowTitle()
                 self.setWindowTitle(f"Widget Tracker - Copied: {grid_text}")
+
+                # Visual cue: turn title_label background green, then fade back
+                self._show_title_copied_feedback()
+
                 QTimer.singleShot(2000, lambda: self.setWindowTitle(original_title))
         else:
             super().keyPressEvent(event)
+
+    def _show_title_copied_feedback(self):
+        """Flash the title label green and fade back to normal."""
+        # Set green background
+        self.title_label.setStyleSheet(
+            """
+            QLabel {
+                color: #ffffff;
+                padding: 8px;
+                background-color: #2ecc40;
+                border-radius: 4px;
+                margin-bottom: 4px;
+            }
+            """
+        )
+        # Fade back to normal after ~1 second
+        QTimer.singleShot(1000, self._reset_title_label_style)
+
+    def _reset_title_label_style(self):
+        """Restore the title label's normal background."""
+        self.title_label.setStyleSheet(
+            """
+            QLabel {
+                color: #ffffff;
+                padding: 8px;
+                background-color: #3d3d3d;
+                border-radius: 4px;
+                margin-bottom: 4px;
+            }
+            """
+        )
 
 
 # --- Logging and CLI ---

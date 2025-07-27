@@ -32,7 +32,7 @@ class DatabaseManager:
 
     def __init__(self, base_path: Path):
         self.base_path = base_path
-        self.frames_db_path = base_path / "src" / "config" / "frames_database.json"
+        self.frames_db_path = base_path / "config" / "database" / "frames_database.json"
         self.screenshots_dir = base_path / "assets" / "screenshots"
 
         # Ensure directories exist

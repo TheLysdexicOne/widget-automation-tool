@@ -12,8 +12,8 @@ def load_stylesheet(filename: str) -> str:
     """Load a QSS stylesheet file and return its contents."""
     logger = logging.getLogger(__name__)
 
-    # Look for the file in the assets/styles directory
-    styles_dir = Path(__file__).parent.parent.parent / "src" / "config" / "styles"
+    # Look for the file in the config/styles directory
+    styles_dir = Path(__file__).parent.parent.parent / "config" / "styles"
     qss_file = styles_dir / filename
 
     if not qss_file.exists():

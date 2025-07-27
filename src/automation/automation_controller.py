@@ -214,6 +214,11 @@ class AutomationController:
         try:
             if frame_id in self.automation_threads:
                 del self.automation_threads[frame_id]
+
+            # Remove from active automators
+            if frame_id in self.active_automators:
+                del self.active_automators[frame_id]
+
             self.logger.info(f"Cleaned up automation thread for {frame_id}")
         except Exception as e:
             self.logger.error(f"Error cleaning up automation for {frame_id}: {e}")
@@ -235,8 +240,16 @@ class AutomationController:
                     if thread.is_alive():
                         self.logger.warning(f"Automation thread for {frame_id} did not stop within timeout")
 
-                # Clean up regardless
+                # Clean up and trigger completion callback
                 self._cleanup_automation(frame_id)
+
+                # Always trigger completion callback to reset UI
+                if self.completion_callback:
+                    try:
+                        self.completion_callback(frame_id)
+                    except Exception as e:
+                        self.logger.error(f"Error calling completion callback: {e}")
+
                 return True
             else:
                 self.logger.warning(f"No active automator found for frame: {frame_id}")

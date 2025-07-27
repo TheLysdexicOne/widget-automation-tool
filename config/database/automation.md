@@ -44,20 +44,26 @@
 
 ```
 miners:
-  miner1 = (32,33)
-  miner2 = (33,99)
-  miner3 = (155,24)
-  miner4 = (158,98)
+  miner1 = (32,33, red)
+  miner2 = (33,99, red)
+  miner3 = (155,24, red)
+  miner4 = (158,98, red)
 ```
 
 **Loop**:
 
-```
+```py
 while {args}:
   for miner in miners:
-    if miner active
-      CLICK miner
-  sleep: 0.1s
+    if miner is ACTIVE
+      click(miner)
+      sleep 100ms
+      if miner is ACTIVE
+        failed +=1
+  # Storage Full Behavior
+  if failed >= 4:
+    break
+  sleep 100ms
 ```
 
 ## Iron Smelter
@@ -66,29 +72,25 @@ Click red Load button until full, then click red Smelt button
 
 ```
 timer = true
-load = (104,32)
-smelt = (122,98)
+load = (104,32, red)
+smelt = (122,98, red)
 ```
 
 **Loop**
 
-```
-while {running}:
-  if load_button active
-    click load_button
+```py
+while {args}:
+  if load is ACTIVE
+    click(load)
     sleep 50ms
-    if load_button active
-      if smelt_button active
-        click smelt_button
-        wait 50ms
-        if smelt_button active
-          print "Button behavior suggests storage is full. Stopping."
-          break
-      else
-        print "Likely on wrong frame. Stopping."
-        break
+    if load_button is INACTIVE
+      while load_button is INACTIVE
+        sleep 100ms
     else
-      sleep 100
+        click(smelt)
+        sleep 50ms
+        if smelt_button is ACTIVE
+          break
 ```
 
 ## Widget Factory
@@ -96,15 +98,38 @@ while {running}:
 Singular blue button to be continually pressed
 
 ```
-create = (94,68)
+create = (94,68, blue)
 ```
 
 **Loop**
 
+```py
+if create is ACTIVE
+  click(create)
+sleep 50ms
 ```
-if create not blue
-  break
-if create not blue.inactive
-  left click create
-sleep: 0.5s
+
+89, 79
+89, 79
+186, 77
+
+# Tier 2
+
+## Sand Pit
+
+Click button while active
+
+```
+excavate = (144, 44, red)
+```
+
+**Loop**
+
+```py
+if excavate is active
+  click excavate
+  sleep 50ms
+  # Storage Full Behavior
+  if excavate is active
+    break
 ```

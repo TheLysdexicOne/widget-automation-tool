@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 def generate_db_cache():
     """Generate frames.json with screen coordinates from frames_database.json."""
-    frames_file = Path(__file__).parent.parent / "config" / "frames_database.json"
-    frames_cache = Path(__file__).parent.parent / "config" / "frames.json"
+    frames_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
+    frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.json"
 
     with open(frames_file, "r") as f:
         frames_data = json.load(f)

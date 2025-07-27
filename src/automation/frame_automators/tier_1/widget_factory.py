@@ -29,7 +29,7 @@ class WidgetFactoryAutomator(BaseAutomator):
                 break
 
             # Check if Create button is available (not inactive)
-            if not self.engine.is_button_inactive(create_button):
+            if not self.engine.button_inactive(create_button):
                 self.engine.click_button(create_button)  # Built-in safety validation
 
             # Use safe_sleep for right-click detection between cycles

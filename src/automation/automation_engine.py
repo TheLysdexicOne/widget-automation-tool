@@ -29,18 +29,6 @@ class AutomationEngine:
             self.logger.error(f"Failed to click at ({x}, {y}): {e}")
             return False
 
-    def safe_sleep(self, duration: float, check_stop_callback=None) -> bool:
-        """
-        Sleep for given duration while optionally checking for stop signal.
-        Returns True if sleep completed normally, False if interrupted.
-        """
-        end_time = time.time() + duration
-        while time.time() < end_time:
-            if check_stop_callback and check_stop_callback():
-                return False
-            time.sleep(0.1)  # Check every 100ms
-        return True
-
     def click_button(self, button_data: list, button_name: str = "button") -> bool:
         """Click a button with built-in frame validation for safety."""
         if len(button_data) != 3:
@@ -122,7 +110,7 @@ class AutomationEngine:
 
         return False
 
-    def is_button_inactive(self, button_data: list) -> bool:
+    def button_inactive(self, button_data: list) -> bool:
         """Check if a button is in inactive state."""
         if len(button_data) != 3:
             self.logger.error(f"Invalid button data: {button_data}")
@@ -131,7 +119,12 @@ class AutomationEngine:
         screen_x, screen_y, button_color = button_data
 
         # Define button inactive colors
-        inactive_colors = {"red": (57, 23, 20), "blue": (20, 34, 57), "green": (16, 46, 22), "yellow": (60, 39, 8)}
+        inactive_colors = {
+            "red": (57, 23, 20),
+            "blue": (20, 34, 57),
+            "green": (16, 46, 22),
+            "yellow": (60, 39, 8),
+        }
 
         if button_color not in inactive_colors:
             self.logger.error(f"Invalid button color '{button_color}'")
@@ -141,9 +134,11 @@ class AutomationEngine:
         expected_color = inactive_colors[button_color]
         tolerance = 5
 
-        return all(abs(actual_color[i] - expected_color[i]) <= tolerance for i in range(3))
+        # Check if button matches inactive state
+        color_match = all(abs(actual_color[i] - expected_color[i]) <= tolerance for i in range(3))
+        return color_match
 
-    def is_button_active(self, button_data: list) -> bool:
+    def button_active(self, button_data: list) -> bool:
         """Check if a button is in active state (default or focus)."""
         if len(button_data) != 3:
             self.logger.error(f"Invalid button data: {button_data}")
