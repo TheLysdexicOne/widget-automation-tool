@@ -4,6 +4,7 @@ Handles automation for the Iron Mine frame in WidgetInc.
 """
 
 import time
+import sys
 from typing import Any, Dict
 
 from ...automation_engine import AutomationEngine
@@ -18,91 +19,41 @@ class IronMineAutomator(BaseAutomator):
         self.engine = AutomationEngine()
         self.max_automation_time = 600.0  # Maximum time to run automation (for testing)
 
-    def start_automation(self) -> bool:
-        """Start Iron Mine automation."""
-        if self.is_running:
-            self.log_info("Iron Mine automation is already running")
-            return False
-
-        self.log_info("Starting Iron Mine automation")
-        self.is_running = True
-        self.should_stop = False
-
-        # Run the automation directly (controller handles threading)
-        self._run_automation()
-        return True
-
-    def _run_automation(self):
-        """Internal method that runs the automation loop."""
-        # Start timer for max automation time
+    def run_automation(self):
+        """Click all available miners repeatedly."""
         start_time = time.time()
-
-        # Get all miner buttons - no coordinate conversion needed!
         miner_buttons = ["miner1", "miner2", "miner3", "miner4"]
 
-        # Validate all buttons have screen coordinates
+        # Get all miner button data
+        miners = []
         for miner_name in miner_buttons:
-            if not self.button_manager.has_button(miner_name):
-                failsafe_reason = f"Could not get screen coordinates for {miner_name}"
-                self.trigger_failsafe_stop(failsafe_reason)
-                return False
+            button_data = self.button_manager.get_button(miner_name)
+            miners.append(button_data)
 
-        try:
-            # Main automation loop with simplified button management
-            while self.is_running and not self.should_stop:
-                # Check if max time exceeded
-                if time.time() - start_time > self.max_automation_time:
-                    self.log_info(f"Iron Mine automation stopped - max time ({self.max_automation_time}s) reached")
-                    break
+        # Main automation loop
+        while self.is_running and not self.should_stop:
+            # Stop after 10 minutes
+            if time.time() - start_time > 600:
+                break
 
-                # Check each miner using simplified button data
-                for miner_name in miner_buttons:
-                    button_data = self.button_manager.get_button(miner_name)
+            failed = 0
+            for miner in miners:
+                # FAILSAFE: Check if we're on the right frame
+                if not self.engine.is_button_color_valid(miner):
+                    self.trigger_failsafe_stop("Wrong frame detected - miner button not valid")
+                    return
 
-                    # Skip if button data is missing
-                    if not button_data:
-                        self.log_error(f"Missing button data for {miner_name}")
-                        continue
+                if not self.engine.is_button_inactive(miner):
+                    self.engine.click_button(miner)
+                    self.safe_sleep(0.05)
+                    if not self.engine.is_button_inactive(miner):
+                        failed += 1
 
-                    # FAILSAFE: Check if this is a valid button
-                    if not self.engine.is_valid_button_color_screen(button_data):
-                        failsafe_reason = f"{miner_name} at screen ({button_data[0]}, {button_data[1]}) is not a valid {button_data[2]} button"
-                        self.trigger_failsafe_stop(failsafe_reason)
-                        break
+            # Storage full detection - break immediately
+            if failed >= 4:
+                self.log_info("Storage full - stopping automation")
+                break
 
-                    # Check if button is not inactive
-                    if not self.engine.is_button_inactive_screen(button_data):
-                        success = self.engine.click_button(button_data, miner_name)
-                        if not success:
-                            self.log_error(f"Failed to click {miner_name}")
-
-                # If failsafe was triggered, break out of main loop
-                if self.should_stop:
-                    self.log_info("Iron Mine automation stopped due to failsafe trigger")
-                    break
-
-                # Sleep between cycles as per automation.md (1 second)
-                if not self.safe_sleep(1.0):
-                    break
-
-            self.log_info("Iron Mine automation stopped")
-            return True
-
-        except Exception as e:
-            self.log_error(f"Error in Iron Mine automation: {e}")
-            return False
-        finally:
-            self.is_running = False
-
-    def stop_automation(self) -> bool:
-        """Stop Iron Mine automation."""
-        if not self.is_running:
-            self.log_info("Iron Mine automation is not running")
-            return True
-
-        self.log_info("Stopping Iron Mine automation")
-        self.should_stop = True
-        self.is_running = False
-
-        self.log_info("Iron Mine automation stopped successfully")
-        return True
+            # Use safe_sleep for right-click detection between cycles
+            if not self.safe_sleep(0.1):
+                break

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def generate_db_cache():
     """Generate frames.json with screen coordinates from frames_database.json."""
     frames_file = Path(__file__).parent.parent / "config" / "frames_database.json"
-    frames_cache = Path(__file__).parent.parent.parent / "data" / "frames.json"
+    frames_cache = Path(__file__).parent.parent / "config" / "frames.json"
 
     with open(frames_file, "r") as f:
         frames_data = json.load(f)
@@ -55,14 +55,22 @@ class ButtonManager:
     def __init__(self, frame_data: Dict[str, Any]):
         self.frame_id = frame_data.get("id", "unknown")
         self.buttons = frame_data.get("buttons", {})
+        self.logger = logging.getLogger(f"{__name__}.ButtonManager")
 
-    def get_button(self, button_name: str) -> Optional[list]:
+    def get_button(self, button_name: str) -> list:
         """Get button as [screen_x, screen_y, color]."""
-        return self.buttons.get(button_name)
+        button = self.buttons.get(button_name)
+        if not button:
+            self.logger.error(f"Missing button data for {button_name} in frame {self.frame_id}")
+            sys.exit("Exiting due to missing button data")
+        return button
 
     def has_button(self, button_name: str) -> bool:
         """Check if button exists."""
-        return button_name in self.buttons
+        exists = button_name in self.buttons
+        if not exists:
+            self.logger.warning(f"Button {button_name} not found in frame {self.frame_id}")
+        return exists
 
     def get_button_screen_coords(self, button_name: str) -> Optional[Tuple[int, int]]:
         """Get screen coordinates for a button."""

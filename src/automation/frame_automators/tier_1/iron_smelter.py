@@ -18,99 +18,42 @@ class IronSmelterAutomator(BaseAutomator):
         self.engine = AutomationEngine()
         self.max_run_time = 300  # 5 minutes max
 
-    def is_automation_available(self) -> bool:
-        """Check if Iron Smelter automation is available."""
-        # Now implemented with generic automation
-        return True
-
-    def start_automation(self) -> bool:
-        """Start Iron Smelter automation."""
-        if self.is_running:
-            self.log_info("Iron Smelter automation is already running")
-            return False
-
-        self.log_info("Starting Iron Smelter automation")
-        self.is_running = True
-        self.should_stop = False
-
-        # Run the automation directly (controller handles threading)
-        self._run_automation()
-        return True
-
-    def stop_automation(self) -> bool:
-        """Stop Iron Smelter automation."""
-        if not self.is_running:
-            self.log_info("Iron Smelter automation not running")
-            return True
-
-        self.log_info("Stopping Iron Smelter automation")
-        self.is_running = False
-        self.should_stop = True
-        return True
-
-    def _run_automation(self):
-        """Internal method that runs the automation loop."""
-        self.log_info("Iron Smelter automation started")
+    def run_automation(self):
+        """Load then smelt repeatedly."""
         start_time = time.time()
 
-        # Get button data from button manager
-        if not self.button_manager.has_button("load") or not self.button_manager.has_button("smelt"):
-            failsafe_reason = "Could not get coordinates for load and smelt buttons"
-            self.trigger_failsafe_stop(failsafe_reason)
-            return False
-
-        # Get simplified button data once
+        # Get button data
         load_button = self.button_manager.get_button("load")
         smelt_button = self.button_manager.get_button("smelt")
 
-        # Validate all button data is available
-        if not load_button or not smelt_button:
-            failsafe_reason = "Missing button data for load or smelt buttons"
-            self.trigger_failsafe_stop(failsafe_reason)
-            return False
+        # Main automation loop
+        while self.is_running and not self.should_stop:
+            # Stop after 5 minutes
+            if time.time() - start_time > 300:
+                break
 
-        try:
-            while self.is_running and not self.should_stop and (time.time() - start_time) < self.max_run_time:
-                # FAILSAFE: Check if Load button is a valid button
-                if not self.engine.is_valid_button_color_screen(load_button):
-                    failsafe_reason = f"Load button at screen ({load_button[0]}, {load_button[1]}) is not a valid {load_button[2]} button"
-                    self.trigger_failsafe_stop(failsafe_reason)
-                    break
+            # FAILSAFE: Check if we're on the right frame
+            if not self.engine.is_button_color_valid(load_button):
+                self.trigger_failsafe_stop("Wrong frame detected - load button not valid")
+                return
 
-                # Check if Load button is available (not inactive)
-                if not self.engine.is_button_inactive_screen(load_button):
-                    # Click load button
-                    load_success = self.engine.click_button(load_button, "load")
-                    if load_success:
-                        # Wait 50ms as specified in automation.md
-                        if not self.safe_sleep(0.05):  # 50ms
+            # Check if Load button is available (not inactive)
+            if not self.engine.is_button_inactive(load_button):
+                # Click load button
+                self.engine.click_button(load_button)
+                self.safe_sleep(0.05)  # 50ms delay
+
+                # If Load button is still active, click Smelt button
+                if not self.engine.is_button_inactive(load_button):
+                    self.engine.click_button(smelt_button)
+
+                    # Wait until smelt button becomes active again
+                    while self.is_running and not self.should_stop:
+                        if not self.engine.is_button_inactive(smelt_button):
+                            break
+                        if not self.safe_sleep(0.1):
                             break
 
-                        # Check if Load button is still not inactive and check Smelt button failsafe
-                        if not self.engine.is_button_inactive_screen(load_button):
-                            # FAILSAFE: Check if Smelt button is a valid button
-                            if not self.engine.is_valid_button_color_screen(smelt_button):
-                                failsafe_reason = f"Smelt button at screen ({smelt_button[0]}, {smelt_button[1]}) is not a valid {smelt_button[2]} button"
-                                self.trigger_failsafe_stop(failsafe_reason)
-                                break
-
-                            # Click smelt button
-                            smelt_success = self.engine.click_button(smelt_button, "smelt")
-                            if smelt_success:
-                                # Wait until smelt button becomes active again (not inactive)
-                                while self.is_running and not self.should_stop:
-                                    if not self.engine.is_button_inactive_screen(smelt_button):
-                                        break
-                                    if not self.safe_sleep(0.1):  # Check every 100ms
-                                        break
-
-                            else:
-                                self.log_error("Failed to click Smelt button")
-                    else:
-                        self.log_error("Failed to click Load button")
-
-        except Exception as e:
-            self.log_error(f"Error in Iron Smelter automation: {e}")
-        finally:
-            self.is_running = False
-            self.log_info("Iron Smelter automation completed")
+            # Use safe_sleep for right-click detection between cycles
+            if not self.safe_sleep(0.1):
+                break

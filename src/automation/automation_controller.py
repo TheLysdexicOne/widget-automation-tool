@@ -21,6 +21,7 @@ class AutomationController:
         self.automation_threads: Dict[str, threading.Thread] = {}
         self.frame_mapping = self._build_frame_mapping()
         self.ui_callback = None  # Callback for UI events (failsafe, etc.)
+        self.completion_callback = None  # Callback for automation completion
 
     def _build_frame_mapping(self) -> Dict[str, str]:
         """Build mapping from frame ID to module name based on frames database."""
@@ -184,6 +185,10 @@ class AutomationController:
             self.logger.error(f"Failed to start automation for {frame_id}: {e}")
             return False
 
+    def set_completion_callback(self, callback):
+        """Set callback for automation completion events."""
+        self.completion_callback = callback
+
     def _run_automation_thread(self, frame_id: str, automator: BaseAutomator):
         """Run the automation in a background thread."""
         try:
@@ -196,6 +201,13 @@ class AutomationController:
         finally:
             # Clean up when automation finishes
             self._cleanup_automation(frame_id)
+
+            # Notify UI that automation completed
+            if self.completion_callback:
+                try:
+                    self.completion_callback(frame_id)
+                except Exception as e:
+                    self.logger.error(f"Error calling completion callback: {e}")
 
     def _cleanup_automation(self, frame_id: str):
         """Clean up automation resources."""

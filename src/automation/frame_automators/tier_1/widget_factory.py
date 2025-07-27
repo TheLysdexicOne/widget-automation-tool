@@ -18,77 +18,28 @@ class WidgetFactoryAutomator(BaseAutomator):
         self.engine = AutomationEngine()
         self.max_run_time = 300  # 5 minutes max
 
-    def is_automation_available(self) -> bool:
-        """Check if Widget Factory automation is available."""
-        # Implemented with blue button automation
-        return True
-
-    def start_automation(self) -> bool:
-        """Start Widget Factory automation."""
-        if self.is_running:
-            self.log_info("Widget Factory automation is already running")
-            return False
-
-        self.log_info("Starting Widget Factory automation")
-        self.is_running = True
-        self.should_stop = False
-
-        # Run the automation directly (controller handles threading)
-        self._run_automation()
-        return True
-
-    def stop_automation(self) -> bool:
-        """Stop Widget Factory automation."""
-        if not self.is_running:
-            self.log_info("Widget Factory automation not running")
-            return True
-
-        self.log_info("Stopping Widget Factory automation")
-        self.is_running = False
-        self.should_stop = True
-        return True
-
-    def _run_automation(self):
-        """Internal method that runs the automation loop."""
-        self.log_info("Widget Factory automation started")
+    def run_automation(self):
+        """Click create button repeatedly."""
         start_time = time.time()
 
-        # Get create button data from button manager
-        if not self.button_manager.has_button("create"):
-            failsafe_reason = "Could not get coordinates for create button"
-            self.trigger_failsafe_stop(failsafe_reason)
-            return False
-
-        # Get simplified button data once
+        # Get create button data
         create_button = self.button_manager.get_button("create")
 
-        # Validate button data
-        if not create_button:
-            failsafe_reason = "Missing create button data"
-            self.trigger_failsafe_stop(failsafe_reason)
-            return False
+        # Main automation loop
+        while self.is_running and not self.should_stop:
+            # Stop after 5 minutes
+            if time.time() - start_time > 300:
+                break
 
-        try:
-            while self.is_running and not self.should_stop and (time.time() - start_time) < self.max_run_time:
-                # FAILSAFE: Check if Create button is a valid button
-                if not self.engine.is_valid_button_color_screen(create_button):
-                    failsafe_reason = f"Create button at screen ({create_button[0]}, {create_button[1]}) is not a valid {create_button[2]} button"
-                    self.trigger_failsafe_stop(failsafe_reason)
-                    break
+            # FAILSAFE: Check if we're on the right frame
+            if not self.engine.is_button_color_valid(create_button):
+                self.trigger_failsafe_stop("Wrong frame detected - create button not valid")
+                return
 
-                # Check if Create button is available (not inactive)
-                if not self.engine.is_button_inactive_screen(create_button):
-                    # Click create button
-                    create_success = self.engine.click_button(create_button, "create")
-                    if not create_success:
-                        self.log_error("Failed to click Create button")
+            # Check if Create button is available (not inactive)
+            if not self.engine.is_button_inactive(create_button):
+                self.engine.click_button(create_button)
 
-                # Use safe_sleep as per automation.md (0.5s)
-                if not self.safe_sleep(0.5):
-                    break
-
-        except Exception as e:
-            self.log_error(f"Error in Widget Factory automation: {e}")
-        finally:
-            self.is_running = False
-            self.log_info("Widget Factory automation completed")
+            # Use safe_sleep for right-click detection between cycles
+            if not self.safe_sleep(0.5):
+                break

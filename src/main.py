@@ -111,6 +111,7 @@ class MainWindow(QMainWindow):
         # Initialize automation controller and global hotkeys
         self.automation_controller = AutomationController()
         self.automation_controller.set_ui_callback(self.handle_automation_event)
+        self.automation_controller.set_completion_callback(self.handle_automation_completion)
         self.hotkey_manager = GlobalHotkeyManager()
         self.hotkey_manager.set_stop_callback(self.stop_all_automations)
 
@@ -131,8 +132,8 @@ class MainWindow(QMainWindow):
         self.setup_window_snapping()
         generate_db_cache()
 
-        # Load frames from JSON (adjusted path for our project structure)
-        frames_file = Path(__file__).parent / "config" / "frames_database.json"
+        # Load frames from converted cache (screen coordinates)
+        frames_file = Path(__file__).parent / "config" / "frames.json"
         self.logger.debug(f"Loading frames from: {frames_file}")
         try:
             with open(frames_file, "r", encoding="utf-8") as f:
@@ -268,8 +269,6 @@ class MainWindow(QMainWindow):
                 # Use the calculate_overlay_position function for cleaner positioning
                 overlay_x, overlay_y, available_height = calculate_overlay_position(
                     window_info=window_info,
-                    overlay_width=self.width(),
-                    overlay_height=self.height(),
                 )
 
                 # Calculate optimal height: smaller of content size or available space
@@ -424,6 +423,18 @@ class MainWindow(QMainWindow):
             self.hotkey_manager.start_monitoring()
         else:
             print(f"❌ Failed to start automation for: {name}")
+
+    def handle_automation_completion(self, frame_id: str):
+        """Handle automation completion (natural completion, not manual stop)."""
+        self.logger.info(f"Automation completed naturally for frame: {frame_id}")
+
+        # Stop hotkey monitoring
+        self.hotkey_manager.stop_monitoring()
+
+        # Re-enable all buttons
+        self.set_buttons_disabled(False)
+
+        print(f"✅ Automation completed for frame: {frame_id}")
 
     def handle_automation_event(self, event_type: str, frame_id: str, data: str | None = None):
         """Handle automation events from automators (failsafe, etc.)."""

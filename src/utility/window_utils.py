@@ -372,8 +372,6 @@ def get_playable_area(target_process_name: str = "WidgetInc.exe") -> Optional[Di
 
 def calculate_overlay_position(
     window_info: Dict[str, Any],
-    overlay_width: int,
-    overlay_height: int,
 ) -> Tuple[int, int, int]:
     """
     Calculate overlay position in top-right corner of target window.
@@ -418,35 +416,25 @@ def calculate_overlay_position(
         return (100, 100, 100)
 
 
-def grid_to_screen_coordinates(
-    grid_x: int,
-    grid_y: int,
-    playable_area: Optional[Dict[str, int]] = None,
-    grid_width: int = PIXEL_ART_GRID_WIDTH,
-    grid_height: int = PIXEL_ART_GRID_HEIGHT,
-) -> Tuple[int, int]:
+def grid_to_screen_coordinates(grid_x: int, grid_y: int) -> Tuple[int, int]:
     """
     Convert grid coordinates to screen coordinates for clicking.
 
     Takes grid coordinates and returns the center pixel of that grid cell in screen coordinates.
 
     Args:
-        grid_x: Grid X coordinate (0 to grid_width-1)
-        grid_y: Grid Y coordinate (0 to grid_height-1)
-        playable_area: Playable area dictionary with x, y, width, height (auto-detected if None)
-        grid_width: Background pixel grid width (default 192)
-        grid_height: Background pixel grid height (default 128)
+        grid_x: Grid X coordinate (0 to 191)
+        grid_y: Grid Y coordinate (0 to 127)
 
     Returns:
         Tuple of (screen_x, screen_y) coordinates for clicking
     """
     try:
-        # Auto-detect playable area if not provided
+        # Get current playable area
+        playable_area = get_playable_area()
         if not playable_area:
-            playable_area = get_playable_area()
-            if not playable_area:
-                logger.error("Could not find playable area for grid to screen conversion")
-                return (0, 0)
+            logger.error("Could not find playable area for grid to screen conversion")
+            return (0, 0)
 
         px = playable_area.get("x", 0)
         py = playable_area.get("y", 0)
@@ -461,8 +449,8 @@ def grid_to_screen_coordinates(
             return (0, 0)
 
         # Clamp grid coordinates to valid range
-        grid_x = max(0, min(grid_width - 1, grid_x))
-        grid_y = max(0, min(grid_height - 1, grid_y))
+        grid_x = max(0, min(PIXEL_ART_GRID_WIDTH - 1, grid_x))
+        grid_y = max(0, min(PIXEL_ART_GRID_HEIGHT - 1, grid_y))
 
         # Calculate center of grid cell in playable area coordinates
         cell_center_x = (grid_x + 0.5) * pixel_size

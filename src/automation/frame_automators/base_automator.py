@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 
 from utility.coordinate_utils import ButtonManager
+from automation.automation_engine import AutomationEngine
 
 
 class BaseAutomator(ABC):
@@ -26,6 +27,7 @@ class BaseAutomator(ABC):
 
         # Button management
         self.button_manager = ButtonManager(frame_data)
+        self.engine = AutomationEngine()
 
         # Automation state
         self.is_running = False
@@ -35,19 +37,37 @@ class BaseAutomator(ABC):
         self.ui_callback = None
 
     @abstractmethod
-    def start_automation(self) -> bool:
+    def run_automation(self):
         """
-        Start the automation process for this frame.
-        Returns True if automation started successfully, False otherwise.
+        Run the actual automation logic for this frame.
+        This method contains the frame-specific automation logic.
         """
         pass
 
-    @abstractmethod
+    def start_automation(self) -> bool:
+        """Start the automation process for this frame."""
+        if self.is_running:
+            self.log_info(f"{self.frame_name} automation is already running")
+            return False
+
+        self.log_info(f"Starting {self.frame_name} automation")
+        self.is_running = True
+        self.should_stop = False
+
+        # Run the automation directly (controller handles threading)
+        self.run_automation()
+        return True
+
     def stop_automation(self) -> bool:
-        """
-        Stop the automation process for this frame.
-        Returns True if automation stopped successfully, False otherwise.
-        """
+        """Stop the automation process for this frame."""
+        if not self.is_running:
+            self.log_info(f"{self.frame_name} automation not running")
+            return True
+
+        self.log_info(f"Stopping {self.frame_name} automation")
+        self.is_running = False
+        self.should_stop = True
+        return True
         pass
 
     def get_status(self) -> Dict[str, Any]:
@@ -102,3 +122,15 @@ class BaseAutomator(ABC):
                 self.ui_callback("failsafe_stop", self.frame_id, reason)
             except Exception as e:
                 self.log_error(f"Error calling UI callback: {e}")
+
+    def check_button_failsafe(self, button_data: list, button_name: str) -> bool:
+        """
+        Check if button is valid and trigger failsafe if not.
+        """
+        if not self.engine.is_button_color_valid(button_data):
+            failsafe_reason = (
+                f"{button_name} at screen ({button_data[0]}, {button_data[1]}) is not a valid {button_data[2]} button"
+            )
+            self.trigger_failsafe_stop(failsafe_reason)
+            return False
+        return True
