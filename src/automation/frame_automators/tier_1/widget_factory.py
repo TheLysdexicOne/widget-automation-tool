@@ -19,8 +19,8 @@ class WidgetFactoryAutomator(BaseAutomator):
         """Click create button repeatedly."""
         start_time = time.time()
 
-        # Get create button data
-        create_button = self.button_manager.get_button("create")
+        # Create button engine for clean syntax
+        create = self.engine.create_button(self.button_manager.get_button("create"), "create")
 
         # Main automation loop
         while self.is_running and not self.should_stop:
@@ -29,9 +29,9 @@ class WidgetFactoryAutomator(BaseAutomator):
                 break
 
             # Check if Create button is available (not inactive)
-            if not self.engine.button_inactive(create_button):
-                self.engine.click_button(create_button)  # Built-in safety validation
+            if not create.inactive():
+                create.click()  # Built-in safety validation
 
             # Use safe_sleep for right-click detection between cycles
-            if not self.safe_sleep(self.factory_delay):
+            if not self.sleep(self.factory_delay):
                 break

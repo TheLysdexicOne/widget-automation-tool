@@ -1,0 +1,69 @@
+"""
+Button Engine
+Handles individual button automation and state validation.
+"""
+
+import logging
+import sys
+import pyautogui
+
+
+class ButtonEngine:
+    """Represents a single button with all its automation capabilities."""
+
+    def __init__(self, button_data: list, name: str = "button"):
+        if len(button_data) != 3:
+            logging.getLogger(f"{__name__}.ButtonEngine").error(f"Invalid button data for {name}: {button_data}")
+            sys.exit("Exiting due to invalid button data")
+
+        self.x, self.y, self.color = button_data
+        self.name = name
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        # Define button state colors
+        self.button_colors = {
+            "red": {"default": (199, 35, 21), "focus": (251, 36, 18), "inactive": (57, 23, 20)},
+            "blue": {"default": (21, 87, 199), "focus": (18, 104, 251), "inactive": (20, 34, 57)},
+            "green": {"default": (17, 162, 40), "focus": (15, 204, 45), "inactive": (16, 46, 22)},
+            "yellow": {"default": (242, 151, 0), "focus": (198, 125, 0), "inactive": (60, 39, 8)},
+        }
+
+        if self.color not in self.button_colors:
+            self.logger.error(f"Invalid button color '{self.color}'")
+            sys.exit("Exiting due to invalid button color")
+
+        self.tolerance = 5
+
+    def active(self) -> bool:
+        """Check if button is in active state (default or focus)."""
+        actual_color = pyautogui.pixel(self.x, self.y)
+
+        # Check if button matches default or focus state
+        for state in ["default", "focus"]:
+            expected_color = self.button_colors[self.color][state]
+            color_match = all(abs(actual_color[i] - expected_color[i]) <= self.tolerance for i in range(3))
+            if color_match:
+                return True
+        return False
+
+    def inactive(self) -> bool:
+        """Check if button is in inactive state."""
+        actual_color = pyautogui.pixel(self.x, self.y)
+        expected_color = self.button_colors[self.color]["inactive"]
+
+        color_match = all(abs(actual_color[i] - expected_color[i]) <= self.tolerance for i in range(3))
+        return color_match
+
+    def click(self) -> bool:
+        """Click this button with safety validation."""
+        if not self.active():
+            self.logger.error(f"Button {self.name} not in valid state for clicking")
+            sys.exit("Safety stop - button not valid")
+
+        try:
+            pyautogui.click(self.x, self.y)
+            self.logger.debug(f"Clicked {self.color} {self.name} at ({self.x}, {self.y})")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to click {self.color} {self.name} at ({self.x}, {self.y}): {e}")
+            return False

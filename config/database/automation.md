@@ -109,9 +109,8 @@ if create is ACTIVE
 sleep 50ms
 ```
 
-89, 79
-89, 79
-186, 77
+86, 79
+88, 79
 
 # Tier 2
 

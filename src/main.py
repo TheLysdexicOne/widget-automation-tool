@@ -24,17 +24,17 @@ from automation.automation_controller import AutomationController
 from automation.global_hotkey_manager import GlobalHotkeyManager
 from utility.window_utils import calculate_overlay_position, find_target_window
 from utility.coordinate_utils import generate_db_cache
-from utility.logging_utils import setup_logging
+from utility.logging_utils import setup_logging, LoggerMixin
 
 
-class CustomTitleBar(QWidget):
+class CustomTitleBar(QWidget, LoggerMixin):
     """Custom title bar with minimize and close buttons."""
 
     def __init__(self, parent):
         super().__init__(parent)
         self.main_window = parent
-        self.logger = logging.getLogger(f"{__name__}.CustomTitleBar")
-        self.logger.debug("Initializing custom title bar")
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.log_debug("Initializing custom title bar")
         self.setFixedHeight(30)
 
         # Create layout
@@ -63,50 +63,11 @@ class CustomTitleBar(QWidget):
         layout.addWidget(self.close_btn)
 
 
-class MainWindow(QMainWindow):
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.RightButton:
-            self.logger.debug("Right-click detected, showing context menu")
-            pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
-            widget = self.childAt(pos)
-
-            if isinstance(widget, QPushButton):
-                return
-            menu = QMenu(self)
-            restart_action = menu.addAction("Restart")
-            menu.addSeparator()
-            exit_action = menu.addAction("Exit")
-            global_pos = event.globalPosition().toPoint() if hasattr(event, "globalPosition") else event.globalPos()
-            action = menu.exec(global_pos)
-            if action == restart_action:
-                self.restart_app()
-            elif action == exit_action:
-                self.close()
-        else:
-            super().mousePressEvent(event)
-
-    def restart_app(self):
-        self.logger.info("Restarting application")
-        # Relaunch the current script
-        os.execv(sys.executable, [sys.executable] + sys.argv)
-
-    def closeEvent(self, event):
-        """Handle window closing - ensure cleanup."""
-        self.logger.info("Application closing - cleaning up")
-
-        # Stop hotkey monitoring
-        self.hotkey_manager.stop_monitoring()
-
-        # Stop all automations
-        self.automation_controller.stop_all_automations()
-
-        # Accept the close event
-        event.accept()
-
+class MainWindow(QMainWindow, LoggerMixin):
     def __init__(self):
         super().__init__()
-        self.logger = logging.getLogger(f"{__name__}.MainWindow")
-        self.logger.info("Initializing main window")
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.log_info("Initializing main window")
 
         # Initialize automation controller and global hotkeys
         self.automation_controller = AutomationController()
@@ -123,7 +84,7 @@ class MainWindow(QMainWindow):
             Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Window
         )
         self.setMinimumSize(100, 200)  # Set a reasonable minimum size
-        self.logger.debug("Window flags and size configured")
+        self.log_debug("Window flags and size configured")
 
         # Disable context menu to prevent interference with right-click hotkey
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
@@ -141,7 +102,7 @@ class MainWindow(QMainWindow):
             frames = frames_data.get("frames", [])
             self.logger.info(f"Loaded {len(frames)} frames from database")
         except FileNotFoundError:
-            self.logger.error(f"Could not find frames database at {frames_file}")
+            self.log_error(f"Could not find frames database at {frames_file}")
             print(f"Warning: Could not find frames database at {frames_file}")
             frames = []
 
@@ -245,6 +206,45 @@ class MainWindow(QMainWindow):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.logger.info(f"Window initialized with preferred size: {preferred_width}x{preferred_height}")
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.RightButton:
+            self.logger.debug("Right-click detected, showing context menu")
+            pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
+            widget = self.childAt(pos)
+
+            if isinstance(widget, QPushButton):
+                return
+            menu = QMenu(self)
+            restart_action = menu.addAction("Restart")
+            menu.addSeparator()
+            exit_action = menu.addAction("Exit")
+            global_pos = event.globalPosition().toPoint() if hasattr(event, "globalPosition") else event.globalPos()
+            action = menu.exec(global_pos)
+            if action == restart_action:
+                self.restart_app()
+            elif action == exit_action:
+                self.close()
+        else:
+            super().mousePressEvent(event)
+
+    def restart_app(self):
+        self.logger.info("Restarting application")
+        # Relaunch the current script
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    def closeEvent(self, event):
+        """Handle window closing - ensure cleanup."""
+        self.logger.info("Application closing - cleaning up")
+
+        # Stop hotkey monitoring
+        self.hotkey_manager.stop_monitoring()
+
+        # Stop all automations
+        self.automation_controller.stop_all_automations()
+
+        # Accept the close event
+        event.accept()
 
     def setup_window_snapping(self):
         """Setup window snapping to WidgetInc application."""
@@ -469,7 +469,10 @@ class MainWindow(QMainWindow):
 
 def main():
     # Setup logging first
-    logger = setup_logging()
+    setup_logging()
+
+    # Use custom logger name instead of module name
+    logger = logging.getLogger("Initialization")
 
     logger.info("Creating QApplication")
     app = QApplication(sys.argv)

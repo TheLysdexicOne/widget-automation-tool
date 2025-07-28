@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, Tuple
 
 from .window_utils import grid_to_screen_coordinates
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("CoordinateUtils")
 
 
 def generate_db_cache():
@@ -55,7 +55,7 @@ class ButtonManager:
     def __init__(self, frame_data: Dict[str, Any]):
         self.frame_id = frame_data.get("id", "unknown")
         self.buttons = frame_data.get("buttons", {})
-        self.logger = logging.getLogger(f"{__name__}.ButtonManager")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_button(self, button_name: str) -> list:
         """Get button as [screen_x, screen_y, color]."""

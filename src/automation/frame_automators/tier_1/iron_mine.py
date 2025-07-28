@@ -18,34 +18,31 @@ class IronMineAutomator(BaseAutomator):
     def run_automation(self):
         start_time = time.time()
 
-        # Get all miner button data
+        # Create button engines for clean syntax
         miner_buttons = ["miner1", "miner2", "miner3", "miner4"]
-        miners = [self.button_manager.get_button(name) for name in miner_buttons]
+        miners = [self.engine.create_button(self.button_manager.get_button(name), name) for name in miner_buttons]
 
         # Main automation loop
         while self.is_running and not self.should_stop:
             if time.time() - start_time > self.max_run_time:
                 break
+
             failed = 0
             for miner in miners:
-                if self.engine.button_active(miner):
-                    self.engine.click_button(miner)
-                    self.safe_sleep(0.1)
-                    if self.engine.button_active(miner):
+                if miner.active():
+                    miner.click()
+                    self.sleep(0.1)
+                    if miner.active():
                         failed += 1
-                        print(failed)
+                else:
+                    failed += 1
 
-            # Storage full behavior
+            # Storage full behavior - stop automation completely
             if failed >= 4:
-                self.log_info("Button behavior suggests storage is full. Stopping.")
-                break
-            while self.is_running and not self.should_stop and self.engine.button_inactive(miners[0]):
-                self.safe_sleep(0.2)
-
-            # Use safe_sleep for right-click detection between cycles
-            if not self.safe_sleep(0.1):
+                self.log_storage_error()
                 break
 
-            # Use safe_sleep for right-click detection between cycles
-            if not self.safe_sleep(self.cycle_delay):
-                break
+            # Wait for miners to become inactive, then cycle delay
+            while self.is_running and not self.should_stop and miners[0].inactive():
+                if not self.sleep(0.2):
+                    return

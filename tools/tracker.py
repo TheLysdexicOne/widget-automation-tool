@@ -225,7 +225,7 @@ class TrackerWidget(QWidget):
     def __init__(self, target_process="WidgetInc.exe"):
         super().__init__()
         self.target_process = target_process
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         # State
         self.target_found = False

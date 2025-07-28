@@ -22,8 +22,7 @@ class BaseAutomator(ABC):
         self.item = frame_data.get("item", "Unknown Item")
 
         # Setup logging
-        safe_name = self.frame_name.encode("ascii", "replace").decode("ascii")
-        self.logger = logging.getLogger(f"automation.{safe_name.lower().replace(' ', '_')}")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         # Button management
         self.button_manager = ButtonManager(frame_data)
@@ -87,7 +86,7 @@ class BaseAutomator(ABC):
             "should_stop": self.should_stop,
         }
 
-    def safe_sleep(self, duration: float) -> bool:
+    def sleep(self, duration: float) -> bool:
         """
         Sleep for given duration while checking for stop signal.
         Returns True if sleep completed normally, False if interrupted.
@@ -136,3 +135,15 @@ class BaseAutomator(ABC):
         return self.engine.failsafe_color_validation(
             button_data, button_name, trigger_failsafe_callback=self.trigger_failsafe_stop
         )
+
+    """
+    Predefined Logging Messages
+    """
+
+    def log_storage_error(self):
+        self.should_stop = True
+        self.log_info("Stopping. Storage is likely full or resources are missing.")
+
+    def log_frame_error(self):
+        self.should_stop = True
+        self.log_info("Stopping. Frame validation failed or frame is not active.")

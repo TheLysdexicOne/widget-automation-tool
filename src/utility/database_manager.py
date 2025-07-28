@@ -17,6 +17,8 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .logging_utils import LoggerMixin
+
 try:
     from PIL import Image
 
@@ -24,13 +26,15 @@ try:
 except ImportError:
     PIL_AVAILABLE = False
 
-logger = logging.getLogger(__name__)
+# File-level logger for static functions
+logger = logging.getLogger("DatabaseManager")
 
 
-class DatabaseManager:
+class DatabaseManager(LoggerMixin):
     """Core data management for frames and screenshots."""
 
     def __init__(self, base_path: Path):
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.base_path = base_path
         self.frames_db_path = base_path / "config" / "database" / "frames_database.json"
         self.screenshots_dir = base_path / "assets" / "screenshots"
@@ -48,7 +52,7 @@ class DatabaseManager:
                 with open(self.frames_db_path, "r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
-                logger.error(f"Error loading frames database: {e}")
+                self.log_error(f"Error loading frames database: {e}")
         # Return default structure
         return {"frames": []}
 
@@ -64,7 +68,7 @@ class DatabaseManager:
                 json.dump(self.frames_data, f, indent=2, ensure_ascii=False)
             return True
         except Exception as e:
-            logger.error(f"Error saving frames database: {e}")
+            self.log_error(f"Error saving frames database: {e}")
             return False
 
     def get_frame_list(self) -> List[Dict]:
@@ -96,7 +100,7 @@ class DatabaseManager:
 
         screenshot_path = self.screenshots_dir / filename
         screenshot.save(screenshot_path)
-        logger.info(f"Screenshot saved: {screenshot_path}")
+        self.log_info(f"Screenshot saved: {screenshot_path}")
         return screenshot_uuid
 
     def update_frame(self, frame_name: str, frame_data: Dict) -> bool:
@@ -108,7 +112,7 @@ class DatabaseManager:
                     return self._save_frames_database()
             return False
         except Exception as e:
-            logger.error(f"Error updating frame: {e}")
+            self.log_error(f"Error updating frame: {e}")
             return False
 
     def delete_screenshot(self, screenshot_uuid: str) -> bool:
@@ -117,9 +121,9 @@ class DatabaseManager:
             # Find and delete the file
             for screenshot_file in self.screenshots_dir.glob(f"*{screenshot_uuid}*"):
                 screenshot_file.unlink()
-                logger.info(f"Deleted screenshot: {screenshot_file}")
+                self.log_info(f"Deleted screenshot: {screenshot_file}")
                 return True
             return False
         except Exception as e:
-            logger.error(f"Error deleting screenshot: {e}")
+            self.log_error(f"Error deleting screenshot: {e}")
             return False

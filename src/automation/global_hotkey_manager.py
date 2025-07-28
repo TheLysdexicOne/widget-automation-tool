@@ -21,7 +21,7 @@ class GlobalHotkeyManager:
     """Manages global hotkeys for automation control."""
 
     def __init__(self):
-        self.logger = logging.getLogger(f"{__name__}.GlobalHotkeyManager")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.is_monitoring = False
         self.monitor_thread: Optional[threading.Thread] = None
         self.stop_callback: Optional[Callable] = None

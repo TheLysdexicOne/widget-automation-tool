@@ -12,6 +12,40 @@ from pathlib import Path
 from typing import Any, Dict
 
 
+class LoggerMixin:
+    """Mixin class providing convenient logging methods for any class."""
+
+    logger: logging.Logger  # Type hint for mixin
+
+    def log_info(self, message: str):
+        """Convenience method for info logging."""
+        if hasattr(self, "logger"):
+            self.logger.info(message)
+        else:
+            logging.getLogger(self.__class__.__name__).info(message)
+
+    def log_debug(self, message: str):
+        """Convenience method for debug logging."""
+        if hasattr(self, "logger"):
+            self.logger.debug(message)
+        else:
+            logging.getLogger(self.__class__.__name__).debug(message)
+
+    def log_error(self, message: str):
+        """Convenience method for error logging."""
+        if hasattr(self, "logger"):
+            self.logger.error(message)
+        else:
+            logging.getLogger(self.__class__.__name__).error(message)
+
+    def log_warning(self, message: str):
+        """Convenience method for warning logging."""
+        if hasattr(self, "logger"):
+            self.logger.warning(message)
+        else:
+            logging.getLogger(self.__class__.__name__).warning(message)
+
+
 class ThrottledLogger:
     """Logger wrapper that throttles repeated messages."""
 
@@ -103,7 +137,9 @@ def setup_rotating_logs(log_dir: str = "logs", max_bytes: int = 5 * 1024 * 1024,
     )
 
     # Setup formatter
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    formatter = logging.Formatter(
+        "%(asctime)s  |  %(name)-25s  |  %(levelname)-8s  |  %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
     file_handler.setFormatter(formatter)
 
     # Add handler to root logger
@@ -112,7 +148,7 @@ def setup_rotating_logs(log_dir: str = "logs", max_bytes: int = 5 * 1024 * 1024,
 
     # Optional: Add console handler for debug mode
     console_handler = logging.StreamHandler()
-    console_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    console_formatter = logging.Formatter("%(asctime)s  |  %(name)-25s  |  %(levelname)-8s  |  %(message)s")
     console_handler.setFormatter(console_formatter)
     root_logger.addHandler(console_handler)
 
@@ -159,7 +195,7 @@ def setup_logging():
     log_level = logging.DEBUG if debug_mode else logging.INFO
 
     # Setup logging format
-    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    log_format = "%(asctime)s  |  %(name)-25s  |  %(levelname)-8s  |  %(message)s"
 
     # Configure root logger
     logging.basicConfig(

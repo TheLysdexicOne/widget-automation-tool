@@ -16,7 +16,7 @@ class AutomationController:
     """Controls and manages automation for different frames."""
 
     def __init__(self):
-        self.logger = logging.getLogger(f"{__name__}.AutomationController")
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.active_automators: Dict[str, BaseAutomator] = {}
         self.automation_threads: Dict[str, threading.Thread] = {}
         self.frame_mapping = self._build_frame_mapping()

@@ -1,23 +1,32 @@
 """
 Automation Engine
-Common automation utilities and patterns for frame automators.
+Common automation utilities and routing for frame automators.
 """
 
 import logging
-import time
 import sys
 import pyautogui
 
+from .button_engine import ButtonEngine
+from .scan_engine import ScanEngine
+
 
 class AutomationEngine:
-    """Provides common automation utilities for frame automators."""
+    """Provides common automation utilities and routing for frame automators."""
 
     def __init__(self):
-        self.logger = logging.getLogger(f"{__name__}.AutomationEngine")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         # Configure pyautogui for safety
         pyautogui.FAILSAFE = True  # Move mouse to corner to abort
         pyautogui.PAUSE = 0.1  # Small delay between actions
+
+        # Initialize engines
+        self.scan_engine = ScanEngine()
+
+    def create_button(self, button_data: list, name: str = "button") -> ButtonEngine:
+        """Factory method to create ButtonEngine instances."""
+        return ButtonEngine(button_data, name)
 
     def click_at(self, x: int, y: int, button: str = "left", duration: float = 0.1) -> bool:
         """Click at specified coordinates."""

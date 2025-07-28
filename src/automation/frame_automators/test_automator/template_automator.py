@@ -100,7 +100,7 @@ class TemplateAutomator(BaseAutomator):
             # Your automation logic goes here
 
             # Always end with safe_sleep for proper interruption handling
-            if not self.safe_sleep(1.0):  # 1 second delay for template
+            if not self.sleep(1.0):  # 1 second delay for template
                 break
 
         self.log_info("Template automation completed")
@@ -128,7 +128,7 @@ class ExampleFrameAutomator(TemplateAutomator):
             for i, button in enumerate(buttons):
                 if self.engine.button_active(button):
                     self.engine.click_button(button, button_names[i])  # Built-in safety
-                    self.safe_sleep(self.click_delay)
+                    self.sleep(self.click_delay)
                     actions_performed += 1
 
             # Log progress occasionally
@@ -136,5 +136,5 @@ class ExampleFrameAutomator(TemplateAutomator):
                 self.log_debug(f"Performed {actions_performed} actions this cycle")
 
             # Check for completion or pause between cycles
-            if not self.safe_sleep(self.cycle_delay):
+            if not self.sleep(self.cycle_delay):
                 break
