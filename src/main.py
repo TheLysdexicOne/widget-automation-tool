@@ -5,8 +5,9 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any, Dict
 
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
     QHBoxLayout,
@@ -22,7 +23,7 @@ from PyQt6.QtWidgets import (
 
 from automation.automation_controller import AutomationController
 from automation.global_hotkey_manager import GlobalHotkeyManager
-from utility.window_utils import calculate_overlay_position, find_target_window
+from utility.window_manager import get_window_manager
 from utility.coordinate_utils import generate_db_cache
 from utility.logging_utils import setup_logging, LoggerMixin
 
@@ -75,6 +76,11 @@ class MainWindow(QMainWindow, LoggerMixin):
         self.automation_controller.set_completion_callback(self.handle_automation_completion)
         self.hotkey_manager = GlobalHotkeyManager()
         self.hotkey_manager.set_stop_callback(self.stop_all_automations)
+
+        # Initialize WindowManager and connect signals
+        self.window_manager = get_window_manager()
+        self.window_manager.window_found.connect(self.on_window_found)
+        self.window_manager.window_lost.connect(self.on_window_lost)
 
         # Track button states for toggle functionality
         self.automation_buttons = {}  # frame_id -> button mapping
@@ -251,10 +257,9 @@ class MainWindow(QMainWindow, LoggerMixin):
         self.logger.debug("Setting up window snapping")
         # Track last position to avoid spam logging
         self.last_snap_position = None
-        # Timer for periodic window detection and snapping
-        self.snap_timer = QTimer(self)
-        self.snap_timer.timeout.connect(self.check_and_snap_to_window)
-        self.snap_timer.start(1000)  # Check every second
+
+        # WindowManager will notify us of changes automatically via signals
+        # No need for manual timer - much more efficient!
 
         # Initial snap attempt
         self.check_and_snap_to_window()
@@ -262,14 +267,14 @@ class MainWindow(QMainWindow, LoggerMixin):
     def check_and_snap_to_window(self):
         """Check for WidgetInc window and snap overlay to it."""
         try:
-            target_info = find_target_window()
-            if target_info and target_info.get("window_info"):
-                window_info = target_info["window_info"]
+            # Use WindowManager to get cached overlay position
+            window_manager = get_window_manager()
+            overlay_position = window_manager.get_overlay_position()
 
-                # Use the calculate_overlay_position function for cleaner positioning
-                overlay_x, overlay_y, available_height = calculate_overlay_position(
-                    window_info=window_info,
-                )
+            if overlay_position:
+                overlay_x = overlay_position["x"]
+                overlay_y = overlay_position["y"]
+                available_height = overlay_position["available_height"]
 
                 # Calculate optimal height: smaller of content size or available space
                 central_widget = self.centralWidget()
@@ -303,6 +308,17 @@ class MainWindow(QMainWindow, LoggerMixin):
             self.logger.debug(f"Error during window snapping: {e}")
             # Silently ignore errors - window might not be available
             pass
+
+    def on_window_found(self, window_info: Dict[str, Any]):
+        """Handle WindowManager window_found signal."""
+        self.logger.debug("WindowManager detected window change - updating position")
+        # Trigger immediate position update
+        self.check_and_snap_to_window()
+
+    def on_window_lost(self):
+        """Handle WindowManager window_lost signal."""
+        self.logger.debug("WindowManager detected window lost")
+        self.last_snap_position = None
 
     def create_frame_button(self, frame):
         """Create a button for a frame with automation status styling."""
@@ -396,10 +412,12 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Stop the specific automation
         success = self.automation_controller.stop_automation(frame_id)
         if success:
+            self.log_info(f"Automation stopped successfully for: {safe_name}")
             print(f"✅ Automation stopped successfully for: {name}")
             # Re-enable all buttons when automation stops
             self.set_buttons_disabled(False)
         else:
+            self.log_error(f"Failed to stop automation for: {safe_name}")
             print(f"❌ Failed to stop automation for: {name}")
 
     def start_automation(self, frame):
@@ -416,12 +434,14 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Use automation controller to start automation
         success = self.automation_controller.start_automation(frame)
         if success:
+            self.log_info(f"Automation started successfully for: {safe_name}")
             print(f"✅ Automation started successfully for: {name}")
             # Disable all buttons except the one running automation
             self.set_buttons_disabled(True, exclude_frame_id=frame_id)
             # Start global hotkey monitoring when automation starts
             self.hotkey_manager.start_monitoring()
         else:
+            self.log_error(f"Failed to start automation for: {safe_name}")
             print(f"❌ Failed to start automation for: {name}")
 
     def handle_automation_completion(self, frame_id: str):
@@ -434,12 +454,14 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Re-enable all buttons
         self.set_buttons_disabled(False)
 
+        self.log_info(f"Automation completed for frame: {frame_id}")
         print(f"✅ Automation completed for frame: {frame_id}")
 
     def handle_automation_event(self, event_type: str, frame_id: str, data: str | None = None):
         """Handle automation events from automators (failsafe, etc.)."""
         if event_type == "failsafe_stop":
             self.logger.warning(f"Failsafe triggered for {frame_id}: {data}")
+            self.log_warning(f"Failsafe triggered for frame {frame_id}: {data}")
             print(f"🛑 Failsafe triggered for frame {frame_id}: {data}")
 
             # Re-enable all buttons immediately when failsafe is triggered
@@ -448,11 +470,13 @@ class MainWindow(QMainWindow, LoggerMixin):
             # Stop hotkey monitoring since automation stopped
             self.hotkey_manager.stop_monitoring()
 
+            self.log_info("Automation safely stopped and buttons re-enabled")
             print("✅ Automation safely stopped and buttons re-enabled")
 
     def stop_all_automations(self):
         """Stop all running automations (called by global hotkeys)."""
         self.logger.info("Stopping all automations via global hotkey")
+        self.log_info("Stopping all automations (global hotkey detected)")
         print("🛑 Stopping all automations (global hotkey detected)")
 
         # Stop hotkey monitoring
@@ -464,6 +488,7 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Stop all automations
         self.automation_controller.stop_all_automations()
 
+        self.log_info("All automations stopped")
         print("✅ All automations stopped")
 
 

@@ -174,7 +174,7 @@ class MouseTracker(QObject):
                 else:
                     info["inside_window"] = False
 
-        # Playable info
+        # Playable info - calculate pixel size regardless of mouse position
         if self._playable_coords_cb:
             playable = self._playable_coords_cb()
             if playable:
@@ -184,19 +184,24 @@ class MouseTracker(QObject):
                     playable.get("width", 0),
                     playable.get("height", 0),
                 )
+
+                # Pixel art grid calculation (192x128 background pixels)
+                grid_width = 192
+                grid_height = 128
+
+                # Calculate actual pixel size (pixels per background grid unit)
+                pixel_size_x = pw / grid_width if grid_width else 0
+                pixel_size_y = ph / grid_height if grid_height else 0
+                pixel_size = min(pixel_size_x, pixel_size_y)  # Use smaller for square pixels
+
+                # Always include pixel size when we have playable area
+                info["pixel_size"] = pixel_size
+
+                # Only calculate grid position and percentages if mouse is inside playable area
                 if px <= screen_x <= px + pw and py <= screen_y <= py + ph:
                     info["inside_playable"] = True
                     info["x_percent"] = 100 * (screen_x - px) / max(1, pw)
                     info["y_percent"] = 100 * (screen_y - py) / max(1, ph)
-
-                    # Pixel art grid calculation (192x128 background pixels)
-                    grid_width = 192
-                    grid_height = 128
-
-                    # Calculate actual pixel size (pixels per background grid unit)
-                    pixel_size_x = pw / grid_width if grid_width else 0
-                    pixel_size_y = ph / grid_height if grid_height else 0
-                    pixel_size = min(pixel_size_x, pixel_size_y)  # Use smaller for square pixels
 
                     # Calculate grid position
                     rel_x = screen_x - px
@@ -212,9 +217,9 @@ class MouseTracker(QObject):
                     self.current_grid_coords = (grid_x, grid_y)
 
                     info["grid_position"] = {"x": grid_x, "y": grid_y}
-                    info["pixel_size"] = pixel_size
                 else:
                     info["inside_playable"] = False
+
         return info
 
 
@@ -611,7 +616,7 @@ class TrackerWidget(QWidget):
             if position_info.get("inside_window", False):
                 window_x_percent = position_info.get("window_x_percent", 0)
                 window_y_percent = position_info.get("window_y_percent", 0)
-                mouse_text += f"Window: {window_x_percent:.1f}%, {window_y_percent:.1f}%\n"
+                mouse_text += f"Window: {window_x_percent:.4f}%, {window_y_percent:.4f}%\n"
             else:
                 mouse_text += "Window: Outside\n"
 
@@ -622,14 +627,14 @@ class TrackerWidget(QWidget):
                 grid_pos = position_info.get("grid_position", {})
                 pixel_size = position_info.get("pixel_size", 0)
 
-                mouse_text += f"Playable: {x_percent:.1f}%, {y_percent:.1f}%\n"
+                mouse_text += f"Playable: {x_percent:.4f}%, {y_percent:.4f}%\n"
                 mouse_text += f"Grid: ({grid_pos.get('x', 0)}, {grid_pos.get('y', 0)})\n"
-                mouse_text += f"Pixel: {pixel_size:.2f}px"
+                mouse_text += f"Pixel: {pixel_size:.4f}px"
             else:
                 pixel_size = position_info.get("pixel_size", 0)
                 mouse_text += "Playable: Outside\n"
                 mouse_text += "Grid: Outside\n"
-                mouse_text += f"Pixel: {pixel_size:.2f}px"
+                mouse_text += f"Pixel: {pixel_size:.4f}px"
 
             self.mouse_label.setText(mouse_text)
 
