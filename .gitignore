@@ -1,46 +1,62 @@
-# Python
+# Python bytecode and caches
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Compiled extensions
 *.so
+
+# Python environment
 .Python
+
+# Build and distribution
 build/
-develop-eggs/
 dist/
 downloads/
+sdist/
+wheels/
+share/python-wheels/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Packaging
+develop-eggs/
 eggs/
 .eggs/
 lib/
 lib64/
 parts/
-sdist/
 var/
-wheels/
-share/python-wheels/
-*.egg-info/
 .installed.cfg
-*.egg
-MANIFEST
+
+# Old/backup folders
 **/.old*/
+
+# Project assets
 assets/game
 
+# Tool caches
+.ruff_cache/
+.pytest_cache/
+ov=tools/
 
-# Virtual Environment
-venv/
+# Virtual environments
 .venv/
+venv/
 env/
 ENV/
 env.bak/
 venv.bak/
 
-# IDE
+# IDE/editor folders and files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
+# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -60,9 +76,10 @@ config/private_settings.json
 *.key
 *.pem
 
-# Test files
+# Test/coverage outputs
 test_screenshots/
-.pytest_cache/
 .coverage
 htmlcov/
+
+# GitHub workflows and settings
 .github/

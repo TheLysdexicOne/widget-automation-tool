@@ -188,7 +188,7 @@ def setup_logging():
     debug_mode = "--debug" in sys.argv or "-d" in sys.argv
 
     # Create logs directory
-    logs_dir = Path(__file__).parent.parent / "logs"
+    logs_dir = Path(__file__).parent.parent.parent / "logs"
     logs_dir.mkdir(exist_ok=True)
 
     # Configure logging level
