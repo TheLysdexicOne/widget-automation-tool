@@ -7,8 +7,10 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict
+import pyautogui
 
 from utility.coordinate_utils import ButtonManager
+from automation.scan_engine import ScanEngine
 from automation.automation_engine import AutomationEngine
 
 
@@ -24,9 +26,13 @@ class BaseAutomator(ABC):
         # Setup logging
         self.logger = logging.getLogger(self.__class__.__name__)
 
+        # Disable pyautogui safety delay for faster automation
+        pyautogui.PAUSE = 0
+
         # Button management
         self.button_manager = ButtonManager(frame_data)
         self.engine = AutomationEngine()
+        self.scan = ScanEngine()
 
         # Automation state
         self.is_running = False
@@ -74,8 +80,19 @@ class BaseAutomator(ABC):
         self.log_info(f"Stopping {self.frame_name} automation")
         self.is_running = False
         self.should_stop = True
+
+        # Ensure mouse button is released when stopping
+        self.cleanup_mouse_state()
+
         return True
-        pass
+
+    def cleanup_mouse_state(self):
+        """Ensure mouse button is released - safety cleanup for automations that use mouse operations."""
+        try:
+            pyautogui.mouseUp()
+            self.log_debug("Mouse button released during cleanup")
+        except Exception as e:
+            self.log_debug(f"Error during mouse cleanup: {e}")
 
     def get_status(self) -> Dict[str, Any]:
         """Get current automation status."""
@@ -86,6 +103,11 @@ class BaseAutomator(ABC):
             "should_stop": self.should_stop,
         }
 
+    @property
+    def should_continue(self) -> bool:
+        """Check if automation should continue running."""
+        return self.is_running and not self.should_stop
+
     def sleep(self, duration: float) -> bool:
         """
         Sleep for given duration while checking for stop signal.
@@ -95,7 +117,7 @@ class BaseAutomator(ABC):
         while time.time() < end_time:
             if self.should_stop:
                 return False
-            time.sleep(0.1)  # Check every 100ms
+            time.sleep(0.01)  # Check every 100ms
         return True
 
     def log_info(self, message: str):
@@ -123,6 +145,9 @@ class BaseAutomator(ABC):
         self.is_running = False
         self.log_error(f"Failsafe triggered: {reason}")
 
+        # Ensure mouse button is released during failsafe
+        self.cleanup_mouse_state()
+
         # Notify UI to re-enable buttons
         if self.ui_callback:
             try:
@@ -136,14 +161,25 @@ class BaseAutomator(ABC):
             button_data, button_name, trigger_failsafe_callback=self.trigger_failsafe_stop
         )
 
+    def create_button(self, button_name: str):
+        """Create a button engine for the given button name."""
+        return self.engine.create_button(self.button_manager.get_button(button_name), button_name)
+
     """
     Predefined Logging Messages
     """
 
     def log_storage_error(self):
         self.should_stop = True
+        self.cleanup_mouse_state()
         self.log_info("Stopping. Storage is likely full or resources are missing.")
 
     def log_frame_error(self):
         self.should_stop = True
+        self.cleanup_mouse_state()
         self.log_info("Stopping. Frame validation failed or frame is not active.")
+
+    def log_timeout_error(self):
+        self.should_stop = True
+        self.cleanup_mouse_state()
+        self.log_info("Stopping. Waiting for action timed out.")

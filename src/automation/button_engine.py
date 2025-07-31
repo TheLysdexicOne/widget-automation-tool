@@ -11,7 +11,7 @@ import pyautogui
 class ButtonEngine:
     """Represents a single button with all its automation capabilities."""
 
-    def __init__(self, button_data: list, name: str = "button"):
+    def __init__(self, button_data: list, name: str = "button", custom_colors: dict = {}):
         if len(button_data) != 3:
             logging.getLogger(f"{__name__}.ButtonEngine").error(f"Invalid button data for {name}: {button_data}")
             sys.exit("Exiting due to invalid button data")
@@ -27,6 +27,14 @@ class ButtonEngine:
             "green": {"default": (17, 162, 40), "focus": (15, 204, 45), "inactive": (16, 46, 22)},
             "yellow": {"default": (242, 151, 0), "focus": (198, 125, 0), "inactive": (60, 39, 8)},
         }
+
+        # Allow custom colors to override or add to button_colors
+        if custom_colors:
+            for color, states in custom_colors.items():
+                if color in self.button_colors:
+                    self.button_colors[color].update(states)
+                else:
+                    self.button_colors[color] = states
 
         if self.color not in self.button_colors:
             self.logger.error(f"Invalid button color '{self.color}'")
@@ -66,4 +74,30 @@ class ButtonEngine:
             return True
         except Exception as e:
             self.logger.error(f"Failed to click {self.color} {self.name} at ({self.x}, {self.y}): {e}")
+            return False
+
+    def hold_click(self, duration: float = 0.5) -> bool:
+        """Hold click this button for specified duration with safety validation."""
+        if not self.active():
+            self.logger.error(f"Button {self.name} not in valid state for hold clicking")
+            sys.exit("Safety stop - button not valid")
+
+        try:
+            pyautogui.mouseDown(self.x, self.y)
+            self.logger.debug(f"Started holding {self.color} {self.name} at ({self.x}, {self.y}) for {duration}s")
+
+            import time
+
+            time.sleep(duration)
+
+            pyautogui.mouseUp()
+            self.logger.debug(f"Released hold on {self.color} {self.name}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to hold click {self.color} {self.name} at ({self.x}, {self.y}): {e}")
+            # Ensure mouse is released on error
+            try:
+                pyautogui.mouseUp()
+            except Exception:
+                pass
             return False

@@ -1,65 +1,75 @@
-import win32gui
-import win32process
+import pyautogui
 import time
+import json
+import os
+from PIL import ImageGrab
 
-target_title = "WidgetInc"  # Use a partial window title
+# Define scan area (change as needed)
+x1, y1 = -2526, 100
+x2, y2 = -2488, 800
 
-# Sliding cache (2 second timeout)
-pid_cache = {}
-CACHE_TTL = 2  # seconds
-
-
-def find_pid_by_window_title(title_part):
-    def enum_callback(hwnd, result):
-        if win32gui.IsWindowVisible(hwnd):
-            window_title = win32gui.GetWindowText(hwnd)
-            if title_part.lower() in window_title.lower():
-                _, pid = win32process.GetWindowThreadProcessId(hwnd)
-                result.append((pid, window_title))
-
-    results = []
-    win32gui.EnumWindows(enum_callback, results)
-    return results
+x_offset = 2560
 
 
-# Cache lookup: refresh cache and TTL on every access
-def get_pid_with_cache(title_part):
-    now = time.time()
-    cache_entry = pid_cache.get(title_part)
-
-    if cache_entry:
-        pid, last_used = cache_entry
-        if now - last_used < CACHE_TTL:
-            # Refresh TTL
-            pid_cache[title_part] = (pid, now)
-            return pid
-
-    # Cache miss or expired: re-fetch
-    results = find_pid_by_window_title(title_part)
-    if results:
-        pid = results[0][0]
-        pid_cache[title_part] = (pid, now)
-        return pid
-    return None
+def rgb_key(rgb):
+    return f"({rgb[0]:03},{rgb[1]:03},{rgb[2]:03})"
 
 
-# --- Measure Uncached ---
-start = time.perf_counter()
-uncached_result = find_pid_by_window_title(target_title)  # NO cache update
-elapsed_uncached = time.perf_counter() - start
+# Method 1: PIL ImageGrab with x_offset (for all_screens)
+start1 = time.time()
+full_img1 = ImageGrab.grab(all_screens=True)
+region_box1 = (x1 + x_offset, y1, x2 + x_offset, y2)
+region_img1 = full_img1.crop(region_box1)
+pixels1 = {}
+for y in range(y2 - y1):
+    for x in range(x2 - x1):
+        rgb = region_img1.getpixel((x, y))
+        key = rgb_key(rgb)
+        pixels1[key] = pixels1.get(key, 0) + 1
+end1 = time.time()
 
-# --- Measure Cached ---
-start = time.perf_counter()
-cached_pid = get_pid_with_cache(target_title)
-elapsed_cached = time.perf_counter() - start
+# Save the region screenshot for visual comparison
+img_dir = os.path.dirname(__file__)
+region_img1.save(os.path.join(img_dir, "pag_offset.png"))
+region_img1.convert("RGB").save(os.path.join(img_dir, "pag_offset.jpg"), quality=95)
 
-# --- Output ---
-if uncached_result:
-    print(f"Uncached PID lookup: {uncached_result[0][0]} in {elapsed_uncached:.6f} sec")
-else:
-    print("Uncached PID lookup: Not found")
+# Method 2: PIL ImageGrab with bbox and all_screens=True, no offset
+start2 = time.time()
+bbox = (x1, y1, x2, y2)
+region_img2 = ImageGrab.grab(bbox=bbox, all_screens=True)
+pixels2 = {}
+for y in range(y2 - y1):
+    for x in range(x2 - x1):
+        rgb = region_img2.getpixel((x, y))
+        key = rgb_key(rgb)
+        pixels2[key] = pixels2.get(key, 0) + 1
+end2 = time.time()
 
-if cached_pid:
-    print(f"Cached PID lookup:   {cached_pid} in {elapsed_cached:.6f} sec")
-else:
-    print("Cached PID lookup: Not found")
+# Save the region screenshot for visual comparison
+region_img2.save(os.path.join(img_dir, "pag_bbox.png"))
+region_img2.convert("RGB").save(os.path.join(img_dir, "pag_bbox.jpg"), quality=95)
+
+# Raw pyautogui.pixel method
+# start2 = time.time()
+# pixels2 = {}
+# for y in range(y1, y2):
+#     for x in range(x1, x2):
+#         rgb = pyautogui.pixel(x, y)
+#         key = rgb_key(rgb)
+#         pixels2[key] = pixels2.get(key, 0) + 1
+# end2 = time.time()
+
+
+result = {
+    "imagegrab_offset": {
+        "start": f"{x1 + x_offset}, {y1}",
+        "end": f"{x2 + x_offset}, {y2}",
+        "time": f"{end1 - start1:.4f}",
+        "pixels": pixels1,
+    },
+    "imagegrab_bbox": {"start": f"{x1}, {y1}", "end": f"{x2}, {y2}", "time": f"{end2 - start2:.4f}", "pixels": pixels2},
+}
+
+out_path = os.path.join(os.path.dirname(__file__), "output.json")
+with open(out_path, "w", encoding="utf-8") as f:
+    json.dump(result, f, indent=2)

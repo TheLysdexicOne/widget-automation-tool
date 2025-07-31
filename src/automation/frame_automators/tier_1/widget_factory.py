@@ -5,8 +5,8 @@ Handles automation for the Widget Factory frame in WidgetInc.
 
 import time
 from typing import Any, Dict
-
-from ..base_automator import BaseAutomator
+from automation.base_automator import BaseAutomator
+from utility.window_utils import get_grid_color
 
 
 class WidgetFactoryAutomator(BaseAutomator):
@@ -20,18 +20,22 @@ class WidgetFactoryAutomator(BaseAutomator):
         start_time = time.time()
 
         # Create button engine for clean syntax
-        create = self.engine.create_button(self.button_manager.get_button("create"), "create")
+        create = self.create_button("create")
+        progress_bar = (85, 80)
+        progress_color = (0, 95, 149)
 
+        fail = 0
         # Main automation loop
-        while self.is_running and not self.should_stop:
+        while self.should_continue:
             # Stop after configured time limit
             if time.time() - start_time > self.max_run_time:
                 break
-
-            # Check if Create button is available (not inactive)
             if not create.inactive():
-                create.click()  # Built-in safety validation
-
-            # Use safe_sleep for right-click detection between cycles
-            if not self.sleep(self.factory_delay):
+                create.click()
+                if not get_grid_color(progress_bar) == progress_color:
+                    fail += 1
+                    if fail > 3:
+                        self.log_storage_error()
+                        break
+            if not self.sleep(0.01):
                 break

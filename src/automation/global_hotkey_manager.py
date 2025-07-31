@@ -74,6 +74,7 @@ class GlobalHotkeyManager:
                 # Check for right mouse button
                 if self.has_mouse_detection and self._is_right_mouse_pressed():
                     self.logger.info("Right mouse button detected - stopping automation")
+                    self._emergency_mouse_cleanup()
                     if self.stop_callback:
                         self.stop_callback()
                     time.sleep(0.5)  # Debounce
@@ -81,6 +82,7 @@ class GlobalHotkeyManager:
                 # Check for spacebar
                 if self.has_keyboard_detection and self._is_spacebar_pressed():
                     self.logger.info("Spacebar detected - stopping automation")
+                    self._emergency_mouse_cleanup()
                     if self.stop_callback:
                         self.stop_callback()
                     time.sleep(0.5)  # Debounce
@@ -116,3 +118,13 @@ class GlobalHotkeyManager:
         # Fallback: pyautogui doesn't have direct key state checking
         # so we can't reliably detect spacebar without hooking
         return False
+
+    def _emergency_mouse_cleanup(self):
+        """Emergency mouse cleanup - release any held mouse buttons."""
+        try:
+            import pyautogui
+
+            pyautogui.mouseUp()  # Release any mouse button that might be held
+            self.logger.debug("Emergency mouse cleanup performed")
+        except Exception as e:
+            self.logger.error(f"Error during emergency mouse cleanup: {e}")

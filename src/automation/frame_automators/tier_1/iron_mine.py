@@ -6,7 +6,7 @@ Handles automation for the Iron Mine frame in WidgetInc.
 import time
 from typing import Any, Dict
 
-from ..base_automator import BaseAutomator
+from automation.base_automator import BaseAutomator
 
 
 class IronMineAutomator(BaseAutomator):
@@ -20,10 +20,10 @@ class IronMineAutomator(BaseAutomator):
 
         # Create button engines for clean syntax
         miner_buttons = ["miner1", "miner2", "miner3", "miner4"]
-        miners = [self.engine.create_button(self.button_manager.get_button(name), name) for name in miner_buttons]
+        miners = [self.create_button(name) for name in miner_buttons]
 
         # Main automation loop
-        while self.is_running and not self.should_stop:
+        while self.should_continue:
             if time.time() - start_time > self.max_run_time:
                 break
 
@@ -43,6 +43,6 @@ class IronMineAutomator(BaseAutomator):
                 break
 
             # Wait for miners to become inactive, then cycle delay
-            while self.is_running and not self.should_stop and miners[0].inactive():
+            while self.should_continue and miners[0].inactive():
                 if not self.sleep(0.2):
                     return

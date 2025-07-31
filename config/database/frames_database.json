@@ -49,7 +49,7 @@
         "programmed": 1
       },
       "buttons": {
-        "excavate": [142, 44, "red"]
+        "excavate": [143, 45, "red"]
       }
     },
     {
@@ -70,10 +70,10 @@
       "item": "Gyroscope",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "create": [95, 74, "red"]
       }
     },
     {
@@ -82,10 +82,10 @@
       "item": "Spinning Widget",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "spin": [131, 79, "red"]
       }
     },
     {
@@ -105,11 +105,15 @@
       "name": "Oil Power Plant",
       "item": "Power (Oil)",
       "automation": {
-        "can_automate": 0,
-        "programmed": 0
+        "can_automate": 1,
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "interactions": {
+        "handle": [161, 91],
+        "progress_bar": [161, 110]
       }
     },
     {
@@ -117,11 +121,15 @@
       "name": "Battery Assembler",
       "item": "Battery",
       "automation": {
-        "can_automate": 0,
-        "programmed": 0
+        "can_automate": 1,
+        "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "plus": [73, 70, "red"],
+        "minus": [118, 70, "green"]
+      },
+      "interactions": {
+        "progress_bar": [83, 79]
       }
     },
     {
@@ -129,8 +137,8 @@
       "name": "Capacitor Bank",
       "item": "Capacitor Widget",
       "automation": {
-        "can_automate": 0,
-        "programmed": 0
+        "can_automate": 1,
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]

@@ -23,8 +23,7 @@ from PyQt6.QtWidgets import (
 
 from automation.automation_controller import AutomationController
 from automation.global_hotkey_manager import GlobalHotkeyManager
-from utility.window_manager import get_window_manager
-from utility.coordinate_utils import generate_db_cache
+from utility.cache_manager import get_window_manager
 from utility.logging_utils import setup_logging, LoggerMixin
 
 
@@ -97,7 +96,7 @@ class MainWindow(QMainWindow, LoggerMixin):
 
         # Initialize window snapping
         self.setup_window_snapping()
-        generate_db_cache()
+        get_window_manager().generate_db_cache()
 
         # Load frames from converted cache (screen coordinates)
         frames_file = Path(__file__).parent.parent / "config" / "database" / "frames.json"
@@ -293,7 +292,7 @@ class MainWindow(QMainWindow, LoggerMixin):
                         f"Snapped overlay to WidgetInc window at position: {overlay_x}, {overlay_y} (height: {optimal_height})"
                     )
                     self.last_snap_position = current_position
-                    generate_db_cache()
+                    get_window_manager().generate_db_cache()
 
                 elif self.height() != optimal_height:
                     # Update height even if position hasn't changed

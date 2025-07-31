@@ -9,7 +9,7 @@ import re
 import threading
 from typing import Any, Dict, Optional
 
-from .frame_automators.base_automator import BaseAutomator
+from .base_automator import BaseAutomator
 
 
 class AutomationController:
@@ -269,6 +269,16 @@ class AutomationController:
     def stop_all_automations(self) -> bool:
         """Stop all active automations."""
         success = True
+
+        # First, ensure mouse button is released globally (emergency cleanup)
+        try:
+            import pyautogui
+
+            pyautogui.mouseUp()
+            self.logger.debug("Global mouse button release performed during stop all automations")
+        except Exception as e:
+            self.logger.debug(f"Error during global mouse cleanup: {e}")
+
         for frame_id, automator in self.active_automators.items():
             if not automator.stop_automation():
                 self.logger.error(f"Failed to stop automation for frame {frame_id}")

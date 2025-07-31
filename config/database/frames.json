@@ -78,8 +78,8 @@
       },
       "buttons": {
         "excavate": [
-          -783,
-          498,
+          -772,
+          509,
           "red"
         ]
       }
@@ -106,13 +106,13 @@
       "item": "Gyroscope",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [
-          -2290,
-          39,
-          1
+        "create": [
+          -1285,
+          819,
+          "red"
         ]
       }
     },
@@ -122,13 +122,13 @@
       "item": "Spinning Widget",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [
-          -2290,
-          39,
-          1
+        "spin": [
+          -900,
+          873,
+          "red"
         ]
       }
     },
@@ -153,14 +153,24 @@
       "name": "Oil Power Plant",
       "item": "Power (Oil)",
       "automation": {
-        "can_automate": 0,
-        "programmed": 0
+        "can_automate": 1,
+        "programmed": 1
       },
       "buttons": {
         "1": [
           -2290,
           39,
           1
+        ]
+      },
+      "interactions": {
+        "handle": [
+          161,
+          91
+        ],
+        "progress_bar": [
+          161,
+          110
         ]
       }
     },
@@ -169,14 +179,25 @@
       "name": "Battery Assembler",
       "item": "Battery",
       "automation": {
-        "can_automate": 0,
-        "programmed": 0
+        "can_automate": 1,
+        "programmed": 1
       },
       "buttons": {
-        "1": [
-          -2290,
-          39,
-          1
+        "plus": [
+          -1521,
+          776,
+          "red"
+        ],
+        "minus": [
+          -1039,
+          776,
+          "green"
+        ]
+      },
+      "interactions": {
+        "progress_bar": [
+          83,
+          79
         ]
       }
     },
@@ -185,8 +206,8 @@
       "name": "Capacitor Bank",
       "item": "Capacitor Widget",
       "automation": {
-        "can_automate": 0,
-        "programmed": 0
+        "can_automate": 1,
+        "programmed": 1
       },
       "buttons": {
         "1": [

@@ -6,9 +6,10 @@ All functions are backed by the WindowManager's proactive caching system.
 """
 
 import logging
+import pyautogui
 from typing import Any, Dict, Tuple
 
-from .window_manager import get_window_manager, PIXEL_ART_GRID_WIDTH, PIXEL_ART_GRID_HEIGHT
+from .cache_manager import get_window_manager, PIXEL_ART_GRID_WIDTH, PIXEL_ART_GRID_HEIGHT
 
 logger = logging.getLogger(__name__)
 
@@ -77,3 +78,13 @@ def grid_to_screen_coordinates(grid_x: int, grid_y: int) -> Tuple[int, int]:
     except Exception as e:
         logger.error(f"Error converting grid to screen coordinates: {e}")
         return (0, 0)
+
+
+def get_pixel_color(coords):
+    x, y = coords
+    return pyautogui.pixel(x, y)
+
+
+def get_grid_color(grid):
+    coords = grid_to_screen_coordinates(grid[0], grid[1])
+    return get_pixel_color(coords)

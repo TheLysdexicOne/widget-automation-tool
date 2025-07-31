@@ -1,10 +1,10 @@
 {
-  "timestamp": 1753747808.9039063,
+  "timestamp": 1753907837.82871,
   "is_valid": true,
-  "last_updated": "2025-07-28 20:10:08",
+  "last_updated": "2025-07-30 16:37:17",
   "window_info": {
-    "pid": 83484,
-    "hwnd": 133284,
+    "pid": 215248,
+    "hwnd": 6359260,
     "title": "WidgetInc",
     "window_rect": [-2568, -8, 8, 1400],
     "client_rect": [0, 0, 2560, 1369],
@@ -28,7 +28,7 @@
   },
   "pixel_size": 10.6927,
   "last_state": {
-    "hwnd": 133284,
+    "hwnd": 6359260,
     "window_rect": [-2568, -8, 8, 1400],
     "client_rect": [0, 0, 2560, 1369]
   }

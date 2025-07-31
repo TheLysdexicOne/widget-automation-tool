@@ -46,11 +46,12 @@ PIXEL_ART_GRID_WIDTH = 192  # Background pixels horizontally
 PIXEL_ART_GRID_HEIGHT = 128  # Background pixels vertically
 
 
-class WindowManager(QObject):
+class CacheManager(QObject):
     """
-    Manages WidgetInc window detection and caching with proactive updates.
+    Manages WidgetInc window detection and database caching with proactive updates.
 
     Validates cache every 500ms and provides clean APIs for window information.
+    Also handles coordinate cache generation from frames database.
     Other components can request data without worrying about cache management.
     """
 
@@ -368,14 +369,52 @@ class WindowManager(QObject):
         """Force immediate cache refresh."""
         self._validate_cache()
 
+    def generate_db_cache(self):
+        """Generate frames.json with screen coordinates from frames_database.json."""
+        from .window_utils import grid_to_screen_coordinates
+
+        frames_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
+        frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.json"
+
+        with open(frames_file, "r") as f:
+            frames_data = json.load(f)
+
+        frames_with_coords = []
+
+        for frame in frames_data["frames"]:
+            frame_copy = frame.copy()
+
+            if "buttons" in frame:
+                converted = {}
+                for button_name, button_data in frame["buttons"].items():
+                    if len(button_data) != 3:
+                        self.logger.error(f"Invalid button data for {button_name}: {button_data}")
+                        import sys
+
+                        sys.exit("Exiting due to invalid database")
+
+                    grid_x, grid_y, color = button_data
+                    screen_x, screen_y = grid_to_screen_coordinates(grid_x, grid_y)
+                    converted[button_name] = [screen_x, screen_y, color]
+
+                frame_copy["buttons"] = converted
+
+            frames_with_coords.append(frame_copy)
+
+        frames_cache.parent.mkdir(exist_ok=True)
+        with open(frames_cache, "w") as f:
+            json.dump({"frames": frames_with_coords}, f, indent=2, separators=(",", ": "))
+
+        self.logger.info(f"Generated coordinate cache at {frames_cache}")
+
 
 # Global WindowManager instance
 _window_manager = None
 
 
-def get_window_manager() -> WindowManager:
-    """Get the global WindowManager instance."""
+def get_window_manager() -> CacheManager:
+    """Get the global CacheManager instance."""
     global _window_manager
     if _window_manager is None:
-        _window_manager = WindowManager()
+        _window_manager = CacheManager()
     return _window_manager
