@@ -210,10 +210,44 @@
         "programmed": 1
       },
       "buttons": {
-        "1": [
-          -2290,
-          39,
-          1
+        "plus1": [
+          -441,
+          552,
+          "red"
+        ],
+        "plus2": [
+          -441,
+          723,
+          "red"
+        ],
+        "plus4": [
+          -441,
+          894,
+          "red"
+        ],
+        "plus8": [
+          -441,
+          1065,
+          "red"
+        ]
+      },
+      "interactions": {
+        "voltage_meter_top": [
+          146,
+          56
+        ],
+        "voltage_meter_bottom": [
+          146,
+          98
+        ],
+        "progress_bar": [
+          154,
+          99,
+          [
+            0,
+            149,
+            28
+          ]
         ]
       }
     },
@@ -222,14 +256,29 @@
       "name": "Copper Mine",
       "item": "Copper Ore",
       "automation": {
-        "can_automate": 0,
-        "programmed": 0
+        "can_automate": 1,
+        "programmed": 1
       },
       "buttons": {
-        "1": [
-          -2290,
-          39,
-          1
+        "miner1": [
+          -1136,
+          573,
+          "red"
+        ],
+        "miner2": [
+          -965,
+          605,
+          "red"
+        ],
+        "miner3": [
+          -793,
+          637,
+          "red"
+        ],
+        "miner4": [
+          -622,
+          669,
+          "red"
         ]
       }
     },
@@ -238,7 +287,7 @@
       "name": "Copper Forge",
       "item": "Copper Ingot",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -254,7 +303,7 @@
       "name": "Plastic Extractor",
       "item": "Plastic",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {

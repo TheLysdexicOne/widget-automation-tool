@@ -8,7 +8,7 @@ import pyautogui
 from typing import Any, Dict
 
 from automation.base_automator import BaseAutomator
-from utility.window_utils import grid_to_screen_coordinates
+from utility.window_utils import grid_to_screen_coords
 
 
 class BatteryAssemblerAutomator(BaseAutomator):
@@ -24,7 +24,7 @@ class BatteryAssemblerAutomator(BaseAutomator):
         plus = self.create_button("plus")
         minus = self.create_button("minus")
         pbar = self.frame_data["interactions"]["progress_bar"]
-        pbar_x, pbar_y = grid_to_screen_coordinates(pbar[0], pbar[1])
+        pbar_x, pbar_y = grid_to_screen_coords(pbar[0], pbar[1])
         pbar_color = (0, 95, 149)
         if plus.active():
             use_plus = True

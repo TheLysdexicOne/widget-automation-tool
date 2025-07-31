@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+
 import psutil
 import win32gui
 import win32process
@@ -63,12 +64,19 @@ class CacheManager(QObject):
         super().__init__()
         self.logger = logging.getLogger(self.__class__.__name__)
 
+        # Set up cache logging directory first
+        self._cache_log_dir = Path(__file__).parent.parent.parent / "logs" / "cache"
+        self._cache_log_dir.mkdir(parents=True, exist_ok=True)
+
         # Cache storage
         self._cache = {
             "window_info": None,
             "timestamp": 0,
             "is_valid": False,
             "last_state": None,  # Track window state changes
+            "playable_area": None,
+            "overlay_position": None,
+            "pixel_size": None,
         }
 
         # Validation timer - checks every 500ms
@@ -78,10 +86,6 @@ class CacheManager(QObject):
 
         # Initial cache population
         self._validate_cache()
-
-        # Set up cache logging directory
-        self._cache_log_dir = Path(__file__).parent.parent.parent / "logs" / "cache"
-        self._cache_log_dir.mkdir(parents=True, exist_ok=True)
 
         self.logger.debug("WindowManager initialized with 500ms validation timer")
 
@@ -97,6 +101,9 @@ class CacheManager(QObject):
                 self._cache["window_info"] = None
                 self._cache["is_valid"] = False
                 self._cache["last_state"] = None
+                self._cache["playable_area"] = None
+                self._cache["overlay_position"] = None
+                self._cache["pixel_size"] = None
                 self.window_lost.emit()
                 self._save_cache_to_file()
                 self.logger.debug("Window lost - cache cleared")
@@ -109,6 +116,12 @@ class CacheManager(QObject):
                     self._cache["is_valid"] = True
                     self._cache["timestamp"] = time.time()
                     self._cache["last_state"] = self._get_window_state(current_window)
+
+                    # Recalculate and cache derived values
+                    self._cache["playable_area"] = self._calculate_playable_area()
+                    self._cache["overlay_position"] = self._calculate_overlay_position()
+                    self._cache["pixel_size"] = self._calculate_pixel_size()
+
                     self.window_found.emit(current_window)
                     self._save_cache_to_file()
                     self.logger.debug("Window cache updated")
@@ -122,20 +135,15 @@ class CacheManager(QObject):
         try:
             cache_file = self._cache_log_dir / "cache.json"
 
-            # Calculate current playable area, overlay position, and pixel size for debugging
-            playable_area = self._calculate_playable_area()
-            overlay_position = self._calculate_overlay_position()
-            pixel_size = self._calculate_pixel_size()
-
-            # Prepare cache data for JSON serialization
+            # Use cached values directly instead of recalculating
             cache_data = {
                 "timestamp": self._cache["timestamp"],
                 "is_valid": self._cache["is_valid"],
                 "last_updated": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self._cache["timestamp"])),
                 "window_info": self._cache["window_info"],
-                "playable_area": playable_area,
-                "overlay_position": overlay_position,
-                "pixel_size": pixel_size,
+                "playable_area": self._cache.get("playable_area"),
+                "overlay_position": self._cache.get("overlay_position"),
+                "pixel_size": self._cache.get("pixel_size"),
                 "last_state": self._cache["last_state"],
             }
 
@@ -279,7 +287,13 @@ class CacheManager(QObject):
         Calculate pixel art grid size based on playable area.
         Returns pixels per background grid unit (192x128 grid).
         """
-        playable_area = self._calculate_playable_area()
+        # Use cached playable area if available
+        playable_area = self._cache.get("playable_area")
+        if not playable_area:
+            playable_area = self._calculate_playable_area()
+            if playable_area:
+                self._cache["playable_area"] = playable_area
+
         if not playable_area:
             return None
 
@@ -306,12 +320,24 @@ class CacheManager(QObject):
             self.logger.error(f"Error calculating pixel size: {e}")
             return None
 
-    def _calculate_overlay_position(self) -> Optional[Dict[str, int]]:
+    def _calculate_overlay_position(
+        self, content_width: Optional[int] = None, content_height: Optional[int] = None
+    ) -> Optional[Dict[str, Any]]:
         """
         Calculate overlay position in top-right corner of window.
-        Returns cached position for the overlay application.
+        Returns cached position for the overlay application with optimal dimensions.
+
+        Args:
+            content_width: Width needed by the overlay content
+            content_height: Height needed by the overlay content
         """
-        playable_area = self._calculate_playable_area()
+        # Use cached playable area if available
+        playable_area = self._cache.get("playable_area")
+        if not playable_area:
+            playable_area = self._calculate_playable_area()
+            if playable_area:
+                self._cache["playable_area"] = playable_area
+
         window_info = self._cache.get("window_info")
 
         if not playable_area or not window_info or not self._cache["is_valid"]:
@@ -332,10 +358,29 @@ class CacheManager(QObject):
             overlay_y = client_y + offset_y
             available_height = client_height - offset_y
 
+            # Calculate available width (from playable area right edge to window border)
+            window_right = client_screen["x"] + client_width
+            available_width = window_right - overlay_x
+
+            # Calculate optimal dimensions
+            optimal_width = available_width  # Default to available width
+            optimal_height = available_height  # Default to available height
+
+            if content_width is not None:
+                optimal_width = min(content_width, available_width)
+
+            if content_height is not None:
+                optimal_height = min(content_height, available_height)
+
             return {
                 "x": overlay_x,
                 "y": overlay_y,
                 "available_height": available_height,
+                "available_width": available_width,
+                "optimal_height": optimal_height,
+                "optimal_width": optimal_width,
+                "content_width": content_width,
+                "content_height": content_height,
             }
 
         except Exception as e:
@@ -351,15 +396,56 @@ class CacheManager(QObject):
 
     def get_playable_area(self) -> Optional[Dict[str, int]]:
         """Get playable area coordinates from cache (fast cached calculation)."""
-        return self._calculate_playable_area()
+        cached_area = self._cache.get("playable_area")
+        if cached_area:
+            return cached_area
 
-    def get_overlay_position(self) -> Optional[Dict[str, int]]:
+        # Calculate and cache if not available
+        calculated_area = self._calculate_playable_area()
+        if calculated_area:
+            self._cache["playable_area"] = calculated_area
+            self._save_cache_to_file()
+
+        return calculated_area
+
+    def get_overlay_position(
+        self, content_width: Optional[int] = None, content_height: Optional[int] = None
+    ) -> Optional[Dict[str, Any]]:
         """Get overlay position coordinates from cache (fast cached calculation)."""
-        return self._calculate_overlay_position()
+        # If we have content dimensions, always recalculate to ensure accuracy
+        if content_width is not None or content_height is not None:
+            calculated_position = self._calculate_overlay_position(content_width, content_height)
+            if calculated_position:
+                self._cache["overlay_position"] = calculated_position
+                self._save_cache_to_file()
+            return calculated_position
+
+        # Otherwise use cached version if available
+        cached_position = self._cache.get("overlay_position")
+        if cached_position:
+            return cached_position
+
+        # Calculate and cache if not available
+        calculated_position = self._calculate_overlay_position()
+        if calculated_position:
+            self._cache["overlay_position"] = calculated_position
+            self._save_cache_to_file()
+
+        return calculated_position
 
     def get_pixel_size(self) -> Optional[float]:
         """Get pixel art grid size from cache (fast cached calculation)."""
-        return self._calculate_pixel_size()
+        cached_size = self._cache.get("pixel_size")
+        if cached_size:
+            return cached_size
+
+        # Calculate and cache if not available
+        calculated_size = self._calculate_pixel_size()
+        if calculated_size:
+            self._cache["pixel_size"] = calculated_size
+            self._save_cache_to_file()
+
+        return calculated_size
 
     def is_window_available(self) -> bool:
         """Check if WidgetInc window is currently available."""
@@ -369,9 +455,25 @@ class CacheManager(QObject):
         """Force immediate cache refresh."""
         self._validate_cache()
 
+    def update_overlay_with_content_dimensions(self, content_width: int, content_height: int):
+        """Update overlay position cache with actual content dimensions."""
+        self.logger.debug(f"Updating overlay cache with content dimensions: {content_width}x{content_height}")
+
+        # Recalculate overlay position with content dimensions
+        updated_position = self._calculate_overlay_position(content_width, content_height)
+        if updated_position:
+            self._cache["overlay_position"] = updated_position
+            self._save_cache_to_file()
+            self.logger.info(
+                f"Updated overlay position cache with optimal dimensions: {updated_position['optimal_width']}x{updated_position['optimal_height']}"
+            )
+        else:
+            self.logger.warning("Failed to update overlay position with content dimensions")
+
     def generate_db_cache(self):
+        from .window_utils import grid_to_screen_coords
+
         """Generate frames.json with screen coordinates from frames_database.json."""
-        from .window_utils import grid_to_screen_coordinates
 
         frames_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
         frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.json"
@@ -394,7 +496,7 @@ class CacheManager(QObject):
                         sys.exit("Exiting due to invalid database")
 
                     grid_x, grid_y, color = button_data
-                    screen_x, screen_y = grid_to_screen_coordinates(grid_x, grid_y)
+                    screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
                     converted[button_name] = [screen_x, screen_y, color]
 
                 frame_copy["buttons"] = converted

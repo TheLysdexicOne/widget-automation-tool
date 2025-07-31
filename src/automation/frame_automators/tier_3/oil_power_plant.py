@@ -8,7 +8,7 @@ import pyautogui
 from typing import Any, Dict
 
 from automation.base_automator import BaseAutomator
-from utility.window_utils import grid_to_screen_coordinates
+from utility.window_utils import grid_to_screen_coords
 
 
 class OilPowerPlantAutomator(BaseAutomator):
@@ -26,8 +26,8 @@ class OilPowerPlantAutomator(BaseAutomator):
         handle = self.frame_data["interactions"]["handle"]
         pbar = self.frame_data["interactions"]["progress_bar"]
 
-        handle_x, handle_y = grid_to_screen_coordinates(handle[0], handle[1])
-        pbar_x, pbar_y = grid_to_screen_coordinates(pbar[0], pbar[1])
+        handle_x, handle_y = grid_to_screen_coords(handle[0], handle[1])
+        pbar_x, pbar_y = grid_to_screen_coords(pbar[0], pbar[1])
 
         # Main automation loop
         while self.should_continue:

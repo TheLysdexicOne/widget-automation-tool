@@ -26,6 +26,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from PyQt6.QtGui import QPainter, QPen
 
 
 # --- Utility: Window Detection ---
@@ -223,6 +224,63 @@ class MouseTracker(QObject):
         return info
 
 
+# --- Grid Overlay Widget ---
+class GridOverlay(QWidget):
+    """Semi-transparent grid overlay for the playable area."""
+
+    def __init__(self, playable_area: Dict):
+        super().__init__()
+        self.playable_area = playable_area
+        self.grid_width = 192
+        self.grid_height = 128
+        self._setup_overlay()
+
+    def _setup_overlay(self):
+        """Setup the overlay window."""
+        # Set window properties for overlay
+        self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+
+        # Position and size the overlay to match playable area
+        px = self.playable_area.get("x", 0)
+        py = self.playable_area.get("y", 0)
+        pw = self.playable_area.get("width", 0)
+        ph = self.playable_area.get("height", 0)
+
+        self.setGeometry(px, py, pw, ph)
+
+    def paintEvent(self, event):
+        """Draw the grid overlay."""
+        painter = QPainter(self)
+
+        # Set up pen for grid lines (2px thick, semi-transparent white)
+        pen = QPen(Qt.GlobalColor.white)
+        pen.setWidth(2)
+        pen.setStyle(Qt.PenStyle.SolidLine)
+        painter.setPen(pen)
+        painter.setOpacity(0.3)  # Semi-transparent
+
+        # Calculate pixel size
+        pw = self.playable_area.get("width", 0)
+        ph = self.playable_area.get("height", 0)
+
+        if pw > 0 and ph > 0:
+            pixel_size_x = pw / self.grid_width
+            pixel_size_y = ph / self.grid_height
+            pixel_size = min(pixel_size_x, pixel_size_y)  # Square pixels
+
+            # Draw vertical lines
+            for i in range(self.grid_width + 1):
+                x = i * pixel_size
+                painter.drawLine(int(x), 0, int(x), ph)
+
+            # Draw horizontal lines
+            for i in range(self.grid_height + 1):
+                y = i * pixel_size
+                painter.drawLine(0, int(y), pw, int(y))
+
+
 # --- Main Tracker Widget ---
 class TrackerWidget(QWidget):
     """Simple tracker widget."""
@@ -238,6 +296,7 @@ class TrackerWidget(QWidget):
         self.coordinates = {}
         self.window_coords = {}
         self.playable_coords = {}
+        self.grid_overlay = None  # Grid overlay widget
 
         # Mouse tracker
         self.mouse_tracker = MouseTracker()
@@ -393,9 +452,9 @@ class TrackerWidget(QWidget):
         # Control buttons
         button_layout = QHBoxLayout()
 
-        self.refresh_button = QPushButton("Refresh")
-        self.refresh_button.clicked.connect(self._refresh_target)
-        self.refresh_button.setStyleSheet(
+        self.grid_button = QPushButton("Grid")
+        self.grid_button.clicked.connect(self._show_grid)
+        self.grid_button.setStyleSheet(
             """
             QPushButton {
                 background-color: #0d7377;
@@ -435,7 +494,7 @@ class TrackerWidget(QWidget):
         """
         )
 
-        button_layout.addWidget(self.refresh_button)
+        button_layout.addWidget(self.grid_button)
         button_layout.addStretch()
         button_layout.addWidget(self.close_button)
 
@@ -469,10 +528,10 @@ class TrackerWidget(QWidget):
         # Standard context menu
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
-        # Add refresh action
-        refresh_action = QAction("Refresh", self)
-        refresh_action.triggered.connect(self._refresh_target)
-        self.addAction(refresh_action)
+        # Add grid action
+        grid_action = QAction("Toggle Grid", self)
+        grid_action.triggered.connect(self._show_grid)
+        self.addAction(grid_action)
 
         # Add separator
         separator = QAction(self)
@@ -586,16 +645,6 @@ class TrackerWidget(QWidget):
         # Update status flag
         self.target_found = found
 
-    def _refresh_target(self):
-        """Manually refresh target search."""
-        self.logger.info("Manual refresh requested")
-        # Clear cached coordinates to force fresh calculation
-        self.window_coords = {}
-        self.playable_coords = {}
-
-        # Force a fresh target check
-        self._check_target()
-
     def _get_window_coords(self) -> Dict:
         """Callback to provide window coordinates to mouse tracker."""
         return self.window_coords
@@ -641,6 +690,24 @@ class TrackerWidget(QWidget):
         except Exception as e:
             self.logger.error(f"Error updating mouse display: {e}")
             self.mouse_label.setText("Mouse: Error")
+
+    def _show_grid(self):
+        """Toggle grid overlay on the playable area."""
+        if self.grid_overlay is not None:
+            # Grid is currently shown - hide it
+            self.grid_overlay.close()
+            self.grid_overlay = None
+            self.grid_button.setText("Grid")
+            self.logger.info("Grid overlay hidden")
+        else:
+            # Grid is not shown - show it if we have playable area
+            if self.playable_coords and self.target_found:
+                self.grid_overlay = GridOverlay(self.playable_coords)
+                self.grid_overlay.show()
+                self.grid_button.setText("Hide Grid")
+                self.logger.info("Grid overlay shown")
+            else:
+                self.logger.warning("Cannot show grid: no playable area available")
 
     def keyPressEvent(self, event):
         """Handle key press events."""
@@ -693,6 +760,13 @@ class TrackerWidget(QWidget):
             }
             """
         )
+
+    def closeEvent(self, event):
+        """Clean up when closing the tracker."""
+        if self.grid_overlay is not None:
+            self.grid_overlay.close()
+            self.grid_overlay = None
+        super().closeEvent(event)
 
 
 # --- Logging and CLI ---

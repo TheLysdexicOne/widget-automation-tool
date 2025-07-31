@@ -7,7 +7,7 @@ import time
 from typing import Any, Dict
 
 from automation.base_automator import BaseAutomator
-from utility.window_utils import grid_to_screen_coordinates
+from utility.window_utils import grid_to_screen_coords
 
 
 class WidgetSpinnerAutomator(BaseAutomator):
@@ -22,7 +22,7 @@ class WidgetSpinnerAutomator(BaseAutomator):
         # Create button engines for clean syntax
         spin = self.create_button("spin")
         point = (87, 33)
-        scan_point = grid_to_screen_coordinates(point[0], point[1])
+        scan_point = grid_to_screen_coords(point[0], point[1])
         scan_color = (57, 63, 70)
 
         # Main automation loop

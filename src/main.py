@@ -96,7 +96,8 @@ class MainWindow(QMainWindow, LoggerMixin):
 
         # Initialize window snapping
         self.setup_window_snapping()
-        get_window_manager().generate_db_cache()
+
+        # Note: generate_db_cache() will be called after content dimensions are calculated
 
         # Load frames from converted cache (screen coordinates)
         frames_file = Path(__file__).parent.parent / "config" / "database" / "frames.json"
@@ -191,26 +192,46 @@ class MainWindow(QMainWindow, LoggerMixin):
         content_container_layout.addWidget(self.title_label)
         content_container_layout.addWidget(scroll)
 
-        content_container = QWidget()
-        content_container.setLayout(content_container_layout)
+        self.content_container = QWidget()  # Store reference for later use
+        self.content_container.setLayout(content_container_layout)
 
-        main_layout.addWidget(content_container)
+        main_layout.addWidget(self.content_container)
 
         self.setCentralWidget(main_widget)
 
         # Calculate content size first
-        content_container.adjustSize()
+        self.content_container.adjustSize()
         self.adjustSize()
 
         # Get preferred content dimensions
-        preferred_width = content_container.sizeHint().width() + 15  # Add padding for scroll area
-        preferred_height = content_container.sizeHint().height() + self.title_bar.height()
+        preferred_width = self.content_container.sizeHint().width() + 15  # Add padding for scroll area
+        preferred_height = self.content_container.sizeHint().height() + self.title_bar.height()
 
         # Set initial size to preferred content size
         self.resize(preferred_width, preferred_height)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.logger.info(f"Window initialized with preferred size: {preferred_width}x{preferred_height}")
+
+    def finalize_window_setup(self):
+        """Finalize window setup by updating cache with actual content dimensions and applying optimal sizing."""
+        # Calculate actual content dimensions
+        content_width = self.content_container.sizeHint().width() + 15  # Add padding for scroll area
+        content_height = self.content_container.sizeHint().height() + self.title_bar.height()
+
+        self.logger.info(f"Finalizing window setup with content dimensions: {content_width}x{content_height}")
+
+        # Update cache manager with content dimensions
+        window_manager = get_window_manager()
+        window_manager.update_overlay_with_content_dimensions(content_width, content_height)
+
+        # Generate database cache now that overlay position is properly calculated
+        window_manager.generate_db_cache()
+
+        # Apply optimal sizing from updated cache
+        self.check_and_snap_to_window()
+
+        self.logger.info("Window setup finalized with optimal dimensions")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:
@@ -264,7 +285,7 @@ class MainWindow(QMainWindow, LoggerMixin):
         self.check_and_snap_to_window()
 
     def check_and_snap_to_window(self):
-        """Check for WidgetInc window and snap overlay to it."""
+        """Check for WidgetInc window and snap overlay to it using optimal cached dimensions."""
         try:
             # Use WindowManager to get cached overlay position
             window_manager = get_window_manager()
@@ -273,30 +294,42 @@ class MainWindow(QMainWindow, LoggerMixin):
             if overlay_position:
                 overlay_x = overlay_position["x"]
                 overlay_y = overlay_position["y"]
-                available_height = overlay_position["available_height"]
 
-                # Calculate optimal height: smaller of content size or available space
-                central_widget = self.centralWidget()
-                if central_widget:
-                    content_height = central_widget.sizeHint().height()
-                    optimal_height = min(content_height, available_height)
+                # Use optimal dimensions from cache if available
+                optimal_width = overlay_position.get("optimal_width")
+                optimal_height = overlay_position.get("optimal_height")
+
+                if optimal_width and optimal_height:
+                    # Use cached optimal dimensions
+                    self.logger.debug(f"Using optimal dimensions from cache: {optimal_width}x{optimal_height}")
                 else:
+                    # Fallback to legacy calculation if optimal dimensions not in cache
+                    available_height = overlay_position["available_height"]
                     optimal_height = available_height
+                    optimal_width = self.width()  # Keep current width
+
+                    if hasattr(self, "content_container") and self.content_container:
+                        content_height = self.content_container.sizeHint().height()
+                        optimal_height = min(content_height, available_height)
+
+                    self.logger.debug(f"Using fallback calculation: {optimal_width}x{optimal_height}")
 
                 # Only log and move if position changed
                 current_position = (overlay_x, overlay_y)
+                current_size = (self.width(), self.height())
+                target_size = (optimal_width, optimal_height)
+
                 if self.last_snap_position != current_position:
                     self.move(overlay_x, overlay_y)
-                    self.resize(self.width(), optimal_height)
+                    self.resize(optimal_width, optimal_height)
                     self.logger.debug(
-                        f"Snapped overlay to WidgetInc window at position: {overlay_x}, {overlay_y} (height: {optimal_height})"
+                        f"Snapped overlay to WidgetInc window at position: {overlay_x}, {overlay_y} (size: {optimal_width}x{optimal_height})"
                     )
                     self.last_snap_position = current_position
-                    get_window_manager().generate_db_cache()
-
-                elif self.height() != optimal_height:
-                    # Update height even if position hasn't changed
-                    self.resize(self.width(), optimal_height)
+                elif current_size != target_size:
+                    # Update size even if position hasn't changed
+                    self.resize(optimal_width, optimal_height)
+                    self.logger.debug(f"Updated overlay size to: {optimal_width}x{optimal_height}")
             else:
                 # Only log "not found" once when it changes state
                 if self.last_snap_position is not None:
@@ -501,9 +534,18 @@ def main():
     logger.info("Creating QApplication")
     app = QApplication(sys.argv)
 
+    # Initialize cache manager after QApplication to avoid QTimer issues
+    logger.info("Initializing cache manager")
+    get_window_manager()  # Initialize the global cache manager instance
+    logger.info("Cache manager initialized")
+
     logger.info("Creating main window")
     window = MainWindow()
     window.show()
+
+    # Finalize window setup now that content is rendered and dimensions can be accurately calculated
+    logger.info("Finalizing window setup with optimal dimensions")
+    window.finalize_window_setup()
 
     logger.info("Application started successfully")
     try:

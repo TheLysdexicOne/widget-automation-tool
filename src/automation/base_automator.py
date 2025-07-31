@@ -183,3 +183,34 @@ class BaseAutomator(ABC):
         self.should_stop = True
         self.cleanup_mouse_state()
         self.log_info("Stopping. Waiting for action timed out.")
+
+    """
+    Repeated Automations
+    """
+
+    def ore_miner(self, miner_buttons: list):
+        start_time = time.time()
+        miners = [self.create_button(name) for name in miner_buttons]
+        while self.should_continue:
+            if time.time() - start_time > self.max_run_time:
+                break
+
+            failed = 0
+            for miner in miners:
+                if miner.active():
+                    miner.click()
+                    self.sleep(0.1)
+                    if miner.active():
+                        failed += 1
+                else:
+                    failed += 1
+
+            # Storage full behavior - stop automation completely
+            if failed >= 4:
+                self.log_storage_error()
+                break
+
+            # Wait for miners to become inactive, then cycle delay
+            while self.should_continue and miners[0].inactive():
+                if not self.sleep(0.2):
+                    return

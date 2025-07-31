@@ -39,7 +39,7 @@ def calculate_overlay_position(window_info: Dict[str, Any]) -> Tuple[int, int, i
         return (100, 100, 100)
 
 
-def grid_to_screen_coordinates(grid_x: int, grid_y: int) -> Tuple[int, int]:
+def grid_to_screen_coords(grid_x: int, grid_y: int) -> Tuple[int, int]:
     """
     Convert grid coordinates to screen coordinates for clicking.
 
@@ -80,11 +80,27 @@ def grid_to_screen_coordinates(grid_x: int, grid_y: int) -> Tuple[int, int]:
         return (0, 0)
 
 
+def grid_to_screenshot_coords(grid_x: int, grid_y: int, offset_x=2560) -> Tuple[int, int]:
+    """
+    Convert grid coordinates to screenshot coordinates.
+
+    Args:
+        grid_x: Grid X coordinate (0 to 191)
+        grid_y: Grid Y coordinate (0 to 127)
+
+    Returns:
+        Tuple of (screenshot_x, screenshot_y) coordinates
+    """
+    screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+    # Adjust for screenshot offset
+    return (screen_x + offset_x, screen_y)
+
+
 def get_pixel_color(coords):
     x, y = coords
     return pyautogui.pixel(x, y)
 
 
 def get_grid_color(grid):
-    coords = grid_to_screen_coordinates(grid[0], grid[1])
+    coords = grid_to_screen_coords(grid[0], grid[1])
     return get_pixel_color(coords)
