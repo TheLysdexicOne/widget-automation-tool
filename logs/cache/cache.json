@@ -1,7 +1,7 @@
 {
-  "timestamp": 1754021233.129041,
+  "timestamp": 1754023624.823045,
   "is_valid": true,
-  "last_updated": "2025-08-01 00:07:13",
+  "last_updated": "2025-08-01 00:47:04",
   "window_info": {
     "pid": 344188,
     "hwnd": 2621542,
@@ -24,7 +24,7 @@
   "overlay_position": {
     "x": -253,
     "y": 55,
-    "available_height": 1337
+    "available_height": 1237
   },
   "pixel_size": 10.6927,
   "last_state": {

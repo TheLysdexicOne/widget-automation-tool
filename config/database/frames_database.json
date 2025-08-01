@@ -176,7 +176,8 @@
         "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "load": [107, 38, "red"],
+        "smelt": [122, 98, "red"]
       }
     },
     {

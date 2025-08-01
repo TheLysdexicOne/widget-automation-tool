@@ -330,9 +330,10 @@ class CacheManager(QObject):
 
             # Calculate overlay position to the right of playable area
             offset_y = max(32, client_width // 80)
+            bottom_margin = 100
             overlay_x = playable_x + playable_width + 1
             overlay_y = client_y + offset_y
-            available_height = client_height - offset_y
+            available_height = client_height - offset_y - bottom_margin
 
             return {
                 "x": overlay_x,
@@ -343,6 +344,45 @@ class CacheManager(QObject):
         except Exception as e:
             self.logger.error(f"Error calculating overlay position: {e}")
             return None
+
+    def generate_db_cache(self):
+        from .window_utils import grid_to_screen_coords
+
+        """Generate frames.json with screen coordinates from frames_database.json."""
+
+        frames_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
+        frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.json"
+
+        with open(frames_file, "r") as f:
+            frames_data = json.load(f)
+
+        frames_with_coords = []
+
+        for frame in frames_data["frames"]:
+            frame_copy = frame.copy()
+
+            if "buttons" in frame:
+                converted = {}
+                for button_name, button_data in frame["buttons"].items():
+                    if len(button_data) != 3:
+                        self.logger.error(f"Invalid button data for {button_name}: {button_data}")
+                        import sys
+
+                        sys.exit("Exiting due to invalid database")
+
+                    grid_x, grid_y, color = button_data
+                    screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+                    converted[button_name] = [screen_x, screen_y, color]
+
+                frame_copy["buttons"] = converted
+
+            frames_with_coords.append(frame_copy)
+
+        frames_cache.parent.mkdir(exist_ok=True)
+        with open(frames_cache, "w") as f:
+            json.dump({"frames": frames_with_coords}, f, indent=2, separators=(",", ": "))
+
+        self.logger.info(f"Generated coordinate cache at {frames_cache}")
 
     # Public API methods
     def get_window_info(self) -> Optional[Dict[str, Any]]:

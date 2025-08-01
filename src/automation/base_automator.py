@@ -188,7 +188,9 @@ class BaseAutomator(ABC):
     Repeated Automations
     """
 
-    def ore_miner(self, miner_buttons: list):
+    def ore_miner(self):
+        # For all miners in frame_data["buttons"]
+        miner_buttons = [name for name in self.frame_data["buttons"] if "miner" in name]
         start_time = time.time()
         miners = [self.create_button(name) for name in miner_buttons]
         while self.should_continue:
@@ -212,5 +214,38 @@ class BaseAutomator(ABC):
 
             # Wait for miners to become inactive, then cycle delay
             while self.should_continue and miners[0].inactive():
+                if not self.sleep(0.2):
+                    return
+            self.sleep(0.2)
+
+    def smelter_cycle(self):
+        """Load then smelt repeatedly with storage full detection via button behavior."""
+        start_time = time.time()
+
+        # Create button engines for clean syntax
+        load = self.create_button("load")
+        smelt = self.create_button("smelt")
+
+        # Main automation loop
+        while self.should_continue:
+            # Start Timer
+            if time.time() - start_time > self.max_run_time:
+                break
+
+            if load.active():
+                load.click()
+                self.sleep(0.1)
+                if load.active():
+                    smelt.click()
+                    # Storage full behavior
+                    if smelt.active():
+                        self.log_storage_error()
+                        break
+                    while self.should_continue and smelt.inactive():
+                        self.sleep(0.2)
+            else:
+                self.log_frame_error()
+
+            while self.should_continue and load.inactive():
                 if not self.sleep(0.2):
                     return

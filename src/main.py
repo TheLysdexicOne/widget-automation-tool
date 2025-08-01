@@ -229,6 +229,7 @@ class MainWindow(QMainWindow, LoggerMixin):
     def check_and_snap_to_window(self):
         """Snap overlay to WidgetInc window using cached anchor and available height, and dynamic content height."""
         overlay_position = self.window_manager.get_overlay_position()
+        self.window_manager.generate_db_cache()
         if overlay_position:
             overlay_x = overlay_position["x"]
             overlay_y = overlay_position["y"]
