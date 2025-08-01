@@ -10,23 +10,23 @@
       },
       "buttons": {
         "miner1": [
-          0,
-          0,
+          -1959,
+          381,
           "red"
         ],
         "miner2": [
-          0,
-          0,
+          -1948,
+          1086,
           "red"
         ],
         "miner3": [
-          0,
-          0,
+          -644,
+          284,
           "red"
         ],
         "miner4": [
-          0,
-          0,
+          -612,
+          1076,
           "red"
         ]
       }
@@ -41,13 +41,13 @@
       },
       "buttons": {
         "load": [
-          0,
-          0,
+          -1189,
+          370,
           "red"
         ],
         "smelt": [
-          0,
-          0,
+          -997,
+          1076,
           "red"
         ]
       }
@@ -62,8 +62,8 @@
       },
       "buttons": {
         "create": [
-          0,
-          0,
+          -1296,
+          755,
           "blue"
         ]
       }
@@ -78,8 +78,8 @@
       },
       "buttons": {
         "excavate": [
-          0,
-          0,
+          -772,
+          509,
           "red"
         ]
       }
@@ -94,8 +94,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -110,8 +110,8 @@
       },
       "buttons": {
         "create": [
-          0,
-          0,
+          -1285,
+          819,
           "red"
         ]
       }
@@ -126,8 +126,8 @@
       },
       "buttons": {
         "spin": [
-          0,
-          0,
+          -900,
+          873,
           "red"
         ]
       }
@@ -142,8 +142,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -158,8 +158,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       },
@@ -184,13 +184,13 @@
       },
       "buttons": {
         "plus": [
-          0,
-          0,
+          -1521,
+          776,
           "red"
         ],
         "minus": [
-          0,
-          0,
+          -1039,
+          776,
           "green"
         ]
       },
@@ -211,23 +211,23 @@
       },
       "buttons": {
         "plus1": [
-          0,
-          0,
+          -441,
+          552,
           "red"
         ],
         "plus2": [
-          0,
-          0,
+          -441,
+          723,
           "red"
         ],
         "plus4": [
-          0,
-          0,
+          -441,
+          894,
           "red"
         ],
         "plus8": [
-          0,
-          0,
+          -441,
+          1065,
           "red"
         ]
       },
@@ -261,23 +261,23 @@
       },
       "buttons": {
         "miner1": [
-          0,
-          0,
+          -1136,
+          573,
           "red"
         ],
         "miner2": [
-          0,
-          0,
+          -965,
+          605,
           "red"
         ],
         "miner3": [
-          0,
-          0,
+          -793,
+          637,
           "red"
         ],
         "miner4": [
-          0,
-          0,
+          -622,
+          669,
           "red"
         ]
       }
@@ -288,12 +288,12 @@
       "item": "Copper Ingot",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -304,12 +304,12 @@
       "item": "Plastic",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -319,13 +319,13 @@
       "name": "Circuit Fab",
       "item": "Circuit Board",
       "automation": {
-        "can_automate": 0,
-        "programmed": 0
+        "can_automate": 1,
+        "programmed": 1
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -335,13 +335,13 @@
       "name": "Computational Engine",
       "item": "Computational Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -351,13 +351,13 @@
       "name": "Tesla Coil",
       "item": "Bottled Lightning",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -367,13 +367,13 @@
       "name": "Core Foundry",
       "item": "Thinking Core",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -383,13 +383,13 @@
       "name": "Integrator",
       "item": "Integrated Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -399,13 +399,13 @@
       "name": "Silicon Extruder",
       "item": "Silicon",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -415,13 +415,13 @@
       "name": "Processor Lab",
       "item": "Microprocessor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -431,13 +431,13 @@
       "name": "Mainframe Assembler",
       "item": "Mainframe Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -452,8 +452,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -463,13 +463,13 @@
       "name": "Uranium Mine",
       "item": "Uranium",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -479,13 +479,13 @@
       "name": "Fuel Rod Assembler",
       "item": "Fuel Rod",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -495,13 +495,13 @@
       "name": "Nuclear Power Plant",
       "item": "Power (Nuclear)",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -511,13 +511,13 @@
       "name": "Cloud Digitizer",
       "item": "Cloud Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -527,13 +527,13 @@
       "name": "Widget Minitizers",
       "item": "Widget Particle",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -543,13 +543,13 @@
       "name": "Nanoscale Lab",
       "item": "Nanoprocessor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -559,13 +559,13 @@
       "name": "Reactor Foundry",
       "item": "Portable Reactor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -575,13 +575,13 @@
       "name": "Quantum Tunneler",
       "item": "Quantum Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -596,8 +596,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -607,13 +607,13 @@
       "name": "Helium Extractor",
       "item": "Helium",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -623,13 +623,13 @@
       "name": "Conductor Foundry",
       "item": "Superconductor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -639,13 +639,13 @@
       "name": "AI Laboratory",
       "item": "AI Core",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -655,13 +655,13 @@
       "name": "AI Delimiter",
       "item": "Unshackled Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -671,13 +671,13 @@
       "name": "Training Center",
       "item": "AI Training Data",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -687,13 +687,13 @@
       "name": "Data Transformer",
       "item": "Ascension Matrix",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -703,13 +703,13 @@
       "name": "Ascension Facility",
       "item": "Ascended Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -724,8 +724,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -735,13 +735,13 @@
       "name": "Sentience Facility",
       "item": "Sentience Core",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -751,13 +751,13 @@
       "name": "Picoscale Lab",
       "item": "Picoprocessor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -767,13 +767,13 @@
       "name": "Sentience Aggregator",
       "item": "Sentient Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -783,13 +783,13 @@
       "name": "\u00ce\u00a9 Processor Lab",
       "item": "Processor Amalgamation",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -799,13 +799,13 @@
       "name": "\u00ce\u00a9 Core Foundry",
       "item": "Core Amalgamation",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -815,13 +815,13 @@
       "name": "\u00ce\u00a9 Widget Distiller",
       "item": "Widget Amalgamation",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -836,8 +836,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -852,8 +852,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -868,8 +868,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -884,8 +884,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -900,8 +900,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -916,8 +916,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }
@@ -932,8 +932,8 @@
       },
       "buttons": {
         "1": [
-          0,
-          0,
+          -2290,
+          39,
           1
         ]
       }

@@ -15,33 +15,33 @@ from typing import Any, Dict
 class LoggerMixin:
     """Mixin class providing convenient logging methods for any class."""
 
-    logger: logging.Logger  # Type hint for mixin
+    logging: logging.Logger  # Type hint for mixin
 
     def log_info(self, message: str):
         """Convenience method for info logging."""
         if hasattr(self, "logger"):
-            self.logger.info(message)
+            self.logging.info(message)
         else:
             logging.getLogger(self.__class__.__name__).info(message)
 
     def log_debug(self, message: str):
         """Convenience method for debug logging."""
         if hasattr(self, "logger"):
-            self.logger.debug(message)
+            self.logging.debug(message)
         else:
             logging.getLogger(self.__class__.__name__).debug(message)
 
     def log_error(self, message: str):
         """Convenience method for error logging."""
         if hasattr(self, "logger"):
-            self.logger.error(message)
+            self.logging.error(message)
         else:
             logging.getLogger(self.__class__.__name__).error(message)
 
     def log_warning(self, message: str):
         """Convenience method for warning logging."""
         if hasattr(self, "logger"):
-            self.logger.warning(message)
+            self.logging.warning(message)
         else:
             logging.getLogger(self.__class__.__name__).warning(message)
 

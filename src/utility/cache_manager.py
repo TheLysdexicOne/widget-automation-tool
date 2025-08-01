@@ -20,24 +20,6 @@ import win32gui
 import win32process
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
-
-class CompactJSONEncoder(json.JSONEncoder):
-    """Custom JSON encoder that keeps arrays on single lines."""
-
-    def encode(self, obj):
-        if isinstance(obj, list) and len(obj) <= 4:
-            # Keep short arrays (like coordinates) on one line
-            return json.dumps(obj, separators=(",", ":"))
-        return super().encode(obj)
-
-    def iterencode(self, obj, _one_shot=False):
-        """Encode the given object and yield each string representation as available."""
-        if isinstance(obj, list) and len(obj) <= 4:
-            yield self.encode(obj)
-        else:
-            yield from super().iterencode(obj, _one_shot)
-
-
 # Constants
 TARGET_PROCESS_NAME = "WidgetInc.exe"
 logger = logging.getLogger(__name__)
@@ -320,16 +302,10 @@ class CacheManager(QObject):
             self.logger.error(f"Error calculating pixel size: {e}")
             return None
 
-    def _calculate_overlay_position(
-        self, content_width: Optional[int] = None, content_height: Optional[int] = None
-    ) -> Optional[Dict[str, Any]]:
+    def _calculate_overlay_position(self, *_) -> Optional[Dict[str, Any]]:
         """
         Calculate overlay position in top-right corner of window.
-        Returns cached position for the overlay application with optimal dimensions.
-
-        Args:
-            content_width: Width needed by the overlay content
-            content_height: Height needed by the overlay content
+        Returns cached position for the overlay application with anchor and available dimensions.
         """
         # Use cached playable area if available
         playable_area = self._cache.get("playable_area")
@@ -358,29 +334,10 @@ class CacheManager(QObject):
             overlay_y = client_y + offset_y
             available_height = client_height - offset_y
 
-            # Calculate available width (from playable area right edge to window border)
-            window_right = client_screen["x"] + client_width
-            available_width = window_right - overlay_x
-
-            # Calculate optimal dimensions
-            optimal_width = available_width  # Default to available width
-            optimal_height = available_height  # Default to available height
-
-            if content_width is not None:
-                optimal_width = min(content_width, available_width)
-
-            if content_height is not None:
-                optimal_height = min(content_height, available_height)
-
             return {
                 "x": overlay_x,
                 "y": overlay_y,
                 "available_height": available_height,
-                "available_width": available_width,
-                "optimal_height": optimal_height,
-                "optimal_width": optimal_width,
-                "content_width": content_width,
-                "content_height": content_height,
             }
 
         except Exception as e:
@@ -408,19 +365,8 @@ class CacheManager(QObject):
 
         return calculated_area
 
-    def get_overlay_position(
-        self, content_width: Optional[int] = None, content_height: Optional[int] = None
-    ) -> Optional[Dict[str, Any]]:
+    def get_overlay_position(self) -> Optional[Dict[str, Any]]:
         """Get overlay position coordinates from cache (fast cached calculation)."""
-        # If we have content dimensions, always recalculate to ensure accuracy
-        if content_width is not None or content_height is not None:
-            calculated_position = self._calculate_overlay_position(content_width, content_height)
-            if calculated_position:
-                self._cache["overlay_position"] = calculated_position
-                self._save_cache_to_file()
-            return calculated_position
-
-        # Otherwise use cached version if available
         cached_position = self._cache.get("overlay_position")
         if cached_position:
             return cached_position
@@ -451,70 +397,12 @@ class CacheManager(QObject):
         """Check if WidgetInc window is currently available."""
         return self._cache["is_valid"] and self._cache["window_info"] is not None
 
-    def force_refresh(self):
-        """Force immediate cache refresh."""
-        self._validate_cache()
-
-    def update_overlay_with_content_dimensions(self, content_width: int, content_height: int):
-        """Update overlay position cache with actual content dimensions."""
-        self.logger.debug(f"Updating overlay cache with content dimensions: {content_width}x{content_height}")
-
-        # Recalculate overlay position with content dimensions
-        updated_position = self._calculate_overlay_position(content_width, content_height)
-        if updated_position:
-            self._cache["overlay_position"] = updated_position
-            self._save_cache_to_file()
-            self.logger.info(
-                f"Updated overlay position cache with optimal dimensions: {updated_position['optimal_width']}x{updated_position['optimal_height']}"
-            )
-        else:
-            self.logger.warning("Failed to update overlay position with content dimensions")
-
-    def generate_db_cache(self):
-        from .window_utils import grid_to_screen_coords
-
-        """Generate frames.json with screen coordinates from frames_database.json."""
-
-        frames_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
-        frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.json"
-
-        with open(frames_file, "r") as f:
-            frames_data = json.load(f)
-
-        frames_with_coords = []
-
-        for frame in frames_data["frames"]:
-            frame_copy = frame.copy()
-
-            if "buttons" in frame:
-                converted = {}
-                for button_name, button_data in frame["buttons"].items():
-                    if len(button_data) != 3:
-                        self.logger.error(f"Invalid button data for {button_name}: {button_data}")
-                        import sys
-
-                        sys.exit("Exiting due to invalid database")
-
-                    grid_x, grid_y, color = button_data
-                    screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
-                    converted[button_name] = [screen_x, screen_y, color]
-
-                frame_copy["buttons"] = converted
-
-            frames_with_coords.append(frame_copy)
-
-        frames_cache.parent.mkdir(exist_ok=True)
-        with open(frames_cache, "w") as f:
-            json.dump({"frames": frames_with_coords}, f, indent=2, separators=(",", ": "))
-
-        self.logger.info(f"Generated coordinate cache at {frames_cache}")
-
 
 # Global WindowManager instance
 _window_manager = None
 
 
-def get_window_manager() -> CacheManager:
+def get_cache_manager() -> CacheManager:
     """Get the global CacheManager instance."""
     global _window_manager
     if _window_manager is None:

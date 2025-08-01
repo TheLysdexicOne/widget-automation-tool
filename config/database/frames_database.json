@@ -173,7 +173,7 @@
       "item": "Copper Ingot",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
@@ -185,7 +185,7 @@
       "item": "Plastic",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
@@ -196,8 +196,8 @@
       "name": "Circuit Fab",
       "item": "Circuit Board",
       "automation": {
-        "can_automate": 0,
-        "programmed": 0
+        "can_automate": 1,
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
@@ -208,7 +208,7 @@
       "name": "Computational Engine",
       "item": "Computational Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -220,7 +220,7 @@
       "name": "Tesla Coil",
       "item": "Bottled Lightning",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -232,7 +232,7 @@
       "name": "Core Foundry",
       "item": "Thinking Core",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -244,7 +244,7 @@
       "name": "Integrator",
       "item": "Integrated Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -256,7 +256,7 @@
       "name": "Silicon Extruder",
       "item": "Silicon",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -268,7 +268,7 @@
       "name": "Processor Lab",
       "item": "Microprocessor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -280,7 +280,7 @@
       "name": "Mainframe Assembler",
       "item": "Mainframe Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -304,7 +304,7 @@
       "name": "Uranium Mine",
       "item": "Uranium",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -316,7 +316,7 @@
       "name": "Fuel Rod Assembler",
       "item": "Fuel Rod",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -328,7 +328,7 @@
       "name": "Nuclear Power Plant",
       "item": "Power (Nuclear)",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -340,7 +340,7 @@
       "name": "Cloud Digitizer",
       "item": "Cloud Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -352,7 +352,7 @@
       "name": "Widget Minitizers",
       "item": "Widget Particle",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -364,7 +364,7 @@
       "name": "Nanoscale Lab",
       "item": "Nanoprocessor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -376,7 +376,7 @@
       "name": "Reactor Foundry",
       "item": "Portable Reactor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -388,7 +388,7 @@
       "name": "Quantum Tunneler",
       "item": "Quantum Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -412,7 +412,7 @@
       "name": "Helium Extractor",
       "item": "Helium",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -424,7 +424,7 @@
       "name": "Conductor Foundry",
       "item": "Superconductor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -436,7 +436,7 @@
       "name": "AI Laboratory",
       "item": "AI Core",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -448,7 +448,7 @@
       "name": "AI Delimiter",
       "item": "Unshackled Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -460,7 +460,7 @@
       "name": "Training Center",
       "item": "AI Training Data",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -472,7 +472,7 @@
       "name": "Data Transformer",
       "item": "Ascension Matrix",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -484,7 +484,7 @@
       "name": "Ascension Facility",
       "item": "Ascended Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -508,7 +508,7 @@
       "name": "Sentience Facility",
       "item": "Sentience Core",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -520,7 +520,7 @@
       "name": "Picoscale Lab",
       "item": "Picoprocessor",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -532,7 +532,7 @@
       "name": "Sentience Aggregator",
       "item": "Sentient Widget",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -544,7 +544,7 @@
       "name": "\u00ce\u00a9 Processor Lab",
       "item": "Processor Amalgamation",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -556,7 +556,7 @@
       "name": "\u00ce\u00a9 Core Foundry",
       "item": "Core Amalgamation",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {
@@ -568,7 +568,7 @@
       "name": "\u00ce\u00a9 Widget Distiller",
       "item": "Widget Amalgamation",
       "automation": {
-        "can_automate": 0,
+        "can_automate": 1,
         "programmed": 0
       },
       "buttons": {

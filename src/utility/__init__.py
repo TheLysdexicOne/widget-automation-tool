@@ -6,11 +6,11 @@ Centralizes reusable components following KISS principles.
 from .coordinate_utils import ButtonManager
 from .logging_utils import setup_logging
 from .window_utils import calculate_overlay_position
-from .cache_manager import get_window_manager
+from .cache_manager import get_cache_manager
 
 __all__ = [
     "ButtonManager",
     "setup_logging",
     "calculate_overlay_position",
-    "get_window_manager",
+    "get_cache_manager",
 ]

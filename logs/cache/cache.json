@@ -1,10 +1,10 @@
 {
-  "timestamp": 1753979908.1495707,
+  "timestamp": 1754021233.129041,
   "is_valid": true,
-  "last_updated": "2025-07-31 12:38:28",
+  "last_updated": "2025-08-01 00:07:13",
   "window_info": {
-    "pid": 282836,
-    "hwnd": 4656006,
+    "pid": 344188,
+    "hwnd": 2621542,
     "title": "WidgetInc",
     "window_rect": [-2568, -8, 8, 1400],
     "client_rect": [0, 0, 2560, 1369],
@@ -24,16 +24,11 @@
   "overlay_position": {
     "x": -253,
     "y": 55,
-    "available_height": 1337,
-    "available_width": 253,
-    "optimal_height": 462,
-    "optimal_width": 191,
-    "content_width": 191,
-    "content_height": 462
+    "available_height": 1337
   },
   "pixel_size": 10.6927,
   "last_state": {
-    "hwnd": 4656006,
+    "hwnd": 2621542,
     "window_rect": [-2568, -8, 8, 1400],
     "client_rect": [0, 0, 2560, 1369]
   }

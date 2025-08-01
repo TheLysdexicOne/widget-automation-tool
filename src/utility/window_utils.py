@@ -9,7 +9,7 @@ import logging
 import pyautogui
 from typing import Any, Dict, Tuple
 
-from .cache_manager import get_window_manager, PIXEL_ART_GRID_WIDTH, PIXEL_ART_GRID_HEIGHT
+from .cache_manager import get_cache_manager, PIXEL_ART_GRID_WIDTH, PIXEL_ART_GRID_HEIGHT
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def calculate_overlay_position(window_info: Dict[str, Any]) -> Tuple[int, int, i
     """
     try:
         # Use WindowManager to get cached overlay position
-        window_manager = get_window_manager()
+        window_manager = get_cache_manager()
         overlay_position = window_manager.get_overlay_position()
 
         if not overlay_position:
@@ -53,7 +53,7 @@ def grid_to_screen_coords(grid_x: int, grid_y: int) -> Tuple[int, int]:
         Tuple of (screen_x, screen_y) coordinates for clicking
     """
     try:
-        window_manager = get_window_manager()
+        window_manager = get_cache_manager()
         playable_area = window_manager.get_playable_area()
         pixel_size = window_manager.get_pixel_size()
 
