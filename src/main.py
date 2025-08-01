@@ -56,10 +56,10 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Disable context menu to prevent interference with right-click hotkey
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 
-        # Note: generate_db_cache() will be called after content dimensions are calculated
+        self.window_manager.generate_db_cache()
 
         # Load frames from converted cache (screen coordinates)
-        frames_file = Path(__file__).parent.parent / "config" / "database" / "frames.json"
+        frames_file = Path(__file__).parent.parent / "config" / "database" / "frames.cache"
         self.logging.debug(f"Loading frames from: {frames_file}")
         try:
             with open(frames_file, "r", encoding="utf-8") as f:

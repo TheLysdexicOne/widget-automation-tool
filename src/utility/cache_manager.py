@@ -113,9 +113,9 @@ class CacheManager(QObject):
             self._cache["is_valid"] = False
 
     def _save_cache_to_file(self):
-        """Save current cache state to logs/cache/cache.json for debugging."""
+        """Save current cache state to logs/cache/cache.cache for debugging."""
         try:
-            cache_file = self._cache_log_dir / "cache.json"
+            cache_file = self._cache_log_dir / "cache.cache"
 
             # Use cached values directly instead of recalculating
             cache_data = {
@@ -348,10 +348,10 @@ class CacheManager(QObject):
     def generate_db_cache(self):
         from .window_utils import grid_to_screen_coords
 
-        """Generate frames.json with screen coordinates from frames_database.json."""
+        """Generate frames.cache with screen coordinates from frames_database.json."""
 
         frames_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
-        frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.json"
+        frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.cache"
 
         with open(frames_file, "r") as f:
             frames_data = json.load(f)

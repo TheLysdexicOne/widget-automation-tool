@@ -40,6 +40,8 @@ assets/game
 .ruff_cache/
 .pytest_cache/
 ov=tools/
+*.cache
+logs/*
 
 # Virtual environments
 .venv/
@@ -70,6 +72,7 @@ Thumbs.db
 temp/
 screenshots/
 debug_images/
+*.cache
 
 # Sensitive data
 config/private_settings.json
