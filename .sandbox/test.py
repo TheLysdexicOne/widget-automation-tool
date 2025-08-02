@@ -1,75 +1,107 @@
-import pyautogui
-import time
-import json
-import os
-from PIL import ImageGrab
-
-# Define scan area (change as needed)
-x1, y1 = -2526, 100
-x2, y2 = -2488, 800
-
-x_offset = 2560
+import easyocr
+import numpy as np
+from PIL import Image, ImageFilter
 
 
-def rgb_key(rgb):
-    return f"({rgb[0]:03},{rgb[1]:03},{rgb[2]:03})"
+class PixelArtMathReader:
+    """OCR reader optimized for pixel art math equations."""
+
+    def __init__(self):
+        self.reader = easyocr.Reader(["en"])
+        self.allowed_chars = "0123456789x/-+=?"
+
+    def preprocess_image(self, image_path):
+        """Extract white pixels and create clean image."""
+        img_original = Image.open(image_path).convert("RGB")
+        img_processed = Image.new("RGB", img_original.size, (0, 0, 0))
+
+        # Keep only white pixels (#ffffff)
+        for x in range(img_original.width):
+            for y in range(img_original.height):
+                pixel = img_original.getpixel((x, y))
+                if pixel == (255, 255, 255):
+                    img_processed.putpixel((x, y), (255, 255, 255))
+
+        return img_processed
+
+    def test_blur_levels(self, image_path):
+        """Test different Gaussian blur levels to find optimal OCR results."""
+        img_processed = self.preprocess_image(image_path)
+        results = []
+
+        print("=== EasyOCR Gaussian Blur Test ===")
+        for blur_level in range(5, 16):  # 0.5 to 1.5 in 0.1 increments
+            blur_radius = blur_level / 10.0
+
+            img_test = img_processed.convert("L")
+            img_test = img_test.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+
+            ocr_results = self.reader.readtext(np.array(img_test), allowlist=self.allowed_chars)
+
+            if ocr_results:
+                text, confidence = ocr_results[0][1], ocr_results[0][2]
+                print(f"Blur {blur_radius:.1f}: {text} | Confidence: {confidence:.2f}")
+                results.append((text, confidence))
+            else:
+                print(f"Blur {blur_radius:.1f}: No text detected")
+
+        return results
+
+    def calculate_combined_confidence(self, results_list):
+        """Calculate combined confidence starting from max and adding for confirmations."""
+        if not results_list:
+            return "", 0.0
+
+        # Group by text content
+        text_groups = {}
+        for text, confidence in results_list:
+            if text not in text_groups:
+                text_groups[text] = []
+            text_groups[text].append(confidence)
+
+        # Find most common result
+        most_common_text = max(text_groups.keys(), key=lambda x: len(text_groups[x]))
+        matching_confidences = text_groups[most_common_text]
+
+        # Start with max confidence and add bonus for each additional confirmation
+        base_confidence = max(matching_confidences)
+
+        # Add bonus for each confirming result (diminishing returns)
+        bonus = 0.0
+        for i, conf in enumerate(sorted(matching_confidences)[1:], 1):  # Skip the max
+            bonus += (conf * 0.01) / i  # Diminishing bonus per confirmation
+
+        combined_confidence = min(1.0, base_confidence + bonus)
+
+        return most_common_text, combined_confidence
+
+    def read_text(self, image_path):
+        """Read text from pixel art image with optimal settings."""
+        img_processed = self.preprocess_image(image_path)
+
+        # Use optimal blur level (adjust based on your testing)
+        img_test = img_processed.convert("L")
+        img_test = img_test.filter(ImageFilter.GaussianBlur(radius=0.8))
+
+        results = self.reader.readtext(np.array(img_test), allowlist=self.allowed_chars)
+
+        if results:
+            return results[0][1], results[0][2]
+        return "", 0.0
 
 
-# Method 1: PIL ImageGrab with x_offset (for all_screens)
-start1 = time.time()
-full_img1 = ImageGrab.grab(all_screens=True)
-region_box1 = (x1 + x_offset, y1, x2 + x_offset, y2)
-region_img1 = full_img1.crop(region_box1)
-pixels1 = {}
-for y in range(y2 - y1):
-    for x in range(x2 - x1):
-        rgb = region_img1.getpixel((x, y))
-        key = rgb_key(rgb)
-        pixels1[key] = pixels1.get(key, 0) + 1
-end1 = time.time()
+if __name__ == "__main__":
+    reader = PixelArtMathReader()
 
-# Save the region screenshot for visual comparison
-img_dir = os.path.dirname(__file__)
-region_img1.save(os.path.join(img_dir, "pag_offset.png"))
-region_img1.convert("RGB").save(os.path.join(img_dir, "pag_offset.jpg"), quality=95)
+    # Test different blur levels
+    results = reader.test_blur_levels(".sandbox/text.png")
 
-# Method 2: PIL ImageGrab with bbox and all_screens=True, no offset
-start2 = time.time()
-bbox = (x1, y1, x2, y2)
-region_img2 = ImageGrab.grab(bbox=bbox, all_screens=True)
-pixels2 = {}
-for y in range(y2 - y1):
-    for x in range(x2 - x1):
-        rgb = region_img2.getpixel((x, y))
-        key = rgb_key(rgb)
-        pixels2[key] = pixels2.get(key, 0) + 1
-end2 = time.time()
+    # Calculate combined confidence
+    if results:
+        best_text, combined_confidence = reader.calculate_combined_confidence(results)
+        print(f"\n=== Final Result ===")
+        print(f"Text: '{best_text}' | Combined Confidence: {combined_confidence:.2f}")
 
-# Save the region screenshot for visual comparison
-region_img2.save(os.path.join(img_dir, "pag_bbox.png"))
-region_img2.convert("RGB").save(os.path.join(img_dir, "pag_bbox.jpg"), quality=95)
-
-# Raw pyautogui.pixel method
-# start2 = time.time()
-# pixels2 = {}
-# for y in range(y1, y2):
-#     for x in range(x1, x2):
-#         rgb = pyautogui.pixel(x, y)
-#         key = rgb_key(rgb)
-#         pixels2[key] = pixels2.get(key, 0) + 1
-# end2 = time.time()
-
-
-result = {
-    "imagegrab_offset": {
-        "start": f"{x1 + x_offset}, {y1}",
-        "end": f"{x2 + x_offset}, {y2}",
-        "time": f"{end1 - start1:.4f}",
-        "pixels": pixels1,
-    },
-    "imagegrab_bbox": {"start": f"{x1}, {y1}", "end": f"{x2}, {y2}", "time": f"{end2 - start2:.4f}", "pixels": pixels2},
-}
-
-out_path = os.path.join(os.path.dirname(__file__), "output.json")
-with open(out_path, "w", encoding="utf-8") as f:
-    json.dump(result, f, indent=2)
+    # Single read with optimal settings
+    text, confidence = reader.read_text(".sandbox/text.png")
+    print(f"Single Read: '{text}' | Confidence: {confidence:.2f}")

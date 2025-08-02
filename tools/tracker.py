@@ -129,14 +129,14 @@ class MouseTracker(QObject):
 
     def __init__(self):
         super().__init__()
-        self._window_coords_cb: Optional[Callable[[], Dict]] = None
-        self._playable_coords_cb: Optional[Callable[[], Dict]] = None
+        self._window_xy_cb: Optional[Callable[[], Dict]] = None
+        self._playable_xy_cb: Optional[Callable[[], Dict]] = None
         self._timer: Optional[QTimer] = None
-        self.current_grid_coords = (0, 0)  # Store current grid coordinates
+        self.current_grid_xy = (0, 0)  # Store current grid coordinates
 
     def set_coordinate_callbacks(self, window_cb: Callable[[], Dict], playable_cb: Callable[[], Dict]):
-        self._window_coords_cb = window_cb
-        self._playable_coords_cb = playable_cb
+        self._window_xy_cb = window_cb
+        self._playable_xy_cb = playable_cb
 
     def start_tracking(self, interval_ms: int = 100):
         if self._timer is None:
@@ -164,8 +164,8 @@ class MouseTracker(QObject):
         info = {"screen_x": screen_x, "screen_y": screen_y}
 
         # Window info
-        if self._window_coords_cb:
-            win_info = self._window_coords_cb()
+        if self._window_xy_cb:
+            win_info = self._window_xy_cb()
             if win_info and "window_rect" in win_info:
                 wx1, wy1, wx2, wy2 = win_info["window_rect"]
                 if wx1 <= screen_x <= wx2 and wy1 <= screen_y <= wy2:
@@ -176,8 +176,8 @@ class MouseTracker(QObject):
                     info["inside_window"] = False
 
         # Playable info - calculate pixel size regardless of mouse position
-        if self._playable_coords_cb:
-            playable = self._playable_coords_cb()
+        if self._playable_xy_cb:
+            playable = self._playable_xy_cb()
             if playable:
                 px, py, pw, ph = (
                     playable.get("x", 0),
@@ -201,12 +201,17 @@ class MouseTracker(QObject):
                 # Only calculate grid position and percentages if mouse is inside playable area
                 if px <= screen_x <= px + pw and py <= screen_y <= py + ph:
                     info["inside_playable"] = True
-                    info["x_percent"] = 100 * (screen_x - px) / max(1, pw)
-                    info["y_percent"] = 100 * (screen_y - py) / max(1, ph)
 
-                    # Calculate grid position
+                    # Calculate actual pixel coordinates within playable area
                     rel_x = screen_x - px
                     rel_y = screen_y - py
+                    info["playable_x"] = rel_x
+                    info["playable_y"] = rel_y
+
+                    info["x_percent"] = 100 * rel_x / max(1, pw)
+                    info["y_percent"] = 100 * rel_y / max(1, ph)
+
+                    # Calculate grid position
                     grid_x = int(rel_x / pixel_size) if pixel_size > 0 else 0
                     grid_y = int(rel_y / pixel_size) if pixel_size > 0 else 0
 
@@ -215,7 +220,7 @@ class MouseTracker(QObject):
                     grid_y = max(0, min(grid_height - 1, grid_y))
 
                     # Store current grid coordinates
-                    self.current_grid_coords = (grid_x, grid_y)
+                    self.current_grid_xy = (grid_x, grid_y)
 
                     info["grid_position"] = {"x": grid_x, "y": grid_y}
                 else:
@@ -294,8 +299,8 @@ class TrackerWidget(QWidget):
         self.target_found = False
         self.target_hwnd = None
         self.coordinates = {}
-        self.window_coords = {}
-        self.playable_coords = {}
+        self.window_xy = {}
+        self.playable_xy = {}
         self.grid_overlay = None  # Grid overlay widget
 
         # Mouse tracker
@@ -620,8 +625,8 @@ class TrackerWidget(QWidget):
                     )
 
                     # Always update tracker coordinates
-                    self.window_coords = target_info["window_info"]
-                    self.playable_coords = playable
+                    self.window_xy = target_info["window_info"]
+                    self.playable_xy = playable
 
                 self.coords_label.setText(coords_text)
 
@@ -639,19 +644,19 @@ class TrackerWidget(QWidget):
             )
             self.info_area.setPlainText("No target process found")
             self.coords_label.setText("No coordinates available")
-            self.window_coords = {}
-            self.playable_coords = {}
+            self.window_xy = {}
+            self.playable_xy = {}
 
         # Update status flag
         self.target_found = found
 
     def _get_window_coords(self) -> Dict:
         """Callback to provide window coordinates to mouse tracker."""
-        return self.window_coords
+        return self.window_xy
 
     def _get_playable_coords(self) -> Dict:
         """Callback to provide playable coordinates to mouse tracker."""
-        return self.playable_coords
+        return self.playable_xy
 
     def _on_mouse_position_changed(self, position_info: Dict):
         """Handle mouse position updates from mouse tracker."""
@@ -671,12 +676,12 @@ class TrackerWidget(QWidget):
 
             # Add playable area information if available
             if position_info.get("inside_playable", False):
-                x_percent = position_info.get("x_percent", 0)
-                y_percent = position_info.get("y_percent", 0)
+                playable_x = position_info.get("playable_x", 0)
+                playable_y = position_info.get("playable_y", 0)
                 grid_pos = position_info.get("grid_position", {})
                 pixel_size = position_info.get("pixel_size", 0)
 
-                mouse_text += f"Playable: {x_percent:.4f}%, {y_percent:.4f}%\n"
+                mouse_text += f"Playable: {playable_x}, {playable_y}\n"
                 mouse_text += f"Grid: ({grid_pos.get('x', 0)}, {grid_pos.get('y', 0)})\n"
                 mouse_text += f"Pixel: {pixel_size:.4f}px"
             else:
@@ -701,8 +706,8 @@ class TrackerWidget(QWidget):
             self.logger.info("Grid overlay hidden")
         else:
             # Grid is not shown - show it if we have playable area
-            if self.playable_coords and self.target_found:
-                self.grid_overlay = GridOverlay(self.playable_coords)
+            if self.playable_xy and self.target_found:
+                self.grid_overlay = GridOverlay(self.playable_xy)
                 self.grid_overlay.show()
                 self.grid_button.setText("Hide Grid")
                 self.logger.info("Grid overlay shown")
@@ -713,7 +718,7 @@ class TrackerWidget(QWidget):
         """Handle key press events."""
         if event.key() == Qt.Key.Key_G and event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # Copy grid coordinates to clipboard (Ctrl+G)
-            grid_x, grid_y = self.mouse_tracker.current_grid_coords
+            grid_x, grid_y = self.mouse_tracker.current_grid_xy
             grid_text = f"{grid_x}, {grid_y}"
             clipboard = QApplication.clipboard()
             if clipboard:

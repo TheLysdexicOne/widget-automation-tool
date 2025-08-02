@@ -8,7 +8,6 @@ import pyautogui
 from typing import Any, Dict
 
 from automation.base_automator import BaseAutomator
-from utility.window_utils import grid_to_screen_coords
 
 
 class OilPowerPlantAutomator(BaseAutomator):
@@ -22,19 +21,16 @@ class OilPowerPlantAutomator(BaseAutomator):
 
         pbar_color = (0, 149, 28)
 
-        # Pull handle and progress bar acting as buttons
-        handle = self.frame_data["interactions"]["handle"]
-        pbar = self.frame_data["interactions"]["progress_bar"]
-
-        handle_x, handle_y = grid_to_screen_coords(handle[0], handle[1])
-        pbar_x, pbar_y = grid_to_screen_coords(pbar[0], pbar[1])
+        # Pull lever and progress bar acting as buttons
+        lever_x, lever_y = self.frame_data["interactions"]["lever"]
+        pbar_x, pbar_y = self.frame_data["interactions"]["progress_bar"]
 
         # Main automation loop
         while self.should_continue:
             if time.time() - start_time > self.max_run_time:
                 break
 
-            pyautogui.mouseDown(handle_x, handle_y)
+            pyautogui.mouseDown(lever_x, lever_y)
             pyautogui.moveTo(pbar_x, pbar_y, duration=0)
             while self.should_continue:
                 # Monitor progress bar for one second to see if it appears/fills

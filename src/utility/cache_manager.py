@@ -59,6 +59,8 @@ class CacheManager(QObject):
             "playable_area": None,
             "overlay_position": None,
             "pixel_size": None,
+            "monitor_info": None,  # Store monitor info for multi-monitor support
+            "leftmost_x_offset": None,  # Store leftmost x offset
         }
 
         # Validation timer - checks every 500ms
@@ -103,6 +105,8 @@ class CacheManager(QObject):
                     self._cache["playable_area"] = self._calculate_playable_area()
                     self._cache["overlay_position"] = self._calculate_overlay_position()
                     self._cache["pixel_size"] = self._calculate_pixel_size()
+                    self._cache["monitor_info"] = self._get_monitor_info()
+                    self._cache["leftmost_x_offset"] = self._get_leftmost_x_offset()
 
                     self.window_found.emit(current_window)
                     self._save_cache_to_file()
@@ -126,6 +130,8 @@ class CacheManager(QObject):
                 "playable_area": self._cache.get("playable_area"),
                 "overlay_position": self._cache.get("overlay_position"),
                 "pixel_size": self._cache.get("pixel_size"),
+                "monitor_info": self._cache.get("monitor_info"),
+                "leftmost_x_offset": self._cache.get("leftmost_x_offset"),
                 "last_state": self._cache["last_state"],
             }
 
@@ -149,6 +155,45 @@ class CacheManager(QObject):
         except Exception as e:
             self.logger.debug(f"Could not save cache to file: {e}")
             # Don't let cache logging errors affect main functionality
+
+    def _get_monitor_info(self):
+        """Get monitor info for the monitor containing the WidgetInc window."""
+        try:
+            from screeninfo import get_monitors
+
+            window_info = self._cache.get("window_info")
+            if not window_info or not self._cache["is_valid"]:
+                return None
+            client_screen = window_info["client_screen"]
+            wx, wy = client_screen["x"], client_screen["y"]
+            for m in get_monitors():
+                # Check if window's top-left is within monitor bounds
+                if wx >= m.x and wx < m.x + m.width and wy >= m.y and wy < m.y + m.height:
+                    return {
+                        "name": getattr(m, "name", None),
+                        "x": m.x,
+                        "y": m.y,
+                        "width": m.width,
+                        "height": m.height,
+                        "is_primary": getattr(m, "is_primary", False),
+                    }
+            return None
+        except Exception as e:
+            self.logger.error(f"Error getting monitor info: {e}")
+            return None
+
+    def _get_leftmost_x_offset(self):
+        """Get the x offset of the leftmost monitor (for multi-monitor screenshots)."""
+        try:
+            from screeninfo import get_monitors
+
+            monitors = get_monitors()
+            if not monitors:
+                return 0
+            return min(m.x for m in monitors)
+        except Exception as e:
+            self.logger.error(f"Error getting leftmost x offset: {e}")
+            return 0
 
     def _window_changed(self, old_window: Dict, new_window: Dict) -> bool:
         """Check if window state has meaningfully changed."""
@@ -345,6 +390,14 @@ class CacheManager(QObject):
             self.logger.error(f"Error calculating overlay position: {e}")
             return None
 
+    def _convert_colors_to_tuples(self, frame_data):
+        """Convert color arrays to tuples for pixel comparison."""
+        if "colors" in frame_data:
+            for color_key, color_value in frame_data["colors"].items():
+                if isinstance(color_value, list) and len(color_value) == 3:
+                    frame_data["colors"][color_key] = tuple(color_value)
+        return frame_data
+
     def generate_db_cache(self):
         from .window_utils import grid_to_screen_coords
 
@@ -361,6 +414,7 @@ class CacheManager(QObject):
         for frame in frames_data["frames"]:
             frame_copy = frame.copy()
 
+            # Convert button coordinates
             if "buttons" in frame:
                 converted = {}
                 for button_name, button_data in frame["buttons"].items():
@@ -375,6 +429,22 @@ class CacheManager(QObject):
                     converted[button_name] = [screen_x, screen_y, color]
 
                 frame_copy["buttons"] = converted
+
+            # Convert interaction coordinates
+            if "interactions" in frame:
+                converted = {}
+                for interaction_name, interaction_data in frame["interactions"].items():
+                    if len(interaction_data) == 2:
+                        grid_x, grid_y = interaction_data
+                        screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+                        converted[interaction_name] = [screen_x, screen_y]
+                    else:
+                        self.logger.error(f"Invalid interaction data for {interaction_name}: {interaction_data}")
+                        import sys
+
+                        sys.exit("Exiting due to invalid database")
+
+                frame_copy["interactions"] = converted
 
             frames_with_coords.append(frame_copy)
 
@@ -436,6 +506,47 @@ class CacheManager(QObject):
     def is_window_available(self) -> bool:
         """Check if WidgetInc window is currently available."""
         return self._cache["is_valid"] and self._cache["window_info"] is not None
+
+    def get_frame_data(self, frame_id: str) -> Optional[Dict[str, Any]]:
+        """Get frame data by ID with colors converted to tuples."""
+        # Load from frames.cache (or however you currently load frame data)
+        frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.cache"
+
+        try:
+            with open(frames_cache, "r", encoding="utf-8") as f:
+                frames_data = json.load(f)
+
+            for frame in frames_data.get("frames", []):
+                if frame.get("id") == frame_id:
+                    return self._convert_colors_to_tuples(frame.copy())
+
+            self.logger.warning(f"Frame {frame_id} not found in cache")
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Error loading frame data for {frame_id}: {e}")
+            return None
+
+    def get_monitor_info(self):
+        """Public API: Get monitor info for the monitor containing the WidgetInc window."""
+        cached = self._cache.get("monitor_info")
+        if cached:
+            return cached
+        info = self._get_monitor_info()
+        if info:
+            self._cache["monitor_info"] = info
+            self._save_cache_to_file()
+        return info
+
+    def get_leftmost_x_offset(self):
+        """Public API: Get the x offset of the leftmost monitor (for multi-monitor screenshots)."""
+        cached = self._cache.get("leftmost_x_offset")
+        if cached is not None:
+            return cached
+        offset = self._get_leftmost_x_offset()
+        self._cache["leftmost_x_offset"] = offset
+        self._save_cache_to_file()
+        return offset
 
 
 # Global WindowManager instance

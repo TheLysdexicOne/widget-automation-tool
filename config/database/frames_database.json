@@ -112,7 +112,7 @@
         "1": [1, 1, 1]
       },
       "interactions": {
-        "handle": [161, 91],
+        "lever": [161, 91],
         "progress_bar": [161, 110]
       }
     },
@@ -147,9 +147,15 @@
         "plus8": [174, 97, "red"]
       },
       "interactions": {
-        "voltage_meter_top": [146, 56],
-        "voltage_meter_bottom": [146, 98],
-        "progress_bar": [154, 99, [0, 149, 28]]
+        "voltage_box": [146, 55],
+        "pbar": [154, 99]
+      },
+      "colors": {
+        "pbar_color": [0, 149, 28],
+        "empty_color": [17,11,37],
+        "fill_color1": [72, 237, 56],
+        "fill_color2": [23, 97, 19],
+        "fill_color3": [45, 175, 37]
       }
     },
     {
@@ -189,7 +195,17 @@
         "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "extract": [158, 58, "red"],
+        "pressurize": [159, 85, "blue"]
+      },
+      "interactions": {
+        "box": [129, 53]
+      },
+      "colors": {
+        "empty_color": [17,11,37],
+        "fill_color1": [72, 237, 56],
+        "fill_color2": [23, 97, 19],
+        "fill_color3": [45, 175, 37]
       }
     },
     {
@@ -201,19 +217,39 @@
         "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "engrave": [104, 64, "blue"]
+      },
+      "interactions": {
+        "lever_up": [53, 58],
+        "lever1": [51, 61],
+        "lever2": [50, 64],
+        "lever3": [51, 67],
+        "lever4": [52, 70],
+        "lever5": [54, 73],
+        "lever_down": [54, 80]
+      },
+      "colors": {
+        "lever_color": [247, 17, 18]
       }
     },
     {
       "id": "4.5",
-      "name": "Computational Engine",
+      "name": "Compute Engine",
       "item": "Computational Widget",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "answer1": [135, 73, "green"],
+        "answer2": [157, 73, "green"],
+        "answer3": [135, 94, "green"],
+        "answer4": [157, 94, "green"]
+      },
+      "interactions": {
+        "equation_tl": [127, 54],
+        "equation_br": [174, 61]
+
       }
     },
     {

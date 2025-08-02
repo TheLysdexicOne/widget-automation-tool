@@ -1,1 +1,22 @@
-[]
+{
+  "id": "4.3",
+  "name": "Plastic Extractor",
+  "item": "Plastic",
+  "automation": {
+    "can_automate": 1,
+    "programmed": 1
+  },
+  "buttons": {
+    "extract": [-612, 648, "red"],
+    "pressurize": [-601, 937, "blue"]
+  },
+  "interactions": {
+    "box": [-922, 595]
+  },
+  "colors": {
+    "empty_color": [17, 11, 37],
+    "fill_color1": [72, 237, 56],
+    "fill_color2": [23, 97, 19],
+    "fill_color3": [45, 175, 37]
+  }
+}

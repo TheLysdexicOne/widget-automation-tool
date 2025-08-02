@@ -44,12 +44,30 @@ class AutomationEngine:
             self.logger.error(f"Invalid button data for {button_name}: {button_data}")
             sys.exit("Exiting due to invalid button data")
 
-        # SAFETY: Always validate we're on the right frame before clicking
-        if not self.failsafe_color_validation(button_data, button_name):
+        # SAFETY: Triple validation - sometimes floating text covers buttons
+        validation_failures = 0
+        for attempt in range(3):
+            if self.failsafe_color_validation(button_data, button_name):
+                break
+            validation_failures += 1
+            if validation_failures < 3:
+                self.logger.debug(f"Validation attempt {attempt + 1} failed for {button_name}, retrying...")
+                pyautogui.sleep(0.1)  # Brief pause for floating text to move
+        else:
             self.logger.error(
-                f"Frame validation failed - {button_name} button not valid. Stopping automation for safety."
+                f"Frame validation failed after 3 attempts - {button_name} button not valid. Stopping automation for safety."
             )
             sys.exit("Exiting due to wrong frame - safety stop")
+
+        screen_x, screen_y, color = button_data
+
+        try:
+            pyautogui.click(screen_x, screen_y)
+            self.logger.debug(f"Clicked {color} {button_name} at ({screen_x}, {screen_y})")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to click {color} {button_name} at ({screen_x}, {screen_y}): {e}")
+            return False
 
         screen_x, screen_y, color = button_data
 

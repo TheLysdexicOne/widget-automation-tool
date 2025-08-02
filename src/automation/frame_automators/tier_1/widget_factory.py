@@ -27,7 +27,6 @@ class WidgetFactoryAutomator(BaseAutomator):
         fail = 0
         # Main automation loop
         while self.should_continue:
-            # Stop after configured time limit
             if time.time() - start_time > self.max_run_time:
                 break
             if not create.inactive():

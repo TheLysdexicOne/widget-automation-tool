@@ -46,7 +46,7 @@ class AutomationController:
             "4.2": "copper_forge",
             "4.3": "plastic_extractor",
             "4.4": "circuit_fab",
-            "4.5": "computational_engine",
+            "4.5": "compute_engine",
             # Tier 5
             "5.1": "tesla_coil",
             "5.2": "core_foundry",
@@ -104,35 +104,39 @@ class AutomationController:
         """Get automator instance for the given frame."""
         frame_id = frame_data.get("id", "")
 
-        # Check if already have active automator
         if frame_id in self.active_automators:
             return self.active_automators[frame_id]
 
         try:
-            # Get module name from mapping
+            # Get fresh frame data with converted colors from cache manager
+            from utility.cache_manager import get_cache_manager
+
+            cache_manager = get_cache_manager()
+            processed_frame_data = cache_manager.get_frame_data(frame_id)
+
+            if not processed_frame_data:
+                self.logger.error(f"No frame data found for {frame_id}")
+                return None
+
             module_name = self.frame_mapping.get(frame_id)
             if not module_name:
                 self.logger.warning(f"No module mapping found for frame ID: {frame_id}")
                 return None
 
-            # Parse tier from frame ID
             tier_match = re.match(r"(\d+)\.\d+", frame_id)
             if not tier_match:
                 self.logger.error(f"Invalid frame ID format: {frame_id}")
                 return None
 
             tier_num = tier_match.group(1)
-
-            # Dynamic import
             module_path = f"automation.frame_automators.tier_{tier_num}.{module_name}"
             module = importlib.import_module(module_path)
 
-            # Get the automator class (following naming convention)
             class_name = f"{self._to_class_name(module_name)}Automator"
             automator_class = getattr(module, class_name)
 
-            # Create and cache automator instance
-            automator = automator_class(frame_data)
+            # Use processed frame data with converted colors
+            automator = automator_class(processed_frame_data)
             self.active_automators[frame_id] = automator
 
             self.logger.info(f"Created automator for {frame_id}: {class_name}")
