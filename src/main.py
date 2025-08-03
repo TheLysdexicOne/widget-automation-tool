@@ -46,6 +46,10 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Track button states for toggle functionality
         self.automation_buttons = {}
 
+        # Track minimized state for title bar minimization
+        self._is_minimized_to_titlebar = False
+        self._original_size = None
+
         self.setWindowTitle("Widget Automation Tool")
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Window
@@ -103,7 +107,7 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Minimize button
         minimize_btn = QPushButton("−")
         minimize_btn.setFixedSize(30, 30)
-        minimize_btn.clicked.connect(self.showMinimized)
+        minimize_btn.clicked.connect(self.toggle_minimize_titlebar)
 
         # Close button
         close_btn = QPushButton("×")
@@ -181,6 +185,49 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Initialize window snapping (must be after content_container is created)
         self.setup_window_snapping()
 
+    def toggle_minimize_titlebar(self):
+        """Toggle between normal view and title bar only view."""
+        if self._is_minimized_to_titlebar:
+            self.restore_from_titlebar()
+        else:
+            self.minimize_to_titlebar()
+
+    def minimize_to_titlebar(self):
+        """Minimize window to just the title bar instead of taskbar."""
+        if not self._is_minimized_to_titlebar:
+            # Store original size for restoration
+            self._original_size = self.size()
+
+            # Hide the main content
+            self.content_container.hide()
+
+            # Set height to just the title bar
+            title_bar_height = 30
+            self.setFixedHeight(title_bar_height)
+
+            self._is_minimized_to_titlebar = True
+            self.logging.debug("Minimized to title bar")
+
+    def restore_from_titlebar(self):
+        """Restore window from title bar minimization."""
+        if self._is_minimized_to_titlebar:
+            # Remove height constraint
+            self.setMinimumHeight(0)
+            self.setMaximumHeight(16777215)
+
+            # Show the main content
+            self.content_container.show()
+
+            # Restore original size if available
+            if self._original_size is not None:
+                self.resize(self._original_size)
+
+            self._is_minimized_to_titlebar = False
+            self.logging.debug("Restored from title bar minimization")
+
+            # Re-snap to window position after restoration
+            self.check_and_snap_to_window()
+
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:
             self.logging.debug("Right-click detected, showing context menu")
@@ -228,6 +275,10 @@ class MainWindow(QMainWindow, LoggerMixin):
 
     def check_and_snap_to_window(self):
         """Snap overlay to WidgetInc window using cached anchor and available height, and dynamic content height."""
+        # Don't snap if minimized to title bar
+        if self._is_minimized_to_titlebar:
+            return
+
         overlay_position = self.window_manager.get_overlay_position()
         self.window_manager.generate_db_cache()
         if overlay_position:

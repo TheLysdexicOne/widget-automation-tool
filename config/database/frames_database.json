@@ -253,9 +253,12 @@
         "answer3": [135, 94, "green"],
         "answer4": [157, 94, "green"]
       },
-      "interactions": {
-        "equation_tl": [127, 54],
-        "equation_br": [174, 61]
+      "bbox": {
+        "equation_bbox": [127, 54, 174, 61],
+        "answer1_bbox": [135, 73, 143, 81],
+        "answer2_bbox": [157, 73, 165, 81],
+        "answer3_bbox": [135, 94, 143, 102],
+        "answer4_bbox": [157, 94, 165, 102]
       }
     },
     {
@@ -264,10 +267,10 @@
       "item": "Bottled Lightning",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "call_lightning": [95, 110, "red"]
       }
     },
     {
@@ -276,10 +279,13 @@
       "item": "Thinking Core",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "button1": [75, 50, "blue"],
+        "button2": [115, 50, "blue"],
+        "button3": [75, 75, "blue"],
+        "button4": [115, 75, "blue"]
       }
     },
     {
@@ -288,7 +294,7 @@
       "item": "Integrated Widget",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]

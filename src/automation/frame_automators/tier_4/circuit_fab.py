@@ -3,12 +3,10 @@ Circuit Fab Automator (Frame ID: 4.4)
 Handles automation for the Circuit Fab frame in WidgetInc.
 """
 
+import pyautogui
 import time
 
 from typing import Any, Dict
-
-import pyautogui
-
 from automation.base_automator import BaseAutomator
 
 

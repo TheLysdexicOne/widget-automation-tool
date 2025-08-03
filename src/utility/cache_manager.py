@@ -459,13 +459,31 @@ class CacheManager(QObject):
 
                 frame_copy["interactions"] = converted
 
+            # Convert bbox coordinates
+            if "bbox" in frame:
+                converted = {}
+                for bbox_name, bbox_data in frame["bbox"].items():
+                    if len(bbox_data) == 4 and all(isinstance(x, (int, float)) for x in bbox_data):
+                        # Single bbox [x1, y1, x2, y2]
+                        grid_x1, grid_y1, grid_x2, grid_y2 = bbox_data
+                        screen_x1, screen_y1 = grid_to_screen_coords(grid_x1, grid_y1)
+                        screen_x2, screen_y2 = grid_to_screen_coords(grid_x2, grid_y2)
+                        converted[bbox_name] = [screen_x1, screen_y1, screen_x2, screen_y2]
+                    else:
+                        self.logger.error(f"Invalid bbox data for {bbox_name}: {bbox_data}")
+                        import sys
+
+                        sys.exit("Exiting due to invalid database")
+
+                frame_copy["bbox"] = converted
+
             frames_with_coords.append(frame_copy)
 
         frames_cache.parent.mkdir(exist_ok=True)
         with open(frames_cache, "w") as f:
             json.dump({"frames": frames_with_coords}, f, indent=2, separators=(",", ": "))
 
-        self.logger.info(f"Generated coordinate cache at {frames_cache}")
+        self.logger.debug(f"Generated coordinate cache at {frames_cache}")
 
     # Public API methods
     def get_window_info(self) -> Optional[Dict[str, Any]]:
