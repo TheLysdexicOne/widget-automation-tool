@@ -9,7 +9,7 @@ from PIL import ImageGrab
 
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
-from utility.window_utils import get_fill_by_color
+from utility.window_utils import get_vertical_bar_data
 
 
 class CapacitorBankAutomator(BaseAutomator):
@@ -31,11 +31,7 @@ class CapacitorBankAutomator(BaseAutomator):
         # Get voltage box coordinates
         self.voltage_box = self.frame_data["interactions"]["voltage_box"]
         self.empty_color = self.frame_data["colors"]["empty_color"]
-        self.fill_colors = [
-            self.frame_data["colors"]["fill_color1"],
-            self.frame_data["colors"]["fill_color2"],
-            self.frame_data["colors"]["fill_color3"],
-        ]
+        self.filled_colors = self.frame_data["colors"]["filled_colors"]
 
         # Progress bar coordinates
         self.pbar_x, self.pbar_y = self.frame_data["interactions"]["pbar"]
@@ -45,7 +41,7 @@ class CapacitorBankAutomator(BaseAutomator):
             if time.time() - start_time > self.max_run_time:
                 break
             # Get voltage box fill - fix argument order
-            fill = get_fill_by_color(self.voltage_box, self.empty_color, self.fill_colors)
+            fill = get_vertical_bar_data(self.voltage_box, self.empty_color, self.filled_colors)["percent_filled"]
             voltage = round(15 * fill / 100)
             self.log_info(f"Current voltage: {voltage}")
             if voltage > 0:

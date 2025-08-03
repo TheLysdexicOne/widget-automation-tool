@@ -56,7 +56,7 @@ class CacheManager(QObject):
             "timestamp": 0,
             "is_valid": False,
             "last_state": None,  # Track window state changes
-            "playable_area": None,
+            "frame_area": None,
             "overlay_position": None,
             "pixel_size": None,
             "monitor_info": None,  # Store monitor info for multi-monitor support
@@ -85,7 +85,7 @@ class CacheManager(QObject):
                 self._cache["window_info"] = None
                 self._cache["is_valid"] = False
                 self._cache["last_state"] = None
-                self._cache["playable_area"] = None
+                self._cache["frame_area"] = None
                 self._cache["overlay_position"] = None
                 self._cache["pixel_size"] = None
                 self.window_lost.emit()
@@ -102,7 +102,7 @@ class CacheManager(QObject):
                     self._cache["last_state"] = self._get_window_state(current_window)
 
                     # Recalculate and cache derived values
-                    self._cache["playable_area"] = self._calculate_playable_area()
+                    self._cache["frame_area"] = self._calculate_frame_area()
                     self._cache["overlay_position"] = self._calculate_overlay_position()
                     self._cache["pixel_size"] = self._calculate_pixel_size()
                     self._cache["monitor_info"] = self._get_monitor_info()
@@ -127,7 +127,7 @@ class CacheManager(QObject):
                 "is_valid": self._cache["is_valid"],
                 "last_updated": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self._cache["timestamp"])),
                 "window_info": self._cache["window_info"],
-                "playable_area": self._cache.get("playable_area"),
+                "frame_area": self._cache.get("frame_area"),
                 "overlay_position": self._cache.get("overlay_position"),
                 "pixel_size": self._cache.get("pixel_size"),
                 "monitor_info": self._cache.get("monitor_info"),
@@ -270,9 +270,9 @@ class CacheManager(QObject):
             self.logger.error(f"Error building window info: {e}")
             return None
 
-    def _calculate_playable_area(self) -> Optional[Dict[str, int]]:
+    def _calculate_frame_area(self) -> Optional[Dict[str, int]]:
         """
-        Calculate 3:2 aspect ratio playable area using cached window info.
+        Calculate 3:2 aspect ratio frame area using cached window info.
         Uses the same logic as the tracker app for consistency.
         """
         window_info = self._cache.get("window_info")
@@ -286,42 +286,42 @@ class CacheManager(QObject):
             client_w = client_screen["width"]
             client_h = client_screen["height"]
 
-            # Calculate 3:2 aspect ratio playable area (tracker logic)
+            # Calculate 3:2 aspect ratio frame area (tracker logic)
             target_ratio = 3.0 / 2.0
             client_ratio = client_w / client_h if client_h else 1
 
             if client_ratio > target_ratio:
                 # Client is wider than 3:2 - fit height, center width
-                playable_height = client_h
-                playable_width = int(playable_height * target_ratio)
-                px = client_x + (client_w - playable_width) // 2
+                frame_height = client_h
+                frame_width = int(frame_height * target_ratio)
+                px = client_x + (client_w - frame_width) // 2
                 py = client_y
             else:
                 # Client is taller than 3:2 - fit width, center height
-                playable_width = client_w
-                playable_height = int(playable_width / target_ratio)
+                frame_width = client_w
+                frame_height = int(frame_width / target_ratio)
                 px = client_x
-                py = client_y + (client_h - playable_height) // 2
+                py = client_y + (client_h - frame_height) // 2
 
-            return {"x": px, "y": py, "width": playable_width, "height": playable_height}
+            return {"x": px, "y": py, "width": frame_width, "height": frame_height}
 
         except Exception as e:
-            self.logger.error(f"Error calculating playable area: {e}")
+            self.logger.error(f"Error calculating frame area: {e}")
             return None
 
     def _calculate_pixel_size(self) -> Optional[float]:
         """
-        Calculate pixel art grid size based on playable area.
+        Calculate pixel art grid size based on frame area.
         Returns pixels per background grid unit (192x128 grid).
         """
-        # Use cached playable area if available
-        playable_area = self._cache.get("playable_area")
-        if not playable_area:
-            playable_area = self._calculate_playable_area()
-            if playable_area:
-                self._cache["playable_area"] = playable_area
+        # Use cached frame area if available
+        frame_area = self._cache.get("frame_area")
+        if not frame_area:
+            frame_area = self._calculate_frame_area()
+            if frame_area:
+                self._cache["frame_area"] = frame_area
 
-        if not playable_area:
+        if not frame_area:
             return None
 
         try:
@@ -329,15 +329,15 @@ class CacheManager(QObject):
             PIXEL_ART_GRID_WIDTH = 192
             PIXEL_ART_GRID_HEIGHT = 128
 
-            playable_width = playable_area["width"]
-            playable_height = playable_area["height"]
+            frame_width = frame_area["width"]
+            frame_height = frame_area["height"]
 
-            if playable_width <= 0 or playable_height <= 0:
+            if frame_width <= 0 or frame_height <= 0:
                 return None
 
             # Calculate pixel size for both dimensions
-            pixel_size_x = playable_width / PIXEL_ART_GRID_WIDTH
-            pixel_size_y = playable_height / PIXEL_ART_GRID_HEIGHT
+            pixel_size_x = frame_width / PIXEL_ART_GRID_WIDTH
+            pixel_size_y = frame_height / PIXEL_ART_GRID_HEIGHT
 
             # Use smaller dimension to ensure perfect square pixels
             # Round to 4 decimal places to minimize grid alignment drift
@@ -352,16 +352,16 @@ class CacheManager(QObject):
         Calculate overlay position in top-right corner of window.
         Returns cached position for the overlay application with anchor and available dimensions.
         """
-        # Use cached playable area if available
-        playable_area = self._cache.get("playable_area")
-        if not playable_area:
-            playable_area = self._calculate_playable_area()
-            if playable_area:
-                self._cache["playable_area"] = playable_area
+        # Use cached frame area if available
+        frame_area = self._cache.get("frame_area")
+        if not frame_area:
+            frame_area = self._calculate_frame_area()
+            if frame_area:
+                self._cache["frame_area"] = frame_area
 
         window_info = self._cache.get("window_info")
 
-        if not playable_area or not window_info or not self._cache["is_valid"]:
+        if not frame_area or not window_info or not self._cache["is_valid"]:
             return None
 
         try:
@@ -370,13 +370,13 @@ class CacheManager(QObject):
             client_width = client_screen["width"]
             client_height = client_screen["height"]
 
-            playable_x = playable_area["x"]
-            playable_width = playable_area["width"]
+            frame_x = frame_area["x"]
+            frame_width = frame_area["width"]
 
-            # Calculate overlay position to the right of playable area
+            # Calculate overlay position to the right of frame area
             offset_y = max(32, client_width // 80)
             bottom_margin = 100
-            overlay_x = playable_x + playable_width + 1
+            overlay_x = frame_x + frame_width + 1
             overlay_y = client_y + offset_y
             available_height = client_height - offset_y - bottom_margin
 
@@ -394,8 +394,13 @@ class CacheManager(QObject):
         """Convert color arrays to tuples for pixel comparison."""
         if "colors" in frame_data:
             for color_key, color_value in frame_data["colors"].items():
-                if isinstance(color_value, list) and len(color_value) == 3:
-                    frame_data["colors"][color_key] = tuple(color_value)
+                if isinstance(color_value, list):
+                    if len(color_value) == 3 and all(isinstance(x, (int, float)) for x in color_value):
+                        # Single color [r, g, b] -> (r, g, b)
+                        frame_data["colors"][color_key] = tuple(color_value)
+                    elif all(isinstance(item, list) and len(item) == 3 for item in color_value):
+                        # List of colors [[r,g,b], [r,g,b]] -> [(r,g,b), (r,g,b)]
+                        frame_data["colors"][color_key] = [tuple(color) for color in color_value]
         return frame_data
 
     def generate_db_cache(self):
@@ -434,10 +439,18 @@ class CacheManager(QObject):
             if "interactions" in frame:
                 converted = {}
                 for interaction_name, interaction_data in frame["interactions"].items():
-                    if len(interaction_data) == 2:
+                    if len(interaction_data) == 2 and all(isinstance(x, (int, float)) for x in interaction_data):
+                        # Single coordinate pair [x, y]
                         grid_x, grid_y = interaction_data
                         screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
                         converted[interaction_name] = [screen_x, screen_y]
+                    elif all(isinstance(item, list) and len(item) == 2 for item in interaction_data):
+                        # List of coordinate pairs [[x,y], [x,y], ...]
+                        converted[interaction_name] = []
+                        for coord_pair in interaction_data:
+                            grid_x, grid_y = coord_pair
+                            screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+                            converted[interaction_name].append([screen_x, screen_y])
                     else:
                         self.logger.error(f"Invalid interaction data for {interaction_name}: {interaction_data}")
                         import sys
@@ -461,16 +474,16 @@ class CacheManager(QObject):
             return self._cache["window_info"]
         return None
 
-    def get_playable_area(self) -> Optional[Dict[str, int]]:
-        """Get playable area coordinates from cache (fast cached calculation)."""
-        cached_area = self._cache.get("playable_area")
+    def get_frame_area(self) -> Optional[Dict[str, int]]:
+        """Get frame area coordinates from cache (fast cached calculation)."""
+        cached_area = self._cache.get("frame_area")
         if cached_area:
             return cached_area
 
         # Calculate and cache if not available
-        calculated_area = self._calculate_playable_area()
+        calculated_area = self._calculate_frame_area()
         if calculated_area:
-            self._cache["playable_area"] = calculated_area
+            self._cache["frame_area"] = calculated_area
             self._save_cache_to_file()
 
         return calculated_area

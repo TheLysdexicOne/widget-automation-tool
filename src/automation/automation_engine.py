@@ -69,16 +69,6 @@ class AutomationEngine:
             self.logger.error(f"Failed to click {color} {button_name} at ({screen_x}, {screen_y}): {e}")
             return False
 
-        screen_x, screen_y, color = button_data
-
-        try:
-            pyautogui.click(screen_x, screen_y)
-            self.logger.debug(f"Clicked {color} {button_name} at ({screen_x}, {screen_y})")
-            return True
-        except Exception as e:
-            self.logger.error(f"Failed to click {color} {button_name} at ({screen_x}, {screen_y}): {e}")
-            return False
-
     def failsafe_color_validation(
         self,
         button_data: list,

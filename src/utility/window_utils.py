@@ -7,8 +7,6 @@ All functions are backed by the WindowManager's proactive caching system.
 
 import logging
 import pyautogui
-import screeninfo
-import time
 from PIL import ImageGrab
 from typing import Any, Dict, Tuple
 
@@ -57,11 +55,11 @@ def grid_to_screen_coords(grid_x: int, grid_y: int) -> Tuple[int, int]:
     """
     try:
         window_manager = get_cache_manager()
-        playable_area = window_manager.get_playable_area()
+        frame_area = window_manager.get_frame_area()
         pixel_size = window_manager.get_pixel_size()
 
-        if not playable_area or not pixel_size:
-            logger.warning("No valid playable area or pixel size for grid conversion")
+        if not frame_area or not pixel_size:
+            logger.warning("No valid frame area or pixel size for grid conversion")
             return (0, 0)
 
         # Clamp grid coordinates to valid range
@@ -73,8 +71,8 @@ def grid_to_screen_coords(grid_x: int, grid_y: int) -> Tuple[int, int]:
         pixel_y = (grid_y + 0.5) * pixel_size
 
         # Convert to screen coordinates
-        screen_x = int(playable_area["x"] + pixel_x)
-        screen_y = int(playable_area["y"] + pixel_y)
+        screen_x = int(frame_area["x"] + pixel_x)
+        screen_y = int(frame_area["y"] + pixel_y)
 
         return (screen_x, screen_y)
 
@@ -109,52 +107,70 @@ def get_grid_color(grid):
     return get_pixel_color(coords)
 
 
-def get_fill_by_color(start_point, empty_color, filled_colors: list):
+def get_vertical_bar_data(start_point, empty_color, filled_colors: tuple):
     """
-    Scan vertically from start_point, tracking empty and filled color pixels,
-    and calculate the percentage of filled pixels between the top and bottom bounds.
+    Analyze vertical bar from start_point using PIL-based bounds detection.
+    Returns both bounds and fill percentage in a single pass.
+
+    Args:
+        start_point: Screen coordinates (x, y) to start scanning from
+        empty_color: RGB tuple for empty vertical bar color
+        filled_colors: List of RGB tuples for filled vertical bar colors
+
+    Returns:
+        Dict with keys: 'top', 'bottom', 'height', 'percent_filled'
     """
-    screenshot = ImageGrab.grab(bbox=(-2560, 0, 0, 1440), all_screens=True)
-    offset_x = get_leftmost_x_offset()
-    x0 = start_point[0] + offset_x
-    y0 = start_point[1]
+
+    screenshot = get_monitor_screenshot()
+    if not screenshot:
+        return {"top": 0, "bottom": 0, "height": 0, "percent_filled": 0}
+
+    frame_x, frame_y = screen_to_frame_coords(start_point[0], start_point[1])
+    frame_x, frame_y = start_point[0], start_point[1]  # Use original coordinates
     width, height = screenshot.size
 
-    # Find top bound
-    y_top = y0
+    filled_count = 0
+
+    # Find top bound and count filled pixels going up
+    y_top = frame_y
     while y_top > 0:
-        pixel = screenshot.getpixel((x0, y_top))
+        pixel = screenshot.getpixel((frame_x, y_top))
         if pixel != empty_color and pixel not in filled_colors:
             break
+        if pixel in filled_colors:
+            filled_count += 1
         y_top -= 1
     y_top += 1
 
-    # Find bottom bound
-    y_bottom = y0
+    # Find bottom bound and count filled pixels going down
+    y_bottom = frame_y
     while y_bottom < height - 1:
-        pixel = screenshot.getpixel((x0, y_bottom))
+        pixel = screenshot.getpixel((frame_x, y_bottom))
         if pixel != empty_color and pixel not in filled_colors:
             break
+        if pixel in filled_colors:
+            filled_count += 1
         y_bottom += 1
     y_bottom -= 1
 
-    # Scan from top to bottom, count empty and filled
-    empty_count = 0
-    filled_count = 0
-    for y in range(y_top, y_bottom + 1):
-        pixel = screenshot.getpixel((x0, y))
-        if pixel == empty_color:
-            empty_count += 1
-        elif pixel in filled_colors:
-            filled_count += 1
+    # Subtract the start pixel if it was counted twice
+    start_pixel = screenshot.getpixel((frame_x, frame_y))
+    if start_pixel in filled_colors:
+        filled_count -= 1
 
-    total = empty_count + filled_count
-    percent_filled = (filled_count / total * 100) if total > 0 else 0
+    box_height = y_bottom - y_top + 1
+    percent_filled = (filled_count / box_height * 100) if box_height > 0 else 0
 
-    print(
-        f"Top: {y_top - offset_x}, Bottom: {y_bottom - offset_x}, Filled: {filled_count}, Empty: {empty_count}, Percent filled: {percent_filled:.2f}%"
-    )
-    return percent_filled
+    # # Visualize bounds with white line
+    # screenshot_copy = screenshot.copy()
+    # for y in range(y_top, y_bottom + 1):
+    #     if 0 <= frame_x < width and 0 <= y < height:
+    #         screenshot_copy.putpixel((frame_x, y), (255, 255, 255))  # White line
+
+    # # Show the visualization
+    # screenshot_copy.show()
+
+    return {"top": y_top, "bottom": y_bottom, "height": box_height, "percent_filled": percent_filled}
 
 
 def get_leftmost_x_offset():
@@ -181,23 +197,42 @@ def get_monitor_screenshot():
     return ImageGrab.grab(bbox=bbox, all_screens=True)
 
 
-def grid_to_playable_area_coords(grid_x: int, grid_y: int) -> Tuple[int, int]:
+def get_frame_screenshot():
     """
-    Convert grid coordinates to playable area coordinates.
+    Screenshot just the frame area using ImageGrab.grab.
+    Returns a PIL Image or None if frame area not found.
+    """
+    window_manager = get_cache_manager()
+    frame_area = window_manager.get_frame_area()
+    if not frame_area:
+        logger.warning("No frame area available for screenshot.")
+        return None
+    x = frame_area["x"]
+    y = frame_area["y"]
+    width = frame_area["width"]
+    height = frame_area["height"]
+    bbox = (x, y, x + width, y + height)
+    # all_screens=True ensures correct multi-monitor capture
+    return ImageGrab.grab(bbox=bbox, all_screens=True)
+
+
+def grid_to_frame_coords(grid_x: int, grid_y: int) -> Tuple[int, int]:
+    """
+    Convert grid coordinates to frame area coordinates.
 
     Args:
         grid_x: Grid X coordinate (0 to 191)
         grid_y: Grid Y coordinate (0 to 127)
 
     Returns:
-        Tuple of (playable_area_x, playable_area_y) coordinates
+        Tuple of (frame_area_x, frame_area_y) coordinates
     """
     window_manager = get_cache_manager()
-    playable_area = window_manager.get_playable_area()
+    frame_area = window_manager.get_frame_area()
     pixel_size = window_manager.get_pixel_size()
 
-    if not playable_area or not pixel_size:
-        logger.warning("No valid playable area or pixel size for grid conversion")
+    if not frame_area or not pixel_size:
+        logger.warning("No valid frame area or pixel size for grid conversion")
         return (0, 0)
 
     # Clamp grid coordinates to valid range
@@ -208,8 +243,39 @@ def grid_to_playable_area_coords(grid_x: int, grid_y: int) -> Tuple[int, int]:
     pixel_x = (grid_x + 0.5) * pixel_size
     pixel_y = (grid_y + 0.5) * pixel_size
 
-    # Convert to playable area coordinates (relative to playable area, not screen)
-    playable_area_x = int(pixel_x)
-    playable_area_y = int(pixel_y)
+    # Convert to frame area coordinates (relative to frame area, not screen)
+    frame_area_x = int(pixel_x)
+    frame_area_y = int(pixel_y)
 
-    return (playable_area_x, playable_area_y)
+    return (frame_area_x, frame_area_y)
+
+
+def screen_to_frame_coords(screen_x: int, screen_y: int) -> Tuple[int, int]:
+    """
+    Convert screen coordinates to frame area coordinates.
+
+    Takes screen coordinates and returns coordinates relative to the frame area.
+
+    Args:
+        screen_x: Screen X coordinate
+        screen_y: Screen Y coordinate
+
+    Returns:
+        Tuple of (frame_area_x, frame_area_y) coordinates relative to frame area
+    """
+    window_manager = get_cache_manager()
+    frame_area = window_manager.get_frame_area()
+
+    if not frame_area:
+        logger.warning("No valid frame area for screen to frame area conversion")
+        return (0, 0)
+
+    # Convert screen coordinates to frame area coordinates
+    frame_area_x = screen_x - frame_area["x"]
+    frame_area_y = screen_y - frame_area["y"]
+
+    # Clamp to frame area bounds
+    frame_area_x = max(0, min(frame_area["width"] - 1, frame_area_x))
+    frame_area_y = max(0, min(frame_area["height"] - 1, frame_area_y))
+
+    return (frame_area_x, frame_area_y)

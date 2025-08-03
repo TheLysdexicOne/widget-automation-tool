@@ -11,6 +11,8 @@ import pyautogui
 class ButtonEngine:
     """Represents a single button with all its automation capabilities."""
 
+    pyautogui.PAUSE = 0
+
     def __init__(self, button_data: list, name: str = "button", custom_colors: dict = {}):
         if len(button_data) != 3:
             logging.getLogger(f"{__name__}.ButtonEngine").error(f"Invalid button data for {name}: {button_data}")
@@ -62,19 +64,28 @@ class ButtonEngine:
         color_match = all(abs(actual_color[i] - expected_color[i]) <= self.tolerance for i in range(3))
         return color_match
 
-    def click(self) -> bool:
-        """Click this button with safety validation."""
-        if not self.active():
-            self.logger.error(f"Button {self.name} not in valid state for clicking")
-            sys.exit("Safety stop - button not valid")
+    def click(self, retries: int = 3) -> bool:
+        """Click this button with safety validation and retries."""
+        for attempt in range(retries):
+            if self.active():
+                try:
+                    pyautogui.click(self.x, self.y)
+                    self.logger.debug(f"Clicked {self.color} {self.name} at ({self.x}, {self.y})")
+                    return True
+                except Exception as e:
+                    self.logger.error(f"Failed to click {self.color} {self.name} at ({self.x}, {self.y}): {e}")
+                    return False
 
-        try:
-            pyautogui.click(self.x, self.y)
-            self.logger.debug(f"Clicked {self.color} {self.name} at ({self.x}, {self.y})")
-            return True
-        except Exception as e:
-            self.logger.error(f"Failed to click {self.color} {self.name} at ({self.x}, {self.y}): {e}")
-            return False
+            if attempt < retries - 1:
+                self.logger.debug(f"Button {self.name} not in valid state, attempt {attempt + 1}, retrying...")
+                import time
+
+                time.sleep(0.1)
+            else:
+                self.logger.error(f"Button {self.name} not in valid state for clicking after {retries} attempts")
+                sys.exit("Safety stop - button not valid")
+
+        return False
 
     def hold_click(self, duration: float = 0.5) -> bool:
         """Hold click this button for specified duration with safety validation."""

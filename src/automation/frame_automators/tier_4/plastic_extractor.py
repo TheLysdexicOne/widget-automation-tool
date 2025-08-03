@@ -6,10 +6,9 @@ Handles automation for the Plastic Extractor frame in WidgetInc.
 import time
 import pyautogui
 from typing import Any, Dict
-from PIL import ImageGrab
 
 from automation.base_automator import BaseAutomator
-from utility.window_utils import grid_to_playable_area_coords, get_monitor_screenshot
+from utility.window_utils import get_vertical_bar_data
 
 
 class PlasticExtractorAutomator(BaseAutomator):
@@ -23,35 +22,32 @@ class PlasticExtractorAutomator(BaseAutomator):
 
         extract = self.create_button("extract")
         pressurize = self.create_button("pressurize")
-        screenshot = get_monitor_screenshot()
-        grid_x = 160
-        grid_y = 22
-        # should be ~1720,238
-        coords = grid_to_playable_area_coords(grid_x, grid_y)
-        print(f"Grid coordinates: {coords}")
 
-        # self.x = self.frame_data["interactions"]["box"]
-        # colors = self.frame_data["colors"]
+        pressure_box = self.frame_data["interactions"]["pressure_box"]
+        empty_color = self.frame_data["colors"]["empty_color"]
+        filled_colors = self.frame_data["colors"]["filled_colors"]
+        box_data = get_vertical_bar_data(pressure_box, empty_color, filled_colors)
+        x = pressure_box[0]
+        y = box_data["top"]
 
-        # self.pixel_top_xy = grid_to_screen_coords(*self.grid_top)
-        # fail = 0
-        # while self.should_continue:
-        #     if time.time() - start_time > self.max_run_time:
-        #         break
+        fail = 0
+        while self.should_continue:
+            if time.time() - start_time > self.max_run_time:
+                break
 
-        #     pixel_color = pyautogui.pixel(self.pixel_top_xy[0], self.pixel_top_xy[1])
-        #     if pixel_color != self.fill_color:
-        #         for _ in range(7):
-        #             pressurize.click()
-        #     elif pixel_color == self.fill_color:
-        #         extract.click()
-        #         self.sleep(0.1)
-        #         if extract.active():
-        #             fail += 1
-        #         while extract.inactive():
-        #             if not self.sleep(1):
-        #                 break
-        #     if fail > 3:
-        #         self.log_storage_error()
-        #     if not self.sleep(0.05):
-        #         break
+            pixel_color = pyautogui.pixel(x, y)
+            while pixel_color not in filled_colors:
+                pressurize.click()
+                pixel_color = pyautogui.pixel(x, y)
+            if pixel_color in filled_colors:
+                extract.click()
+                self.sleep(0.1)
+                if extract.active():
+                    fail += 1
+                while extract.inactive():
+                    if not self.sleep(1):
+                        break
+            if fail > 3:
+                self.log_storage_error()
+            if not self.sleep(0.05):
+                break

@@ -152,10 +152,12 @@
       },
       "colors": {
         "pbar_color": [0, 149, 28],
-        "empty_color": [17,11,37],
-        "fill_color1": [72, 237, 56],
-        "fill_color2": [23, 97, 19],
-        "fill_color3": [45, 175, 37]
+        "empty_color": [17, 11, 37],
+        "filled_colors": [
+          [72, 237, 56],
+          [23, 97, 19],
+          [45, 175, 37]
+        ]
       }
     },
     {
@@ -199,13 +201,15 @@
         "pressurize": [159, 85, "blue"]
       },
       "interactions": {
-        "box": [129, 53]
+        "pressure_box": [130, 55]
       },
       "colors": {
-        "empty_color": [17,11,37],
-        "fill_color1": [72, 237, 56],
-        "fill_color2": [23, 97, 19],
-        "fill_color3": [45, 175, 37]
+        "empty_color": [17, 11, 37],
+        "filled_colors": [
+          [72, 237, 56],
+          [23, 97, 19],
+          [45, 175, 37]
+        ]
       }
     },
     {
@@ -221,12 +225,15 @@
       },
       "interactions": {
         "lever_up": [53, 58],
-        "lever1": [51, 61],
-        "lever2": [50, 64],
-        "lever3": [51, 67],
-        "lever4": [52, 70],
-        "lever5": [54, 73],
-        "lever_down": [54, 80]
+        "lever_down": [54, 80],
+        "lever_pos": [
+          [53,58],
+          [51,61],
+          [50,64],
+          [51,67],
+          [52,70],
+          [54,73]
+        ]
       },
       "colors": {
         "lever_color": [247, 17, 18]
@@ -249,7 +256,6 @@
       "interactions": {
         "equation_tl": [127, 54],
         "equation_br": [174, 61]
-
       }
     },
     {
