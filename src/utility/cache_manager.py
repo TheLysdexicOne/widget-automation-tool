@@ -14,6 +14,7 @@ import pyautogui
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
+import re
 
 import psutil
 import win32gui
@@ -503,9 +504,9 @@ class CacheManager(QObject):
         return frame_data
 
     def generate_db_cache(self):
-        from .window_utils import grid_to_frame_coords
+        from .window_utils import grid_to_screen_coords, screen_to_frame_coords
 
-        """Generate frames.cache with screen coordinates from frames_database.json."""
+        """Generate frames.cache with screen coordinates as main and frame coordinates as additional key."""
 
         frames_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
         frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.cache"
@@ -517,10 +518,11 @@ class CacheManager(QObject):
 
         for frame in frames_data["frames"]:
             frame_copy = frame.copy()
+            frame_xy = {}
 
             # Convert button coordinates
             if "buttons" in frame:
-                converted = {}
+                frame_xy["buttons"] = {}
                 for button_name, button_data in frame["buttons"].items():
                     if len(button_data) != 3:
                         self.logger.error(f"Invalid button data for {button_name}: {button_data}")
@@ -529,60 +531,88 @@ class CacheManager(QObject):
                         sys.exit("Exiting due to invalid database")
 
                     grid_x, grid_y, color = button_data
-                    screen_x, screen_y = grid_to_frame_coords(grid_x, grid_y)
-                    converted[button_name] = [screen_x, screen_y, color]
+                    screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+                    frame_x, frame_y = screen_to_frame_coords(screen_x, screen_y)
 
-                frame_copy["buttons"] = converted
+                    frame_copy["buttons"][button_name] = [screen_x, screen_y, color]
+                    frame_xy["buttons"][button_name] = [frame_x, frame_y, color]
 
             # Convert interaction coordinates
             if "interactions" in frame:
-                converted = {}
+                frame_xy["interactions"] = {}
                 for interaction_name, interaction_data in frame["interactions"].items():
                     if len(interaction_data) == 2 and all(isinstance(x, (int, float)) for x in interaction_data):
                         # Single coordinate pair [x, y]
                         grid_x, grid_y = interaction_data
-                        screen_x, screen_y = grid_to_frame_coords(grid_x, grid_y)
-                        converted[interaction_name] = [screen_x, screen_y]
+                        screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+                        frame_x, frame_y = screen_to_frame_coords(screen_x, screen_y)
+
+                        frame_copy["interactions"][interaction_name] = [screen_x, screen_y]
+                        frame_xy["interactions"][interaction_name] = [frame_x, frame_y]
+
                     elif all(isinstance(item, list) and len(item) == 2 for item in interaction_data):
                         # List of coordinate pairs [[x,y], [x,y], ...]
-                        converted[interaction_name] = []
+                        screen_coords = []
+                        frame_coords = []
                         for coord_pair in interaction_data:
                             grid_x, grid_y = coord_pair
-                            screen_x, screen_y = grid_to_frame_coords(grid_x, grid_y)
-                            converted[interaction_name].append([screen_x, screen_y])
+                            screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+                            frame_x, frame_y = screen_to_frame_coords(screen_x, screen_y)
+
+                            screen_coords.append([screen_x, screen_y])
+                            frame_coords.append([frame_x, frame_y])
+
+                        frame_copy["interactions"][interaction_name] = screen_coords
+                        frame_xy["interactions"][interaction_name] = frame_coords
                     else:
                         self.logger.error(f"Invalid interaction data for {interaction_name}: {interaction_data}")
                         import sys
 
                         sys.exit("Exiting due to invalid database")
 
-                frame_copy["interactions"] = converted
-
             # Convert bbox coordinates
             if "bbox" in frame:
-                converted = {}
+                frame_xy["bbox"] = {}
                 for bbox_name, bbox_data in frame["bbox"].items():
                     if len(bbox_data) == 4 and all(isinstance(x, (int, float)) for x in bbox_data):
                         # Single bbox [x1, y1, x2, y2]
                         grid_x1, grid_y1, grid_x2, grid_y2 = bbox_data
-                        screen_x1, screen_y1 = grid_to_frame_coords(grid_x1, grid_y1)
-                        screen_x2, screen_y2 = grid_to_frame_coords(grid_x2, grid_y2)
-                        converted[bbox_name] = [screen_x1, screen_y1, screen_x2, screen_y2]
+                        screen_x1, screen_y1 = grid_to_screen_coords(grid_x1, grid_y1)
+                        screen_x2, screen_y2 = grid_to_screen_coords(grid_x2, grid_y2)
+                        frame_x1, frame_y1 = screen_to_frame_coords(screen_x1, screen_y1)
+                        frame_x2, frame_y2 = screen_to_frame_coords(screen_x2, screen_y2)
+
+                        frame_copy["bbox"][bbox_name] = [screen_x1, screen_y1, screen_x2, screen_y2]
+                        frame_xy["bbox"][bbox_name] = [frame_x1, frame_y1, frame_x2, frame_y2]
                     else:
                         self.logger.error(f"Invalid bbox data for {bbox_name}: {bbox_data}")
                         import sys
 
                         sys.exit("Exiting due to invalid database")
 
-                frame_copy["bbox"] = converted
+            # Convert colors to tuples for pixel comparison
+            frame_copy = self._convert_colors_to_tuples(frame_copy)
 
+            # Add frame coordinates as additional key
+            frame_copy["frame_xy"] = frame_xy
             frames_with_coords.append(frame_copy)
 
         frames_cache.parent.mkdir(exist_ok=True)
-        with open(frames_cache, "w") as f:
-            json.dump({"frames": frames_with_coords}, f, indent=2, separators=(",", ": "))
+        json_str = json.dumps({"frames": frames_with_coords}, indent=2, separators=(",", ": "))
 
-        self.logger.debug(f"Generated coordinate cache at {frames_cache}")
+        # Compact 2-4 element arrays to a single line
+        json_str = re.sub(
+            r"\[\s*(-?\d+(?:\.\d+)?),?\s*\n\s*(-?\d+(?:\.\d+)?),?\s*\n\s*(-?\d+(?:\.\d+)?)(?:,?\s*\n\s*(-?\d+(?:\.\d+)?))?\s*\]",
+            lambda m: "[" + ", ".join(filter(None, m.groups())) + "]",
+            json_str,
+        )
+
+        with open(frames_cache, "w") as f:
+            f.write(json_str)
+
+        self.logger.info(
+            f"Generated coordinate cache with screen coordinates as main and frame_xy as additional key at {frames_cache}"
+        )
 
     # Public API methods
     def get_window_info(self) -> Optional[Dict[str, Any]]:

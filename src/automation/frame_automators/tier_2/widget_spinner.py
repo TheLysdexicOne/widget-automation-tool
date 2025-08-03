@@ -4,10 +4,10 @@ Handles automation for the Widget Spinner frame in WidgetInc.
 """
 
 import time
+import pyautogui
 from typing import Any, Dict
 
 from automation.base_automator import BaseAutomator
-from utility.window_utils import grid_to_screen_coords
 
 
 class WidgetSpinnerAutomator(BaseAutomator):
@@ -21,18 +21,23 @@ class WidgetSpinnerAutomator(BaseAutomator):
 
         # Create button engines for clean syntax
         spin = self.create_button("spin")
-        point = (87, 33)
-        scan_point = grid_to_screen_coords(point[0], point[1])
-        scan_color = (57, 63, 70)
-
+        watch_point = self.frame_data["interactions"]["watch_point"]
+        watch_color = self.frame_data["colors"]["watch_color"]
+        fail = 0
         # Main automation loop
         while self.should_continue:
             if time.time() - start_time > self.max_run_time:
                 break
 
-            if not self.scan.pixel_watcher(scan_point, scan_color, timeout=30.0, check_interval=0.004):
-                self.log_timeout_error()
-                break
-            spin.click()
-            if not self.sleep(0.25):
+            current_color = pyautogui.pixel(watch_point[0], watch_point[1])
+            if current_color != watch_color:
+                spin.click()
+                self.sleep(0.1)
+                if spin.active():
+                    fail += 1
+                else:
+                    fail = 0
+            if fail > 3:
+                self.log_storage_error()
+            if not self.sleep(0.01):
                 break
