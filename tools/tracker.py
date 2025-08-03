@@ -86,24 +86,24 @@ def find_target_window(target_process: str) -> Optional[Dict]:
                     client_h = client_right_bottom[1] - client_left_top[1]
                     title = win32gui.GetWindowText(hwnd)
 
-                    # Calculate 3:2 aspect ratio playable area
+                    # Calculate 3:2 aspect ratio frame area
                     target_ratio = 3.0 / 2.0
                     client_ratio = client_w / client_h if client_h else 1
 
                     if client_ratio > target_ratio:
                         # Client is wider than 3:2 - fit height, center width
-                        playable_height = client_h
-                        playable_width = int(playable_height * target_ratio)
-                        px = client_x + (client_w - playable_width) // 2
+                        frame_height = client_h
+                        frame_width = int(frame_height * target_ratio)
+                        px = client_x + (client_w - frame_width) // 2
                         py = client_y
                     else:
                         # Client is taller than 3:2 - fit width, center height
-                        playable_width = client_w
-                        playable_height = int(playable_width / target_ratio)
+                        frame_width = client_w
+                        frame_height = int(frame_width / target_ratio)
                         px = client_x
-                        py = client_y + (client_h - playable_height) // 2
+                        py = client_y + (client_h - frame_height) // 2
 
-                    playable_area = {"x": px, "y": py, "width": playable_width, "height": playable_height}
+                    frame_area = {"x": px, "y": py, "width": frame_width, "height": frame_height}
 
                     return {
                         "pid": pid,
@@ -116,7 +116,7 @@ def find_target_window(target_process: str) -> Optional[Dict]:
                             "client_width": client_w,
                             "client_height": client_h,
                         },
-                        "playable_area": playable_area,
+                        "frame_area": frame_area,
                     }
         except Exception:
             continue
@@ -130,13 +130,13 @@ class MouseTracker(QObject):
     def __init__(self):
         super().__init__()
         self._window_xy_cb: Optional[Callable[[], Dict]] = None
-        self._playable_xy_cb: Optional[Callable[[], Dict]] = None
+        self._frame_xy_cb: Optional[Callable[[], Dict]] = None
         self._timer: Optional[QTimer] = None
         self.current_grid_xy = (0, 0)  # Store current grid coordinates
 
-    def set_coordinate_callbacks(self, window_cb: Callable[[], Dict], playable_cb: Callable[[], Dict]):
+    def set_coordinate_callbacks(self, window_cb: Callable[[], Dict], frame_cb: Callable[[], Dict]):
         self._window_xy_cb = window_cb
-        self._playable_xy_cb = playable_cb
+        self._frame_xy_cb = frame_cb
 
     def start_tracking(self, interval_ms: int = 100):
         if self._timer is None:
@@ -175,15 +175,15 @@ class MouseTracker(QObject):
                 else:
                     info["inside_window"] = False
 
-        # Playable info - calculate pixel size regardless of mouse position
-        if self._playable_xy_cb:
-            playable = self._playable_xy_cb()
-            if playable:
+        # Frame info - calculate pixel size regardless of mouse position
+        if self._frame_xy_cb:
+            frame = self._frame_xy_cb()
+            if frame:
                 px, py, pw, ph = (
-                    playable.get("x", 0),
-                    playable.get("y", 0),
-                    playable.get("width", 0),
-                    playable.get("height", 0),
+                    frame.get("x", 0),
+                    frame.get("y", 0),
+                    frame.get("width", 0),
+                    frame.get("height", 0),
                 )
 
                 # Pixel art grid calculation (192x128 background pixels)
@@ -195,18 +195,18 @@ class MouseTracker(QObject):
                 pixel_size_y = ph / grid_height if grid_height else 0
                 pixel_size = min(pixel_size_x, pixel_size_y)  # Use smaller for square pixels
 
-                # Always include pixel size when we have playable area
+                # Always include pixel size when we have frame area
                 info["pixel_size"] = pixel_size
 
-                # Only calculate grid position and percentages if mouse is inside playable area
+                # Only calculate grid position and percentages if mouse is inside frame area
                 if px <= screen_x <= px + pw and py <= screen_y <= py + ph:
-                    info["inside_playable"] = True
+                    info["inside_frame"] = True
 
-                    # Calculate actual pixel coordinates within playable area
+                    # Calculate actual pixel coordinates within frame area
                     rel_x = screen_x - px
                     rel_y = screen_y - py
-                    info["playable_x"] = rel_x
-                    info["playable_y"] = rel_y
+                    info["frame_x"] = rel_x
+                    info["frame_y"] = rel_y
 
                     info["x_percent"] = 100 * rel_x / max(1, pw)
                     info["y_percent"] = 100 * rel_y / max(1, ph)
@@ -224,18 +224,18 @@ class MouseTracker(QObject):
 
                     info["grid_position"] = {"x": grid_x, "y": grid_y}
                 else:
-                    info["inside_playable"] = False
+                    info["inside_frame"] = False
 
         return info
 
 
 # --- Grid Overlay Widget ---
 class GridOverlay(QWidget):
-    """Semi-transparent grid overlay for the playable area."""
+    """Semi-transparent grid overlay for the frame area."""
 
-    def __init__(self, playable_area: Dict):
+    def __init__(self, frame_area: Dict):
         super().__init__()
-        self.playable_area = playable_area
+        self.frame_area = frame_area
         self.grid_width = 192
         self.grid_height = 128
         self._setup_overlay()
@@ -247,11 +247,11 @@ class GridOverlay(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
-        # Position and size the overlay to match playable area
-        px = self.playable_area.get("x", 0)
-        py = self.playable_area.get("y", 0)
-        pw = self.playable_area.get("width", 0)
-        ph = self.playable_area.get("height", 0)
+        # Position and size the overlay to match frame area
+        px = self.frame_area.get("x", 0)
+        py = self.frame_area.get("y", 0)
+        pw = self.frame_area.get("width", 0)
+        ph = self.frame_area.get("height", 0)
 
         self.setGeometry(px, py, pw, ph)
 
@@ -267,8 +267,8 @@ class GridOverlay(QWidget):
         painter.setOpacity(0.3)  # Semi-transparent
 
         # Calculate pixel size
-        pw = self.playable_area.get("width", 0)
-        ph = self.playable_area.get("height", 0)
+        pw = self.frame_area.get("width", 0)
+        ph = self.frame_area.get("height", 0)
 
         if pw > 0 and ph > 0:
             pixel_size_x = pw / self.grid_width
@@ -300,12 +300,12 @@ class TrackerWidget(QWidget):
         self.target_hwnd = None
         self.coordinates = {}
         self.window_xy = {}
-        self.playable_xy = {}
+        self.frame_xy = {}
         self.grid_overlay = None  # Grid overlay widget
 
         # Mouse tracker
         self.mouse_tracker = MouseTracker()
-        self.mouse_tracker.set_coordinate_callbacks(self._get_window_coords, self._get_playable_coords)
+        self.mouse_tracker.set_coordinate_callbacks(self._get_window_coords, self._get_frame_coords)
         self.mouse_tracker.position_changed.connect(self._on_mouse_position_changed)
 
         self._setup_window()
@@ -565,7 +565,7 @@ class TrackerWidget(QWidget):
             # Target found - extract information
             pid = target_info["pid"]
             window_info = target_info["window_info"]
-            playable_area = target_info["playable_area"]
+            frame_area = target_info["frame_area"]
 
             # Create info dict compatible with existing update logic
             found_info = {
@@ -580,7 +580,7 @@ class TrackerWidget(QWidget):
                     window_info["client_height"],
                 ),
                 "window_info": window_info,
-                "playable_area": playable_area,
+                "frame_area": frame_area,
             }
 
             self._update_status(True, found_info)
@@ -618,15 +618,13 @@ class TrackerWidget(QWidget):
                 coords_text = f"Window: {rect[0]}, {rect[1]}, {rect[2] - rect[0]}x{rect[3] - rect[1]}\n"
                 coords_text += f"Client: {client_rect[2]}x{client_rect[3]}"
 
-                if "playable_area" in target_info and target_info["playable_area"]:
-                    playable = target_info["playable_area"]
-                    coords_text += (
-                        f"\nPlayable: {playable['x']}, {playable['y']}, {playable['width']}x{playable['height']}"
-                    )
+                if "frame_area" in target_info and target_info["frame_area"]:
+                    frame = target_info["frame_area"]
+                    coords_text += f"\nFrame: {frame['x']}, {frame['y']}, {frame['width']}x{frame['height']}"
 
                     # Always update tracker coordinates
                     self.window_xy = target_info["window_info"]
-                    self.playable_xy = playable
+                    self.frame_xy = frame
 
                 self.coords_label.setText(coords_text)
 
@@ -645,7 +643,7 @@ class TrackerWidget(QWidget):
             self.info_area.setPlainText("No target process found")
             self.coords_label.setText("No coordinates available")
             self.window_xy = {}
-            self.playable_xy = {}
+            self.frame_xy = {}
 
         # Update status flag
         self.target_found = found
@@ -654,9 +652,9 @@ class TrackerWidget(QWidget):
         """Callback to provide window coordinates to mouse tracker."""
         return self.window_xy
 
-    def _get_playable_coords(self) -> Dict:
-        """Callback to provide playable coordinates to mouse tracker."""
-        return self.playable_xy
+    def _get_frame_coords(self) -> Dict:
+        """Callback to provide frame coordinates to mouse tracker."""
+        return self.frame_xy
 
     def _on_mouse_position_changed(self, position_info: Dict):
         """Handle mouse position updates from mouse tracker."""
@@ -674,19 +672,19 @@ class TrackerWidget(QWidget):
             else:
                 mouse_text += "Window: Outside\n"
 
-            # Add playable area information if available
-            if position_info.get("inside_playable", False):
-                playable_x = position_info.get("playable_x", 0)
-                playable_y = position_info.get("playable_y", 0)
+            # Add frame area information if available
+            if position_info.get("inside_frame", False):
+                frame_x = position_info.get("frame_x", 0)
+                frame_y = position_info.get("frame_y", 0)
                 grid_pos = position_info.get("grid_position", {})
                 pixel_size = position_info.get("pixel_size", 0)
 
-                mouse_text += f"Playable: {playable_x}, {playable_y}\n"
+                mouse_text += f"Frame: {frame_x}, {frame_y}\n"
                 mouse_text += f"Grid: ({grid_pos.get('x', 0)}, {grid_pos.get('y', 0)})\n"
                 mouse_text += f"Pixel: {pixel_size:.4f}px"
             else:
                 pixel_size = position_info.get("pixel_size", 0)
-                mouse_text += "Playable: Outside\n"
+                mouse_text += "Frame: Outside\n"
                 mouse_text += "Grid: Outside\n"
                 mouse_text += f"Pixel: {pixel_size:.4f}px"
 
@@ -697,7 +695,7 @@ class TrackerWidget(QWidget):
             self.mouse_label.setText("Mouse: Error")
 
     def _show_grid(self):
-        """Toggle grid overlay on the playable area."""
+        """Toggle grid overlay on the frame area."""
         if self.grid_overlay is not None:
             # Grid is currently shown - hide it
             self.grid_overlay.close()
@@ -705,14 +703,14 @@ class TrackerWidget(QWidget):
             self.grid_button.setText("Grid")
             self.logger.info("Grid overlay hidden")
         else:
-            # Grid is not shown - show it if we have playable area
-            if self.playable_xy and self.target_found:
-                self.grid_overlay = GridOverlay(self.playable_xy)
+            # Grid is not shown - show it if we have frame area
+            if self.frame_xy and self.target_found:
+                self.grid_overlay = GridOverlay(self.frame_xy)
                 self.grid_overlay.show()
                 self.grid_button.setText("Hide Grid")
                 self.logger.info("Grid overlay shown")
             else:
-                self.logger.warning("Cannot show grid: no playable area available")
+                self.logger.warning("Cannot show grid: no frame area available")
 
     def keyPressEvent(self, event):
         """Handle key press events."""

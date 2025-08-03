@@ -216,6 +216,20 @@ def get_frame_screenshot():
     return ImageGrab.grab(bbox=bbox, all_screens=True)
 
 
+def get_bbox_screenshot(bbox: Tuple[int, int, int, int]):
+    """
+    Screenshot a specific bounding box using ImageGrab.grab.
+
+    Args:
+        bbox: Tuple of (x, y, width, height) coordinates
+
+    Returns:
+        PIL Image of the specified bounding box
+    """
+    x, y, width, height = bbox
+    return ImageGrab.grab(bbox=(x, y, x + width, y + height), all_screens=True)
+
+
 def grid_to_frame_coords(grid_x: int, grid_y: int) -> Tuple[int, int]:
     """
     Convert grid coordinates to frame area coordinates.
@@ -279,3 +293,82 @@ def screen_to_frame_coords(screen_x: int, screen_y: int) -> Tuple[int, int]:
     frame_area_y = max(0, min(frame_area["height"] - 1, frame_area_y))
 
     return (frame_area_x, frame_area_y)
+
+
+def screen_to_screenshot_coords(screen_x: int, screen_y: int) -> Tuple[int, int]:
+    """
+    Convert screen coordinates to screenshot coordinates.
+
+    Args:
+        screen_x: Screen X coordinate
+        screen_y: Screen Y coordinate
+
+    Returns:
+        Tuple of (screenshot_x, screenshot_y) coordinates
+    """
+    window_manager = get_cache_manager()
+    leftmost_x = window_manager.get_leftmost_x_offset()
+
+    # Adjust screen coordinates by the leftmost monitor offset
+    screenshot_x = screen_x + leftmost_x
+    screenshot_y = screen_y  # Y typically doesn't need offset for single-row monitors
+
+    return (screenshot_x, screenshot_y)
+
+
+def get_box(start_point, border_color, screenshot=None):
+    """
+    Find the bounding box of a region starting from start_point using color-based edge detection.
+
+    Args:
+        start_point: Screen coordinates (x, y) to start scanning from
+        border_color: RGB tuple for border color
+
+    Returns:
+        bbox: Tuple (left, top, right, bottom) representing the detected box bounds
+    """
+    if screenshot is None:
+        screenshot = get_monitor_screenshot()
+    if not screenshot:
+        return (0, 0, 0, 0)
+
+    width, height = screenshot.size
+    x0, y0 = start_point
+
+    # Find left edge
+    x = x0
+    # Scan left until we find the border
+    while x > 0 and screenshot.getpixel((x, y0)) != border_color:
+        x -= 1
+    # Continue scanning left until border is no longer found
+    while x > 0 and screenshot.getpixel((x, y0)) == border_color:
+        x -= 1
+    left = x + 1
+
+    # Find right edge
+    x = x0
+    while x < width - 1 and screenshot.getpixel((x, y0)) != border_color:
+        x += 1
+    while x < width - 1 and screenshot.getpixel((x, y0)) == border_color:
+        x += 1
+    right = x - 1
+
+    # Find top edge
+    y = y0
+    while y > 0 and screenshot.getpixel((x0, y)) != border_color:
+        y -= 1
+    while y > 0 and screenshot.getpixel((x0, y)) == border_color:
+        y -= 1
+    top = y + 1
+
+    # Find bottom edge
+    y = y0
+    while y < height - 1 and screenshot.getpixel((x0, y)) != border_color:
+        y += 1
+    while y < height - 1 and screenshot.getpixel((x0, y)) == border_color:
+        y += 1
+    bottom = y - 1
+
+    bbox = (left, top, right, bottom)
+    logger.debug(f"Detected bounding box: {bbox} starting from {start_point}")
+    return bbox

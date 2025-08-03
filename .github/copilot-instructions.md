@@ -14,7 +14,8 @@
 - Don't need to take into account every aspect of failure, let the application fail, we can debug when it does
 - I'm an amateur coder and these are amateur projects
 - This is an unserious project, a project for fun
-- Use ImageGrab.grab(bbox=..., all_screens=True) for screenshots
+- Due to multiple monitors ImageGrab.grab(...all_screens=True) for screenshots
+- All pixel coordinates are relative to the top-left corner of the frame area
 
 # Widget Automation Tool: AI-Generated Development Instructions
 
