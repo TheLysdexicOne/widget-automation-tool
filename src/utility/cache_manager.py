@@ -10,10 +10,10 @@ worrying about cache management or window enumeration performance.
 
 import json
 import logging
+import pyautogui
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
-
 
 import psutil
 import win32gui
@@ -57,6 +57,8 @@ class CacheManager(QObject):
             "is_valid": False,
             "last_state": None,  # Track window state changes
             "frame_area": None,
+            "frame_area_refined": None,  # Store refined frame area with border checking
+            "refinement_failed": False,  # Track if border refinement failed
             "overlay_position": None,
             "pixel_size": None,
             "monitor_info": None,  # Store monitor info for multi-monitor support
@@ -86,6 +88,8 @@ class CacheManager(QObject):
                 self._cache["is_valid"] = False
                 self._cache["last_state"] = None
                 self._cache["frame_area"] = None
+                self._cache["frame_area_refined"] = None
+                self._cache["refinement_failed"] = False
                 self._cache["overlay_position"] = None
                 self._cache["pixel_size"] = None
                 self.window_lost.emit()
@@ -103,6 +107,8 @@ class CacheManager(QObject):
 
                     # Recalculate and cache derived values
                     self._cache["frame_area"] = self._calculate_frame_area()
+                    self._cache["frame_area_refined"] = None  # Reset refined area on window change
+                    self._cache["refinement_failed"] = False  # Reset refinement failure flag
                     self._cache["overlay_position"] = self._calculate_overlay_position()
                     self._cache["pixel_size"] = self._calculate_pixel_size()
                     self._cache["monitor_info"] = self._get_monitor_info()
@@ -270,10 +276,77 @@ class CacheManager(QObject):
             self.logger.error(f"Error building window info: {e}")
             return None
 
+    def _refine_frame_borders_pyautogui(self, frame_area, border_color=(12, 10, 16)):
+        """
+        Refine frame borders using PyAutoGUI pixel checking.
+        Simple border refinement - handle common off-by-1 or off-by-2 pixel errors.
+        Ensures x-1 is border on left and adjust to get exactly 2054 width.
+        Uses middle Y for validation with 3-pixel buffer from overlay.
+        """
+        if not frame_area:
+            return None
+
+        try:
+            x, y, width, height = frame_area["x"], frame_area["y"], frame_area["width"], frame_area["height"]
+
+            # Use middle Y for validation (3-pixel buffer from overlay should be sufficient)
+            validation_y = y + height // 2
+            target_width = 2054
+
+            self.logger.debug(
+                f"Refining borders at validation_y={validation_y}, initial width={width}, target={target_width}"
+            )
+
+            # Find correct left boundary - check if x-1 is border, adjust if needed
+            left_x = x
+            for offset in range(3):  # Check current, +1, +2
+                test_x = left_x + offset
+                if test_x > 0:
+                    try:
+                        pixel = pyautogui.pixel(test_x - 1, validation_y)
+                        if pixel == border_color:
+                            left_x = test_x
+                            self.logger.debug(f"Found correct left boundary at x={left_x}")
+                            break
+                    except Exception as e:
+                        self.logger.debug(f"Error checking pixel at {test_x - 1}: {e}")
+                        continue
+            else:
+                # Try moving left by 1 or 2
+                for offset in range(1, 3):
+                    test_x = left_x - offset
+                    if test_x > 0:
+                        try:
+                            pixel = pyautogui.pixel(test_x - 1, validation_y)
+                            if pixel == border_color:
+                                left_x = test_x
+                                self.logger.debug(f"Found correct left boundary at x={left_x} (moved left by {offset})")
+                                break
+                        except Exception as e:
+                            self.logger.debug(f"Error checking pixel at {test_x - 1}: {e}")
+                            continue
+
+            # Calculate refined dimensions with target width
+            refined_width = target_width
+
+            self.logger.debug(f"Border refinement complete: left_x={left_x}, width={refined_width}")
+
+            return {
+                "x": left_x,
+                "y": y,
+                "width": refined_width,
+                "height": height,
+                "adjustments": {"left_shift": left_x - x, "width_change": refined_width - width},
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error in border refinement: {e}")
+            return None
+
     def _calculate_frame_area(self) -> Optional[Dict[str, int]]:
         """
         Calculate 3:2 aspect ratio frame area using cached window info.
-        Uses the same logic as the tracker app for consistency.
+        Uses border refinement when possible for improved accuracy.
         """
         window_info = self._cache.get("window_info")
         if not window_info or not self._cache["is_valid"]:
@@ -286,7 +359,7 @@ class CacheManager(QObject):
             client_w = client_screen["width"]
             client_h = client_screen["height"]
 
-            # Calculate 3:2 aspect ratio frame area (tracker logic)
+            # Calculate basic 3:2 aspect ratio frame area (tracker logic)
             target_ratio = 3.0 / 2.0
             client_ratio = client_w / client_h if client_h else 1
 
@@ -303,10 +376,36 @@ class CacheManager(QObject):
                 px = client_x
                 py = client_y + (client_h - frame_height) // 2
 
-            return {"x": px, "y": py, "width": frame_width, "height": frame_height}
+            base_frame_area = {"x": px, "y": py, "width": frame_width, "height": frame_height}
+
+            # Try border refinement if not already failed and conditions are met
+            if (
+                not self._cache.get("refinement_failed", False) and abs(frame_width - 2054) <= 5
+            ):  # Only try refinement if we're close to target
+                # Check if we already have a refined version
+                cached_refined = self._cache.get("frame_area_refined")
+                if cached_refined:
+                    self.logger.debug("Using cached refined frame area")
+                    return cached_refined
+
+                # Use bottom area for border checking - no need to minimize overlay
+                refined_area = self._refine_frame_borders_pyautogui(base_frame_area)
+
+                if refined_area:
+                    self.logger.info(f"Border refinement successful: width {frame_width} -> {refined_area['width']}")
+                    self._cache["frame_area_refined"] = refined_area
+                    self._cache["refinement_failed"] = False
+                    return refined_area
+                else:
+                    self.logger.debug("Border refinement failed, using base calculation")
+                    self._cache["refinement_failed"] = True
+
+            # Use base calculation if refinement not available or failed
+            return base_frame_area
 
         except Exception as e:
             self.logger.error(f"Error calculating frame area: {e}")
+            self._cache["refinement_failed"] = True
             return None
 
     def _calculate_pixel_size(self) -> Optional[float]:
@@ -376,7 +475,7 @@ class CacheManager(QObject):
             # Calculate overlay position to the right of frame area
             offset_y = max(32, client_width // 80)
             bottom_margin = 100
-            overlay_x = frame_x + frame_width + 1
+            overlay_x = frame_x + frame_width + 3
             overlay_y = client_y + offset_y
             available_height = client_height - offset_y - bottom_margin
 
@@ -404,7 +503,7 @@ class CacheManager(QObject):
         return frame_data
 
     def generate_db_cache(self):
-        from .window_utils import grid_to_screen_coords
+        from .window_utils import grid_to_frame_coords
 
         """Generate frames.cache with screen coordinates from frames_database.json."""
 
@@ -430,7 +529,7 @@ class CacheManager(QObject):
                         sys.exit("Exiting due to invalid database")
 
                     grid_x, grid_y, color = button_data
-                    screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+                    screen_x, screen_y = grid_to_frame_coords(grid_x, grid_y)
                     converted[button_name] = [screen_x, screen_y, color]
 
                 frame_copy["buttons"] = converted
@@ -442,14 +541,14 @@ class CacheManager(QObject):
                     if len(interaction_data) == 2 and all(isinstance(x, (int, float)) for x in interaction_data):
                         # Single coordinate pair [x, y]
                         grid_x, grid_y = interaction_data
-                        screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+                        screen_x, screen_y = grid_to_frame_coords(grid_x, grid_y)
                         converted[interaction_name] = [screen_x, screen_y]
                     elif all(isinstance(item, list) and len(item) == 2 for item in interaction_data):
                         # List of coordinate pairs [[x,y], [x,y], ...]
                         converted[interaction_name] = []
                         for coord_pair in interaction_data:
                             grid_x, grid_y = coord_pair
-                            screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
+                            screen_x, screen_y = grid_to_frame_coords(grid_x, grid_y)
                             converted[interaction_name].append([screen_x, screen_y])
                     else:
                         self.logger.error(f"Invalid interaction data for {interaction_name}: {interaction_data}")
@@ -466,8 +565,8 @@ class CacheManager(QObject):
                     if len(bbox_data) == 4 and all(isinstance(x, (int, float)) for x in bbox_data):
                         # Single bbox [x1, y1, x2, y2]
                         grid_x1, grid_y1, grid_x2, grid_y2 = bbox_data
-                        screen_x1, screen_y1 = grid_to_screen_coords(grid_x1, grid_y1)
-                        screen_x2, screen_y2 = grid_to_screen_coords(grid_x2, grid_y2)
+                        screen_x1, screen_y1 = grid_to_frame_coords(grid_x1, grid_y1)
+                        screen_x2, screen_y2 = grid_to_frame_coords(grid_x2, grid_y2)
                         converted[bbox_name] = [screen_x1, screen_y1, screen_x2, screen_y2]
                     else:
                         self.logger.error(f"Invalid bbox data for {bbox_name}: {bbox_data}")
