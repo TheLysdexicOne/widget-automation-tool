@@ -330,10 +330,13 @@
       "item": "Silicon",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "interactions": {
+        "slider": [77, 69]
       }
     },
     {
@@ -342,10 +345,21 @@
       "item": "Microprocessor",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "process": [94, 67, "blue"]
+      },
+      "interactions": {
+        "handle": [65, 72],
+        "release": [65, 43]
+      },
+      "colors": {
+        "handle_colors": [
+          [248, 128, 51],
+          [227, 80, 24],
+          [178, 55, 21]
+        ]
       }
     },
     {
@@ -354,7 +368,7 @@
       "item": "Mainframe Widget",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]

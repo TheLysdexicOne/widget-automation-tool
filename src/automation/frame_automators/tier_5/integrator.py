@@ -108,4 +108,5 @@ class IntegratorAutomator(BaseAutomator):
                 center_y = int((y1 + y2) / 2)
                 self.engine.frame_click(center_x, center_y)
 
-            self.sleep(1.5)
+            if not self.sleep(1.5):
+                break

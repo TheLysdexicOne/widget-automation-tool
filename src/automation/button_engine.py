@@ -64,10 +64,12 @@ class ButtonEngine:
         color_match = all(abs(actual_color[i] - expected_color[i]) <= self.tolerance for i in range(3))
         return color_match
 
-    def click(self, retries: int = 3) -> bool:
-        """Click this button with safety validation and retries."""
+    def click(self, retries: int = 3, ignore: bool = False) -> bool:
+        """Click this button with safety validation and retries.
+        Set ignore=True to skip validation and always click.
+        """
         for attempt in range(retries):
-            if self.active():
+            if ignore or self.active():
                 try:
                     pyautogui.click(self.x, self.y)
                     self.logger.debug(f"Clicked {self.color} {self.name} at ({self.x}, {self.y})")
