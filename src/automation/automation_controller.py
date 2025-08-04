@@ -219,9 +219,24 @@ class AutomationController:
             if frame_id in self.automation_threads:
                 del self.automation_threads[frame_id]
 
-            # Remove from active automators
+            # Remove from active automators and force module reload
             if frame_id in self.active_automators:
                 del self.active_automators[frame_id]
+
+                # Force module reload by removing from sys.modules
+                module_name = self.frame_mapping.get(frame_id)
+                if module_name:
+                    tier_match = re.match(r"(\d+)\.\d+", frame_id)
+                    if tier_match:
+                        tier_num = tier_match.group(1)
+                        module_path = f"automation.frame_automators.tier_{tier_num}.{module_name}"
+
+                        # Remove module from cache to force reload
+                        import sys
+
+                        if module_path in sys.modules:
+                            del sys.modules[module_path]
+                            self.logger.debug(f"Forced module reload for {frame_id}")
 
             self.logger.info(f"Cleaned up automation thread for {frame_id}")
         except Exception as e:

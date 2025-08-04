@@ -73,6 +73,9 @@ temp/
 screenshots/
 debug_images/
 *.cache
+**/._temp/
+**/.tmp/
+.sandbox/
 
 # Sensitive data
 config/private_settings.json

@@ -51,6 +51,12 @@ class CacheManager(QObject):
         self._cache_log_dir = Path(__file__).parent.parent.parent / "logs" / "cache"
         self._cache_log_dir.mkdir(parents=True, exist_ok=True)
 
+        # Database file tracking
+        self._frames_db_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
+        self._last_db_mtime = 0
+        self._last_error_shown = None  # Track last error to avoid spam
+        self._last_console_error_time = 0  # Track console error logging (every 10 seconds)
+
         # Cache storage
         self._cache = {
             "window_info": None,
@@ -66,19 +72,38 @@ class CacheManager(QObject):
             "leftmost_x_offset": None,  # Store leftmost x offset
         }
 
-        # Validation timer - checks every 500ms
+        # Validation timer - checks every 1000ms (1 second)
         self._timer = QTimer()
-        self._timer.timeout.connect(self._validate_cache)
-        self._timer.start(500)
+        self._timer.timeout.connect(self._on_timer_tick)
+        self._timer.start(1000)
 
-        # Initial cache population
+        # Timer tick counter for less frequent database checks
+        self._timer_tick_count = 0
+
+        # Initial cache population and database tracking
+        # Only check database on startup, not continuously
+        if self._frames_db_file.exists():
+            self._last_db_mtime = self._frames_db_file.stat().st_mtime
         self._validate_cache()
 
-        self.logger.debug("WindowManager initialized with 500ms validation timer")
+        self.logger.debug("WindowManager initialized with 1000ms validation timer and database file watching")
+
+    def _on_timer_tick(self):
+        """Handle timer tick - validate cache every tick, check database less frequently."""
+        self._timer_tick_count += 1
+
+        # Always update coordinate cache
+        self._validate_cache()
+
+        # Check database every 6th tick (every 30 seconds instead of every 5 seconds)
+        if self._timer_tick_count % 6 == 0:
+            self._check_database_changes()
 
     def _validate_cache(self):
         """Proactively validate and update cache if needed."""
         try:
+            # No longer check database changes here - moved to timer tick
+
             current_window = self._find_target_window()
             cache_window = self._cache.get("window_info")
 
@@ -122,6 +147,153 @@ class CacheManager(QObject):
         except Exception as e:
             self.logger.error(f"Error validating cache: {e}")
             self._cache["is_valid"] = False
+
+    def _check_database_changes(self):
+        """Check if frames_database.json has been modified and regenerate cache if valid."""
+        try:
+            if not self._frames_db_file.exists():
+                return
+
+            current_mtime = self._frames_db_file.stat().st_mtime
+            if current_mtime != self._last_db_mtime:
+                self.logger.debug("Database file modified, checking validity...")
+
+                # Validate JSON before proceeding
+                if self._validate_database_json():
+                    self.logger.info("Database file is valid, regenerating coordinate cache...")
+                    self.generate_db_cache()
+                    self._last_db_mtime = current_mtime
+                    # Clear any previous error if validation now passes
+                    self._last_error_shown = None
+                else:
+                    self.logger.warning("Database file is invalid, skipping cache regeneration")
+                    # Show error popup only once per unique error
+                    self._show_database_error_popup()
+                    # Log error to console every 10 seconds
+                    self._log_console_error()
+
+        except Exception as e:
+            self.logger.error(f"Error checking database changes: {e}")
+
+    def _validate_database_json(self) -> bool:
+        """Lightweight validation: Check JSON syntax and 'frames' key exists."""
+        try:
+            with open(self._frames_db_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Only check basic structure - JSON syntax and frames key
+            if not isinstance(data, dict) or "frames" not in data:
+                error_msg = "Database missing 'frames' key or invalid structure"
+                self.logger.error(error_msg)
+                self._last_validation_error = {"type": "structure", "message": error_msg}
+                return False
+
+            self.logger.debug("Database JSON validation passed (lightweight)")
+            self._last_validation_error = None
+            return True
+
+        except json.JSONDecodeError as e:
+            error_msg = f"Database JSON syntax error: {e}"
+            self.logger.error(error_msg)
+
+            self._last_validation_error = {
+                "type": "json",
+                "message": error_msg,
+                "line": getattr(e, "lineno", None),
+                "col": getattr(e, "colno", None),
+            }
+            return False
+        except Exception as e:
+            error_msg = f"Error validating database JSON: {e}"
+            self.logger.error(error_msg)
+            self._last_validation_error = {"type": "other", "message": error_msg}
+            return False
+
+    def _show_database_error_popup(self):
+        """Show a single error popup with context, avoiding spam."""
+        if not hasattr(self, "_last_validation_error") or not self._last_validation_error:
+            return
+
+        error_info = self._last_validation_error
+        current_error_key = f"{error_info['type']}:{error_info['message']}"
+
+        # Only show popup if this is a new/different error
+        if self._last_error_shown == current_error_key:
+            return
+
+        self._last_error_shown = current_error_key
+
+        # Skip error sound to avoid potential hanging issues
+        # self._play_error_sound()
+
+        # Create detailed error message with context
+        title = "Database Validation Error"
+        message = f"Error in frames_database.json:\n\n{error_info['message']}"
+
+        # Add context based on error type
+        if error_info["type"] == "json" and error_info.get("line") is not None:
+            message += f"\n\nAt line {error_info['line']}"
+            if error_info.get("col"):
+                message += f", column {error_info['col']}"
+
+        # Use static method with window flags to bring to front
+        # Use native Windows MessageBox for guaranteed visibility over WindowStaysOnTopHint
+        try:
+            import ctypes
+
+            # Use Windows MessageBox which always comes to front
+            MB_ICONERROR = 0x10
+            MB_OK = 0x0
+            MB_TOPMOST = 0x40000
+
+            ctypes.windll.user32.MessageBoxW(None, message, title, MB_ICONERROR | MB_OK | MB_TOPMOST)
+        except Exception as e:
+            # Fallback to Qt dialog if Windows MessageBox fails
+            self.logger.debug(f"Windows MessageBox failed, using Qt fallback: {e}")
+
+            from PyQt6.QtWidgets import QMessageBox, QApplication
+            from PyQt6.QtCore import Qt
+
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Icon.Critical)
+            msg_box.setWindowTitle(title)
+            msg_box.setText(message)
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg_box.setWindowFlags(
+                Qt.WindowType.Dialog | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.WindowSystemMenuHint
+            )
+            msg_box.show()
+            msg_box.raise_()
+            msg_box.activateWindow()
+            QApplication.processEvents()
+            msg_box.exec()
+
+    def _log_console_error(self):
+        """Log error to console every 10 seconds to keep it visible."""
+        if not hasattr(self, "_last_validation_error") or not self._last_validation_error:
+            return
+
+        current_time = time.time()
+        # Only log to console every 10 seconds
+        if current_time - self._last_console_error_time >= 10:
+            error_info = self._last_validation_error
+            self.logger.error(f"DATABASE ERROR (repeating): {error_info['message']}")
+            self._last_console_error_time = current_time
+
+    def _play_error_sound(self):
+        """Play error sound if available."""
+        try:
+            from PyQt6.QtMultimedia import QSoundEffect
+            from PyQt6.QtCore import QUrl
+
+            sound_path = Path(__file__).parent.parent.parent / "assets" / "sounds" / "error1.mp3"
+            print(f"Playing error sound from {sound_path}")
+            if sound_path.exists():
+                sound_effect = QSoundEffect()
+                sound_effect.setSource(QUrl.fromLocalFile(str(sound_path)))
+                sound_effect.play()
+        except Exception as e:
+            self.logger.debug(f"Could not play error sound: {e}")
 
     def _save_cache_to_file(self):
         """Save current cache state to logs/cache/cache.cache for debugging."""

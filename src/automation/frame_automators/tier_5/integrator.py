@@ -7,7 +7,7 @@ import time
 from typing import Any, Dict
 
 from automation.base_automator import BaseAutomator
-from utility.window_utils import get_frame_screenshot, get_box, frame_to_screen_coords
+from utility.window_utils import get_frame_screenshot, get_box_with_border, frame_to_screen_coords
 
 
 class IntegratorAutomator(BaseAutomator):
@@ -30,10 +30,10 @@ class IntegratorAutomator(BaseAutomator):
         red = self.frame_data["colors"]["red"]
 
         screenshot = get_frame_screenshot()
-        output_box = get_box(output, border, screenshot)
-        input1_box = get_box(input1, border, screenshot)
-        input2_box = get_box(input2, border, screenshot)
-        input3_box = get_box(input3, border, screenshot)
+        output_box = get_box_with_border(output, border, screenshot)
+        input1_box = get_box_with_border(input1, border, screenshot)
+        input2_box = get_box_with_border(input2, border, screenshot)
+        input3_box = get_box_with_border(input3, border, screenshot)
 
         def get_state_tuple_for_box(box, screenshot, empty, green, red, offset):
             x1, y1, x2, y2 = box
@@ -73,12 +73,11 @@ class IntegratorAutomator(BaseAutomator):
         while self.should_continue:
             if time.time() - start_time > self.max_run_time:
                 break
-
             screenshot = get_frame_screenshot()
-            output_box = get_box(output, border, screenshot)
-            input1_box = get_box(input1, border, screenshot)
-            input2_box = get_box(input2, border, screenshot)
-            input3_box = get_box(input3, border, screenshot)
+            output_box = get_box_with_border(output, border, screenshot)
+            input1_box = get_box_with_border(input1, border, screenshot)
+            input2_box = get_box_with_border(input2, border, screenshot)
+            input3_box = get_box_with_border(input3, border, screenshot)
             input_boxes = [input1_box, input2_box, input3_box]
 
             output_tuple = get_state_tuple_for_box(output_box, screenshot, empty, green, red, offset=5)
