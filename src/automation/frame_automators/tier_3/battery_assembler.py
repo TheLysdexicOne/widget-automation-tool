@@ -20,6 +20,8 @@ class BatteryAssemblerAutomator(BaseAutomator):
         """Optimized alternating plus/minus clicking with progress detection."""
         start_time = time.time()
 
+        pyautogui.PAUSE = 0
+
         plus = self.create_button("plus")
         minus = self.create_button("minus")
         pbar_x, pbar_y = self.frame_data["interactions"]["progress_bar"]
@@ -50,5 +52,5 @@ class BatteryAssemblerAutomator(BaseAutomator):
             if pyautogui.pixel(pbar_x, pbar_y) == pbar_color:
                 last_progress_time = time.time()  # Reset progress timer
 
-            if not self.sleep(0.01):
+            if not self.sleep(0.05):
                 break

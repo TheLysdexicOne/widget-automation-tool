@@ -21,6 +21,7 @@ import win32gui
 import win32process
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
+
 # Constants
 TARGET_PROCESS_NAME = "WidgetInc.exe"
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ class CacheManager(QObject):
         self._cache_log_dir.mkdir(parents=True, exist_ok=True)
 
         # Database file tracking
-        self._frames_db_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
+        self._frames_db_file = Path(__file__).parent.parent.parent / "config" / "data" / "frames_database.json"
         self._last_db_mtime = 0
         self._last_error_shown = None  # Track last error to avoid spam
         self._last_console_error_time = 0  # Track console error logging (every 10 seconds)
@@ -298,7 +299,7 @@ class CacheManager(QObject):
     def _save_cache_to_file(self):
         """Save current cache state to logs/cache/cache.cache for debugging."""
         try:
-            cache_file = self._cache_log_dir / "cache.cache"
+            cache_file = Path(__file__).parent.parent.parent / "config" / "cache" / "cache.cache"
 
             # Use cached values directly instead of recalculating
             cache_data = {
@@ -676,12 +677,12 @@ class CacheManager(QObject):
         return frame_data
 
     def generate_db_cache(self):
-        from .window_utils import grid_to_screen_coords, screen_to_frame_coords
+        from .coordinate_utils import conv_screen_to_frame_coords, conv_grid_to_screen_coords
 
         """Generate frames.cache with screen coordinates as main and frame coordinates as additional key."""
 
-        frames_file = Path(__file__).parent.parent.parent / "config" / "database" / "frames_database.json"
-        frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.cache"
+        frames_file = Path(__file__).parent.parent.parent / "config" / "data" / "frames_database.json"
+        frames_cache = Path(__file__).parent.parent.parent / "config" / "cache" / "frames.cache"
 
         with open(frames_file, "r") as f:
             frames_data = json.load(f)
@@ -703,8 +704,8 @@ class CacheManager(QObject):
                         sys.exit("Exiting due to invalid database")
 
                     grid_x, grid_y, color = button_data
-                    screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
-                    frame_x, frame_y = screen_to_frame_coords(screen_x, screen_y)
+                    screen_x, screen_y = conv_grid_to_screen_coords(grid_x, grid_y)
+                    frame_x, frame_y = conv_screen_to_frame_coords(screen_x, screen_y)
 
                     frame_copy["buttons"][button_name] = [screen_x, screen_y, color]
                     frame_xy["buttons"][button_name] = [frame_x, frame_y, color]
@@ -716,8 +717,8 @@ class CacheManager(QObject):
                     if len(interaction_data) == 2 and all(isinstance(x, (int, float)) for x in interaction_data):
                         # Single coordinate pair [x, y]
                         grid_x, grid_y = interaction_data
-                        screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
-                        frame_x, frame_y = screen_to_frame_coords(screen_x, screen_y)
+                        screen_x, screen_y = conv_grid_to_screen_coords(grid_x, grid_y)
+                        frame_x, frame_y = conv_screen_to_frame_coords(screen_x, screen_y)
 
                         frame_copy["interactions"][interaction_name] = [screen_x, screen_y]
                         frame_xy["interactions"][interaction_name] = [frame_x, frame_y]
@@ -728,8 +729,8 @@ class CacheManager(QObject):
                         frame_coords = []
                         for coord_pair in interaction_data:
                             grid_x, grid_y = coord_pair
-                            screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
-                            frame_x, frame_y = screen_to_frame_coords(screen_x, screen_y)
+                            screen_x, screen_y = conv_grid_to_screen_coords(grid_x, grid_y)
+                            frame_x, frame_y = conv_screen_to_frame_coords(screen_x, screen_y)
 
                             screen_coords.append([screen_x, screen_y])
                             frame_coords.append([frame_x, frame_y])
@@ -749,10 +750,10 @@ class CacheManager(QObject):
                     if len(bbox_data) == 4 and all(isinstance(x, (int, float)) for x in bbox_data):
                         # Single bbox [x1, y1, x2, y2]
                         grid_x1, grid_y1, grid_x2, grid_y2 = bbox_data
-                        screen_x1, screen_y1 = grid_to_screen_coords(grid_x1, grid_y1)
-                        screen_x2, screen_y2 = grid_to_screen_coords(grid_x2, grid_y2)
-                        frame_x1, frame_y1 = screen_to_frame_coords(screen_x1, screen_y1)
-                        frame_x2, frame_y2 = screen_to_frame_coords(screen_x2, screen_y2)
+                        screen_x1, screen_y1 = conv_grid_to_screen_coords(grid_x1, grid_y1)
+                        screen_x2, screen_y2 = conv_grid_to_screen_coords(grid_x2, grid_y2)
+                        frame_x1, frame_y1 = conv_screen_to_frame_coords(screen_x1, screen_y1)
+                        frame_x2, frame_y2 = conv_screen_to_frame_coords(screen_x2, screen_y2)
 
                         frame_copy["bbox"][bbox_name] = [screen_x1, screen_y1, screen_x2, screen_y2]
                         frame_xy["bbox"][bbox_name] = [frame_x1, frame_y1, frame_x2, frame_y2]
@@ -842,7 +843,7 @@ class CacheManager(QObject):
     def get_frame_data(self, frame_id: str) -> Optional[Dict[str, Any]]:
         """Get frame data by ID with colors converted to tuples."""
         # Load from frames.cache (or however you currently load frame data)
-        frames_cache = Path(__file__).parent.parent.parent / "config" / "database" / "frames.cache"
+        frames_cache = Path(__file__).parent.parent.parent / "config" / "cache" / "frames.cache"
 
         try:
             with open(frames_cache, "r", encoding="utf-8") as f:

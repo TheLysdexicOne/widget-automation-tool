@@ -12,7 +12,9 @@ import pyautogui
 from PIL import Image, ImageGrab
 from typing import Any, Dict, List, Optional, Tuple
 
-from .cache_manager import get_cache_manager, PIXEL_ART_GRID_WIDTH, PIXEL_ART_GRID_HEIGHT
+from utility.coordinate_utils import conv_grid_to_screen_coords, conv_screen_to_frame_coords
+
+from .cache_manager import get_cache_manager
 
 logger = logging.getLogger(__name__)
 
@@ -42,29 +44,13 @@ def calculate_overlay_position(window_info: Dict[str, Any]) -> Tuple[int, int, i
         return (100, 100, 100)
 
 
-def grid_to_screenshot_coords(grid_x: int, grid_y: int, offset_x=2560) -> Tuple[int, int]:
-    """
-    Convert grid coordinates to screenshot coordinates.
-
-    Args:
-        grid_x: Grid X coordinate (0 to 191)
-        grid_y: Grid Y coordinate (0 to 127)
-
-    Returns:
-        Tuple of (screenshot_x, screenshot_y) coordinates
-    """
-    screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
-    # Adjust for screenshot offset
-    return (screen_x + offset_x, screen_y)
-
-
 def get_pixel_color(coords):
     x, y = coords
     return pyautogui.pixel(x, y)
 
 
 def get_grid_color(grid):
-    coords = grid_to_screen_coords(grid[0], grid[1])
+    coords = conv_grid_to_screen_coords(grid[0], grid[1])
     return get_pixel_color(coords)
 
 
@@ -86,7 +72,7 @@ def get_vertical_bar_data(start_point, empty_color, filled_colors: tuple):
     if not screenshot:
         return {"top": 0, "bottom": 0, "height": 0, "percent_filled": 0}
 
-    frame_x, frame_y = screen_to_frame_coords(start_point[0], start_point[1])
+    frame_x, frame_y = conv_screen_to_frame_coords(start_point[0], start_point[1])
     frame_x, frame_y = start_point[0], start_point[1]  # Use original coordinates
     width, height = screenshot.size
 
@@ -189,129 +175,6 @@ def get_bbox_screenshot(bbox: Tuple[int, int, int, int]):
     """
     x, y, width, height = bbox
     return ImageGrab.grab(bbox=(x, y, x + width, y + height), all_screens=True)
-
-
-def screen_to_screenshot_coords(screen_x: int, screen_y: int) -> Tuple[int, int]:
-    """
-    Convert screen coordinates to screenshot coordinates.
-
-    Args:
-        screen_x: Screen X coordinate
-        screen_y: Screen Y coordinate
-
-    Returns:
-        Tuple of (screenshot_x, screenshot_y) coordinates
-    """
-    window_manager = get_cache_manager()
-    leftmost_x = window_manager.get_leftmost_x_offset()
-
-    # Adjust screen coordinates by the leftmost monitor offset
-    screenshot_x = screen_x + leftmost_x
-    screenshot_y = screen_y  # Y typically doesn't need offset for single-row monitors
-
-    return (screenshot_x, screenshot_y)
-
-
-def grid_to_screen_coords(grid_x: int, grid_y: int) -> Tuple[int, int]:
-    """
-    Convert grid coordinates to screen coordinates for clicking.
-
-    Takes grid coordinates and returns the center pixel of that grid cell in screen coordinates.
-
-    Args:
-        grid_x: Grid X coordinate (0 to 191)
-        grid_y: Grid Y coordinate (0 to 127)
-
-    Returns:
-        Tuple of (screen_x, screen_y) coordinates for clicking
-    """
-    try:
-        window_manager = get_cache_manager()
-        frame_area = window_manager.get_frame_area()
-        pixel_size = window_manager.get_pixel_size()
-
-        if not frame_area or not pixel_size:
-            logger.warning("No valid frame area or pixel size for grid conversion")
-            return (0, 0)
-
-        # Clamp grid coordinates to valid range
-        grid_x = max(0, min(PIXEL_ART_GRID_WIDTH - 1, grid_x))
-        grid_y = max(0, min(PIXEL_ART_GRID_HEIGHT - 1, grid_y))
-
-        # Calculate pixel center within the grid cell
-        pixel_x = (grid_x + 0.5) * pixel_size
-        pixel_y = (grid_y + 0.5) * pixel_size
-
-        # Convert to screen coordinates
-        screen_x = int(frame_area["x"] + pixel_x)
-        screen_y = int(frame_area["y"] + pixel_y)
-
-        return (screen_x, screen_y)
-
-    except Exception as e:
-        logger.error(f"Error converting grid to screen coordinates: {e}")
-        return (0, 0)
-
-
-def screen_to_frame_coords(screen_x: int, screen_y: int) -> Tuple[int, int]:
-    """
-    Convert screen coordinates to frame area coordinates.
-
-    Takes screen coordinates and returns coordinates relative to the frame area.
-
-    Args:
-        screen_x: Screen X coordinate
-        screen_y: Screen Y coordinate
-
-    Returns:
-        Tuple of (frame_area_x, frame_area_y) coordinates relative to frame area
-    """
-    window_manager = get_cache_manager()
-    frame_area = window_manager.get_frame_area()
-
-    if not frame_area:
-        logger.warning("No valid frame area for screen to frame area conversion")
-        return (0, 0)
-
-    # Convert screen coordinates to frame area coordinates
-    frame_area_x = screen_x - frame_area["x"]
-    frame_area_y = screen_y - frame_area["y"]
-
-    # Clamp to frame area bounds
-    frame_area_x = max(0, min(frame_area["width"] - 1, frame_area_x))
-    frame_area_y = max(0, min(frame_area["height"] - 1, frame_area_y))
-
-    return (frame_area_x, frame_area_y)
-
-
-def grid_to_frame_coords(grid_x: int, grid_y: int) -> tuple[int, int]:
-    """Convert grid coordinates to frame-relative coordinates for screenshot analysis."""
-    # Use the reliable grid_to_screen_coords first
-    screen_x, screen_y = grid_to_screen_coords(grid_x, grid_y)
-    frame_x, frame_y = screen_to_frame_coords(screen_x, screen_y)
-
-    return (frame_x, frame_y)
-
-
-def frame_to_screen_coords(frame_x: int, frame_y: int) -> Tuple[int, int]:
-    """
-    Convert frame-relative coordinates to absolute screen coordinates.
-
-    Args:
-        frame_x: X coordinate relative to the frame area
-        frame_y: Y coordinate relative to the frame area
-
-    Returns:
-        Tuple of (screen_x, screen_y) coordinates
-    """
-    window_manager = get_cache_manager()
-    frame_area = window_manager.get_frame_area()
-    if not frame_area:
-        logger.warning("No valid frame area for frame to screen conversion")
-        return (0, 0)
-    screen_x = frame_area["x"] + frame_x
-    screen_y = frame_area["y"] + frame_y
-    return (screen_x, screen_y)
 
 
 def get_box_with_border(start_point, border_color, screenshot=None):

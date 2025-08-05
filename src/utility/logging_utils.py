@@ -1,17 +1,13 @@
 """
-Logging utilities to reduce excessive debug output.
-Implements smart logging with throttling and level management.
+Logging utilities for the Widget Automation Tool.
+Provides centralized logging configuration with timestamped files and console output.
 """
 
 import gzip
 import logging
-import logging.handlers
-import os
 import sys
-import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
 
 
 class LoggerMixin:
@@ -46,43 +42,6 @@ class LoggerMixin:
             self.logging.warning(message)
         else:
             logging.getLogger(self.__class__.__name__).warning(message)
-
-
-def check_and_force_rotation(log_file_path, max_bytes=5 * 1024 * 1024):
-    """
-    Check if log file exceeds max size and manually rotate if needed.
-    This ensures logs are rotated even if the application was previously terminated improperly.
-
-    Args:
-        log_file_path: Path to the log file
-        max_bytes: Maximum size in bytes before rotation (default: 5MB)
-    """
-    try:
-        log_file = Path(log_file_path)
-        if log_file.exists() and log_file.stat().st_size > max_bytes:
-            # File exists and is too large, perform manual rotation
-            for i in range(3, -1, -1):  # 3, 2, 1, 0
-                # Shift existing backup files
-                backup = log_file.with_suffix(f".log.{i}")
-                next_backup = log_file.with_suffix(f".log.{i + 1}")
-                if backup.exists():
-                    if next_backup.exists():
-                        next_backup.unlink()
-                    backup.rename(next_backup)
-
-            # Rename current log file to .log.1
-            first_backup = log_file.with_suffix(".log.1")
-            if first_backup.exists():
-                first_backup.unlink()
-            log_file.rename(first_backup)
-
-            # Log will be created automatically by the handler
-            logging.getLogger(__name__).info(
-                f"Manually rotated log file: {log_file.name} (exceeded {max_bytes / 1024 / 1024:.1f}MB)"
-            )
-    except Exception as e:
-        # Don't let rotation errors affect the application
-        print(f"Error during log rotation: {e}")
 
 
 def create_timestamped_log_filename(base_name: str = "widget") -> str:
@@ -199,142 +158,6 @@ def manage_log_files(logs_dir: Path, base_name: str = "widget", keep_count: int 
         print(f"Error managing log files: {e}")
 
 
-class ThrottledLogger:
-    """Logger wrapper that throttles repeated messages."""
-
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger
-        self.last_messages: Dict[str, float] = {}
-        self.throttle_time = 1.0  # 1 second throttle by default
-
-    def info(self, message: str):
-        """Standard info logging."""
-        self.logger.info(message)
-
-    def debug(self, message: str):
-        """Standard debug logging."""
-        self.logger.debug(message)
-
-    def error(self, message: str):
-        """Standard error logging."""
-        self.logger.error(message)
-
-    def warning(self, message: str):
-        """Standard warning logging."""
-        self.logger.warning(message)
-
-    def info_throttled(self, message: str, throttle_seconds: float | None = None):
-        """Log info message with throttling."""
-        self._log_throttled(message, self.logger.info, throttle_seconds)
-
-    def debug_throttled(self, message: str, throttle_seconds: float | None = None):
-        """Log debug message with throttling."""
-        self._log_throttled(message, self.logger.debug, throttle_seconds)
-
-    def _log_throttled(self, message: str, log_func: Any, throttle_seconds: float | None = None):
-        """Internal throttled logging method."""
-        throttle = throttle_seconds or self.throttle_time
-        current_time = time.time()
-
-        if message not in self.last_messages or (current_time - self.last_messages[message]) >= throttle:
-            self.last_messages[message] = current_time
-            log_func(message)
-
-
-def get_smart_logger(name: str) -> ThrottledLogger:
-    """Get a smart logger with throttling capabilities."""
-    return ThrottledLogger(logging.getLogger(name))
-
-
-def log_position_change(logger: Any, old_pos: tuple[Any, ...], new_pos: tuple[Any, ...], context: str = ""):
-    """Smart logging for position changes - only logs when actually changed."""
-    if old_pos != new_pos:
-        logger.info(f"Position changed: {old_pos} -> {new_pos} {context}")
-
-
-def log_state_change(logger: Any, old_state: Any, new_state: Any, context: str = ""):
-    """Smart logging for state changes - only logs when actually changed."""
-    if old_state != new_state:
-        logger.info(f"State changed: {old_state} -> {new_state} {context}")
-
-
-def reduce_logging_noise(logger_name: str, level: int = logging.WARNING):
-    """Reduce logging noise for specific loggers."""
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(level)
-
-
-def setup_rotating_logs(log_dir: str = "logs", max_bytes: int = 5 * 1024 * 1024, backup_count: int = 4):
-    """
-    Setup rotating log files with size limits.
-
-    Args:
-        log_dir: Directory to store log files
-        max_bytes: Maximum size per log file (default: 5MB)
-        backup_count: Number of backup files to keep (default: 4, total 5 files)
-    """
-    # Create logs directory if it doesn't exist
-    os.makedirs(log_dir, exist_ok=True)
-
-    # Get root logger
-    root_logger = logging.getLogger()
-
-    # Remove existing handlers to avoid duplicates
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
-
-    # Setup rotating file handler - use same log file as main app
-    log_file = os.path.join(log_dir, "widget.log")
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_file, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
-    )
-
-    # Setup formatter
-    formatter = logging.Formatter(
-        "%(asctime)s  |  %(name)-25s  |  %(levelname)-8s  |  %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    )
-    file_handler.setFormatter(formatter)
-
-    # Add handler to root logger
-    root_logger.addHandler(file_handler)
-    root_logger.setLevel(logging.INFO)
-
-    # Optional: Add console handler for debug mode
-    console_handler = logging.StreamHandler()
-    console_formatter = logging.Formatter("%(asctime)s  |  %(name)-25s  |  %(levelname)-8s  |  %(message)s")
-    console_handler.setFormatter(console_formatter)
-    root_logger.addHandler(console_handler)
-
-    logging.info(
-        f"Log rotation configured: max {max_bytes / 1024 / 1024:.1f}MB per file, {backup_count + 1} files total"
-    )
-
-
-def setup_automation_logging(debug_mode: bool = False):
-    """
-    Setup logging specifically for automation with appropriate levels.
-    Now uses the same timestamped file approach as main logging.
-
-    Args:
-        debug_mode: If True, enables debug level console output
-    """
-    # Use the main setup_logging function for consistency
-    logger = setup_logging()
-
-    if not debug_mode:
-        # Reduce noise from frequent automation operations in console only
-        # File logging still captures everything at DEBUG level
-        reduce_logging_noise("automation.automation_engine", logging.WARNING)
-        reduce_logging_noise("automation.global_hotkey_manager", logging.INFO)
-        reduce_logging_noise("automation.automation_engine.AutomationEngine", logging.WARNING)
-
-        # Keep important automation events at INFO level for console
-        logging.getLogger("automation").setLevel(logging.INFO)
-        logging.getLogger("__main__").setLevel(logging.INFO)
-
-    return logger
-
-
 def setup_logging():
     """Setup logging configuration with timestamped files and debug-to-file always."""
     # Check if debug argument is passed
@@ -347,8 +170,32 @@ def setup_logging():
     # Manage existing log files (compress old ones)
     manage_log_files(logs_dir, "widget", keep_count=5)
 
-    # Setup logging format
-    log_format = "%(asctime)s  |  %(name)-25s  |  %(levelname)-8s  |  %(message)s"
+    # Setup logging formats - different for file vs console
+    file_format = "%(asctime)s | %(name_clean)-20s | %(levelname)-8s | %(message)s"
+    console_format = "%(asctime)s | %(name_clean)-20s | %(levelname_short)s | %(message)s"
+
+    # Custom formatter base class that cleans logger names
+    class BaseCustomFormatter(logging.Formatter):
+        def format(self, record):
+            # Clean the logger name: remove "Automator" suffix and limit to 20 chars
+            name = record.name
+            if name.endswith("Automator"):
+                name = name[:-9]  # Remove "Automator" (9 characters)
+
+            # Truncate to 20 characters if still too long
+            if len(name) > 20:
+                name = name[:20]
+
+            record.name_clean = name
+            return super().format(record)
+
+    # Custom formatter class for console with truncated level names
+    class ConsoleFormatter(BaseCustomFormatter):
+        def format(self, record):
+            # Add truncated level name
+            level_map = {"DEBUG": "D", "INFO": "I", "WARNING": "W", "ERROR": "E", "CRITICAL": "C"}
+            record.levelname_short = level_map.get(record.levelname, record.levelname[0])
+            return super().format(record)
 
     # Get root logger and clear existing handlers
     root_logger = logging.getLogger()
@@ -362,7 +209,7 @@ def setup_logging():
     # Setup file handler - ALWAYS uses DEBUG level (logs everything to file)
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)  # Always log debug to file
-    file_handler.setFormatter(logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S"))
+    file_handler.setFormatter(BaseCustomFormatter(file_format, datefmt="%Y-%m-%d %H:%M:%S"))
 
     # Setup console handler - level depends on debug mode
     console_handler = logging.StreamHandler(sys.stdout)
@@ -373,7 +220,7 @@ def setup_logging():
         console_handler.setLevel(logging.INFO)  # Normal mode: only info+ in console
         root_logger.setLevel(logging.DEBUG)  # But root logger still at DEBUG for file
 
-    console_handler.setFormatter(logging.Formatter(log_format, datefmt="%Y-%m-%d %H:%M:%S"))
+    console_handler.setFormatter(ConsoleFormatter(console_format, datefmt="%Y-%m-%d %H:%M:%S"))
 
     # Add handlers to root logger
     root_logger.addHandler(file_handler)

@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 import pyautogui
 
-from utility.coordinate_utils import ButtonManager
+from utility.button_manager import ButtonManager
 from automation.scan_engine import ScanEngine
 from automation.automation_engine import AutomationEngine
 

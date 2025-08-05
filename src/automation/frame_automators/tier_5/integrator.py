@@ -5,9 +5,12 @@ Handles automation for the Integrator frame in WidgetInc.
 
 import time
 from typing import Any, Dict
+import random
+import pyautogui
 
 from automation.base_automator import BaseAutomator
-from utility.window_utils import get_frame_screenshot, get_box_with_border, frame_to_screen_coords
+from utility.coordinate_utils import conv_frame_to_screen_coords
+from utility.window_utils import get_frame_screenshot, get_box_with_border
 
 
 class IntegratorAutomator(BaseAutomator):
@@ -65,9 +68,6 @@ class IntegratorAutomator(BaseAutomator):
                     state_tuple.append(0)  # Treat unknown color as empty
             return tuple(state_tuple)
 
-        import random
-        import pyautogui
-
         input_boxes = [input1_box, input2_box, input3_box]
 
         while self.should_continue:
@@ -94,7 +94,7 @@ class IntegratorAutomator(BaseAutomator):
                     x1, y1, x2, y2 = box
                     center_x = int((x1 + x2) / 2)
                     center_y = int((y1 + y2) / 2)
-                    screen_x, screen_y = frame_to_screen_coords(center_x, center_y)
+                    screen_x, screen_y = conv_frame_to_screen_coords(center_x, center_y)
                     pyautogui.click(screen_x, screen_y)
                     break
 

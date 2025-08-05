@@ -63,7 +63,7 @@ class MainWindow(QMainWindow, LoggerMixin):
         self.window_manager.generate_db_cache()
 
         # Load frames from converted cache (screen coordinates)
-        frames_file = Path(__file__).parent.parent / "config" / "database" / "frames.cache"
+        frames_file = Path(__file__).parent.parent / "config" / "cache" / "frames.cache"
         self.logging.debug(f"Loading frames from: {frames_file}")
         try:
             with open(frames_file, "r", encoding="utf-8") as f:

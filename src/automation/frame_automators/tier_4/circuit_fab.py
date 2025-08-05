@@ -19,6 +19,8 @@ class CircuitFabAutomator(BaseAutomator):
     def run_automation(self):
         start_time = time.time()
 
+        pyautogui.PAUSE = 0
+
         engrave = self.create_button("engrave")
         lever_down = self.frame_data["interactions"]["lever_down"]
         lever_color = self.frame_data["colors"]["lever_color"]
@@ -34,14 +36,15 @@ class CircuitFabAutomator(BaseAutomator):
 
             for _ in range(5):
                 engrave.click()
+                self.sleep(0.05)
                 fail = 0
 
             for lever_pos in lever_positions:
                 lever_pos_color = pyautogui.pixel(lever_pos[0], lever_pos[1])
                 if tuple(lever_color) == lever_pos_color:
-                    pyautogui.mouseDown(lever_pos[0], lever_pos[1])
-                    pyautogui.moveTo(lever_down[0], lever_down[1], duration=0.1)
-                    pyautogui.mouseUp()
+                    pyautogui.mouseDown(lever_pos[0], lever_pos[1], duration=0.2)
+                    pyautogui.moveTo(lever_down[0], lever_down[1], duration=0.2)
+                    pyautogui.mouseUp(duration=0.2)
                     break
             else:
                 # Lever not found in any valid position

@@ -72,7 +72,7 @@ class ButtonEngine:
             if ignore or self.active():
                 try:
                     pyautogui.click(self.x, self.y)
-                    self.logger.debug(f"Clicked {self.color} {self.name} at ({self.x}, {self.y})")
+                    # self.logger.debug(f"Clicked {self.color} {self.name} at ({self.x}, {self.y})")
                     return True
                 except Exception as e:
                     self.logger.error(f"Failed to click {self.color} {self.name} at ({self.x}, {self.y}): {e}")

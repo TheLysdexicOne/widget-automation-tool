@@ -9,7 +9,7 @@ import pyautogui
 
 from .button_engine import ButtonEngine
 from .scan_engine import ScanEngine
-from utility.window_utils import frame_to_screen_coords
+from utility.coordinate_utils import conv_frame_to_screen_coords
 
 
 class AutomationEngine:
@@ -189,5 +189,5 @@ class AutomationEngine:
 
     def frame_click(self, frame_x: int, frame_y: int, button: str = "left", duration: float = 0.1) -> bool:
         """Click at frame-relative coordinates (converts to screen coordinates)."""
-        screen_x, screen_y = frame_to_screen_coords(frame_x, frame_y)
+        screen_x, screen_y = conv_frame_to_screen_coords(frame_x, frame_y)
         return self.click_at(screen_x, screen_y, button=button, duration=duration)
