@@ -76,6 +76,8 @@ debug_images/
 **/._temp/
 **/.tmp/
 .sandbox/
+*.spec
+tools/*.exe
 
 # Sensitive data
 config/private_settings.json

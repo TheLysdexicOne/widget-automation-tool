@@ -12,8 +12,6 @@ import pyautogui
 from PIL import Image, ImageGrab
 from typing import Any, Dict, List, Optional, Tuple
 
-from utility.coordinate_utils import conv_grid_to_screen_coords, conv_screen_to_frame_coords
-
 from .cache_manager import get_cache_manager
 
 logger = logging.getLogger(__name__)
@@ -44,104 +42,9 @@ def calculate_overlay_position(window_info: Dict[str, Any]) -> Tuple[int, int, i
         return (100, 100, 100)
 
 
-def get_pixel_color(coords):
-    x, y = coords
-    return pyautogui.pixel(x, y)
-
-
-def get_grid_color(grid):
-    coords = conv_grid_to_screen_coords(grid[0], grid[1])
-    return get_pixel_color(coords)
-
-
-def get_vertical_bar_data(start_point, empty_color, filled_colors: tuple):
-    """
-    Analyze vertical bar from start_point using PIL-based bounds detection.
-    Returns both bounds and fill percentage in a single pass.
-
-    Args:
-        start_point: Screen coordinates (x, y) to start scanning from
-        empty_color: RGB tuple for empty vertical bar color
-        filled_colors: List of RGB tuples for filled vertical bar colors
-
-    Returns:
-        Dict with keys: 'top', 'bottom', 'height', 'percent_filled'
-    """
-
-    screenshot = get_monitor_screenshot()
-    if not screenshot:
-        return {"top": 0, "bottom": 0, "height": 0, "percent_filled": 0}
-
-    frame_x, frame_y = conv_screen_to_frame_coords(start_point[0], start_point[1])
-    frame_x, frame_y = start_point[0], start_point[1]  # Use original coordinates
-    width, height = screenshot.size
-
-    filled_count = 0
-
-    # Find top bound and count filled pixels going up
-    y_top = frame_y
-    while y_top > 0:
-        pixel = screenshot.getpixel((frame_x, y_top))
-        if pixel != empty_color and pixel not in filled_colors:
-            break
-        if pixel in filled_colors:
-            filled_count += 1
-        y_top -= 1
-    y_top += 1
-
-    # Find bottom bound and count filled pixels going down
-    y_bottom = frame_y
-    while y_bottom < height - 1:
-        pixel = screenshot.getpixel((frame_x, y_bottom))
-        if pixel != empty_color and pixel not in filled_colors:
-            break
-        if pixel in filled_colors:
-            filled_count += 1
-        y_bottom += 1
-    y_bottom -= 1
-
-    # Subtract the start pixel if it was counted twice
-    start_pixel = screenshot.getpixel((frame_x, frame_y))
-    if start_pixel in filled_colors:
-        filled_count -= 1
-
-    box_height = y_bottom - y_top + 1
-    percent_filled = (filled_count / box_height * 100) if box_height > 0 else 0
-
-    # # Visualize bounds with white line
-    # screenshot_copy = screenshot.copy()
-    # for y in range(y_top, y_bottom + 1):
-    #     if 0 <= frame_x < width and 0 <= y < height:
-    #         screenshot_copy.putpixel((frame_x, y), (255, 255, 255))  # White line
-
-    # # Show the visualization
-    # screenshot_copy.show()
-
-    return {"top": y_top, "bottom": y_bottom, "height": box_height, "percent_filled": percent_filled}
-
-
 def get_leftmost_x_offset():
     window_manager = get_cache_manager()
     return window_manager.get_leftmost_x_offset()
-
-
-def get_monitor_screenshot():
-    """
-    Screenshot the monitor containing the WidgetInc window using ImageGrab.grab.
-    Returns a PIL Image or None if monitor not found.
-    """
-    window_manager = get_cache_manager()
-    monitor_info = window_manager.get_monitor_info()
-    if not monitor_info:
-        logger.warning("No monitor info available for WidgetInc window.")
-        return None
-    x = monitor_info["x"]
-    y = monitor_info["y"]
-    width = monitor_info["width"]
-    height = monitor_info["height"]
-    bbox = (x, y, x + width, y + height)
-    # all_screens=True ensures correct multi-monitor capture
-    return ImageGrab.grab(bbox=bbox, all_screens=True)
 
 
 def get_frame_screenshot():
@@ -161,20 +64,6 @@ def get_frame_screenshot():
     bbox = (x, y, x + width, y + height)
     # all_screens=True ensures correct multi-monitor capture
     return ImageGrab.grab(bbox=bbox, all_screens=True)
-
-
-def get_bbox_screenshot(bbox: Tuple[int, int, int, int]):
-    """
-    Screenshot a specific bounding box using ImageGrab.grab.
-
-    Args:
-        bbox: Tuple of (x, y, width, height) coordinates
-
-    Returns:
-        PIL Image of the specified bounding box
-    """
-    x, y, width, height = bbox
-    return ImageGrab.grab(bbox=(x, y, x + width, y + height), all_screens=True)
 
 
 def get_box_with_border(start_point, border_color, screenshot=None):

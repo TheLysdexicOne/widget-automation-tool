@@ -9,7 +9,7 @@ import random
 import pyautogui
 
 from automation.base_automator import BaseAutomator
-from utility.coordinate_utils import conv_frame_to_screen_coords
+from utility.coordinate_utils_grid_old import conv_frame_to_screen_coords
 from utility.window_utils import get_frame_screenshot, get_box_with_border
 
 
@@ -105,7 +105,8 @@ class IntegratorAutomator(BaseAutomator):
                 x1, y1, x2, y2 = box
                 center_x = int((x1 + x2) / 2)
                 center_y = int((y1 + y2) / 2)
-                self.engine.frame_click(center_x, center_y)
+                center_xy = (center_x, center_y)
+                self.engine.frame_click(center_xy)
 
             if not self.sleep(1.5):
                 break

@@ -8,7 +8,6 @@ from typing import Any, Dict
 
 import pyautogui
 from automation.base_automator import BaseAutomator
-from utility.window_utils import get_grid_color
 
 
 class WidgetFactoryAutomator(BaseAutomator):
@@ -23,8 +22,8 @@ class WidgetFactoryAutomator(BaseAutomator):
         pyautogui.PAUSE = 0
         # Create button engine for clean syntax
         create = self.create_button("create")
-        progress_bar = (85, 80)
-        progress_color = (0, 95, 149)
+        pbar = self.frame_data["interactions"]["pbar"]
+        pbar_color = self.frame_data["colors"]["pbar_color"]
 
         fail = 0
         # Main automation loop
@@ -33,10 +32,12 @@ class WidgetFactoryAutomator(BaseAutomator):
                 break
             if not create.inactive():
                 create.click()
-                if not get_grid_color(progress_bar) == progress_color:
+                if not pyautogui.pixel(*pbar) == pbar_color:
                     fail += 1
-                    if fail > 3:
+                    if fail > 10:
                         self.log_storage_error()
                         break
+                    else:
+                        fail = 0
             if not self.sleep(0.05):
                 break
