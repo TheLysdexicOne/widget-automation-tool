@@ -5,11 +5,11 @@ Handles automation for the Capacitor Bank frame in WidgetInc.
 
 import time
 import pyautogui
-from PIL import ImageGrab
+
 
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
-from utility.window_utils import get_vertical_bar_data
+from utility.window_utils import get_vertical_fill
 
 
 class CapacitorBankAutomator(BaseAutomator):
@@ -20,7 +20,6 @@ class CapacitorBankAutomator(BaseAutomator):
 
     def run_automation(self):
         start_time = time.time()
-        self.screenshot = ImageGrab.grab(all_screens=True)
 
         # Create button objects
         self.plus1 = self.create_button("plus1")
@@ -29,28 +28,37 @@ class CapacitorBankAutomator(BaseAutomator):
         self.plus8 = self.create_button("plus8")
 
         # Get voltage box coordinates
-        self.voltage_box = self.frame_data["interactions"]["voltage_box"]
-        self.empty_color = self.frame_data["colors"]["empty_color"]
-        self.filled_colors = self.frame_data["colors"]["filled_colors"]
+        vbox_top = self.frame_data["frame_xy"]["interactions"]["voltage_box_top"]
+        vbox_bot = self.frame_data["frame_xy"]["interactions"]["voltage_box_bot"]
+        vbox_x = vbox_top[0]
+        vbox_y_top = vbox_top[1]
+        vbox_y_bot = vbox_bot[1]
+
+        empty_color = self.frame_data["colors"]["empty_color"]
+        filled_colors = self.frame_data["colors"]["filled_colors"]
 
         # Progress bar coordinates
-        self.pbar_x, self.pbar_y = self.frame_data["interactions"]["pbar"]
-        self.pbar_color = self.frame_data["colors"]["pbar_color"]
+        one_volt = self.frame_data["interactions"]["1v"]
 
         while self.should_continue:
             if time.time() - start_time > self.max_run_time:
                 break
             # Get voltage box fill - fix argument order
-            fill = get_vertical_bar_data(self.voltage_box, self.empty_color, self.filled_colors)["percent_filled"]
+            fill = get_vertical_fill(vbox_x, vbox_y_top, vbox_y_bot, empty_color, filled_colors)
             voltage = round(15 * fill / 100)
             self.log_info(f"Current voltage: {voltage}")
             if voltage > 0:
                 self.match_voltage(voltage)
+                print(f"Matched voltage: {voltage}V")
+            print("waiting 4 seconds")
+            self.sleep(4)
 
-                if self.monitor_progress_bar():
-                    self.screenshot = ImageGrab.grab(all_screens=True)
-                    continue
-            break
+            while self.should_continue and pyautogui.pixel(*one_volt) not in filled_colors:
+                print(f"{pyautogui.pixel(*one_volt)} not in {filled_colors}")
+                print("Waiting for 1V to fill...")
+                self.sleep(0.5)
+            if not self.sleep(0.5):
+                break
 
     def match_voltage(self, voltage):
         """Click buttons to match target voltage."""
@@ -61,20 +69,3 @@ class CapacitorBankAutomator(BaseAutomator):
                 button.click()
                 voltage -= value
                 time.sleep(0.1)
-
-    def monitor_progress_bar(self):
-        """Monitor progress bar for 6 seconds to see if it completes."""
-        start_time = time.time()
-        completion_detected = False
-
-        while time.time() - start_time < 6.25:
-            # Get live pixel data using pyautogui
-            current_pixel = pyautogui.pixel(self.pbar_x, self.pbar_y)
-
-            if current_pixel == self.pbar_color:
-                completion_detected = True
-
-            time.sleep(0.1)
-
-        # After 6 seconds, return whether completion was detected at any point
-        return completion_detected

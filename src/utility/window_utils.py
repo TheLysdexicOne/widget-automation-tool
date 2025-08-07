@@ -213,3 +213,56 @@ def get_box_no_border(
         return y
 
     return (get_left_edge(x1), get_top_edge(y1), get_right_edge(x2), get_bottom_edge(y2))
+
+
+def get_vertical_fill(x, top_y, bottom_y, empty_colors, filled_colors, screenshot=None):
+    """
+    Scan a vertical bar from bottom to top to determine fill level.
+
+    Args:
+        bottom_y: Bottom y-coordinate of the bar (inclusive)
+        top_y: Top y-coordinate of the bar (inclusive)
+        x: x-coordinate of the vertical line to scan
+        empty_colors: RGB tuple or list of RGB tuples representing empty colors
+        filled_colors: RGB tuple or list of RGB tuples representing filled colors
+        screenshot: Optional PIL Image to use instead of taking a new screenshot
+
+    Returns:
+        percent_filled: Percentage (0-100) of the bar that is filled
+    """
+    if screenshot is None:
+        screenshot = get_frame_screenshot()
+    if not screenshot:
+        return 0
+
+    width, height = screenshot.size
+
+    # Ensure coordinates are within bounds
+    if not (0 <= x < width and 0 <= top_y < height and 0 <= bottom_y < height and top_y < bottom_y):
+        raise ValueError("Coordinates out of bounds")
+
+    # Normalize inputs to lists if they're single tuples
+    if isinstance(empty_colors, tuple) and len(empty_colors) == 3 and all(isinstance(x, int) for x in empty_colors):
+        empty_colors = [empty_colors]
+    if isinstance(filled_colors, tuple) and len(filled_colors) == 3 and all(isinstance(x, int) for x in filled_colors):
+        filled_colors = [filled_colors]
+
+    # Convert color lists to sets for O(1) lookup
+    empty_color_set = set(empty_colors)
+    filled_color_set = set(filled_colors)
+
+    # Numpy array access is much faster than PIL getpixel()
+    img_array = np.array(screenshot)
+
+    fill_height = 0
+    total_height = bottom_y - top_y + 1
+
+    for y in range(bottom_y, top_y - 1, -1):
+        pixel = tuple(img_array[y, x])
+        if pixel in filled_color_set:
+            fill_height += 1
+        elif pixel in empty_color_set:
+            break  # Stop scanning when we hit an empty color
+
+    percent_filled = (fill_height / total_height) * 100 if total_height > 0 else 0
+    return percent_filled

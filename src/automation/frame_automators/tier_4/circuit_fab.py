@@ -35,7 +35,7 @@ class CircuitFabAutomator(BaseAutomator):
                 break
 
             for _ in range(5):
-                engrave.click()
+                pyautogui.click(engrave.x, engrave.y)
                 self.sleep(0.05)
                 fail = 0
 

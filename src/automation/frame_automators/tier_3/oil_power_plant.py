@@ -19,11 +19,10 @@ class OilPowerPlantAutomator(BaseAutomator):
     def run_automation(self):
         start_time = time.time()
 
-        pbar_color = (0, 149, 28)
-
         # Pull lever and progress bar acting as buttons
         lever_x, lever_y = self.frame_data["interactions"]["lever"]
         pbar_x, pbar_y = self.frame_data["interactions"]["progress_bar"]
+        pbar_color = self.frame_data["colors"]["pbar_color"]
 
         # Main automation loop
         while self.should_continue:

@@ -58,7 +58,7 @@
         "programmed": 1
       },
       "buttons": {
-        "excavate": [143, 45, "red"]
+        "excavate": [0.7454, 0.3514, "red"]
       }
     },
     {
@@ -82,7 +82,7 @@
         "programmed": 1
       },
       "buttons": {
-        "create": [95, 74, "red"]
+        "create": [0.5312, 0.5661, "red"]
       }
     },
     {
@@ -94,10 +94,10 @@
         "programmed": 1
       },
       "buttons": {
-        "spin": [131, 75, "red"]
+        "spin": [0.68305, 0.601352, "red"]
       },
       "interactions": {
-        "watch_point": [87, 34]
+        "watch_point": [0.464905, 0.262691]
       },
       "colors": {
         "watch_color": [57, 63, 70]
@@ -127,8 +127,11 @@
         "1": [1, 1, 1]
       },
       "interactions": {
-        "lever": [161, 91],
-        "progress_bar": [161, 110]
+        "lever": [0.841136, 0.714689],
+        "progress_bar": [0.841136, 0.865247]
+      },
+      "colors": {
+        "pbar_color": [0, 149, 28]
       }
     },
     {
@@ -140,11 +143,11 @@
         "programmed": 1
       },
       "buttons": {
-        "plus": [73, 70, "red"],
-        "minus": [118, 70, "green"]
+        "plus": [0.379176, 0.505978, "red"],
+        "minus": [0.620377, 0.508572, "green"]
       },
       "interactions": {
-        "progress_bar": [83, 79]
+        "progress_bar": [0.500871, 0.619795]
       }
     },
     {
@@ -156,14 +159,15 @@
         "programmed": 1
       },
       "buttons": {
-        "plus1": [174, 49, "red"],
-        "plus2": [174, 65, "red"],
-        "plus4": [174, 81, "red"],
-        "plus8": [174, 97, "red"]
+        "plus1": [0.909248, 0.364188, "red"],
+        "plus2": [0.908211, 0.488429, "red"],
+        "plus4": [0.908231, 0.613446, "red"],
+        "plus8": [0.90824, 0.738889, "red"]
       },
       "interactions": {
-        "voltage_box": [146, 55],
-        "pbar": [154, 99]
+        "voltage_box_top": [0.765, 0.425546],
+        "voltage_box_bot": [0.765, 0.768017],
+        "1v": [0.765, 0.758652]
       },
       "colors": {
         "pbar_color": [0, 149, 28],
@@ -184,10 +188,10 @@
         "programmed": 1
       },
       "buttons": {
-        "miner1": [109, 51, "red"],
-        "miner2": [125, 54, "red"],
-        "miner3": [141, 57, "red"],
-        "miner4": [157, 60, "red"]
+        "miner1": [0.570229, 0.400588, "red"],
+        "miner2": [0.654754, 0.426399, "red"],
+        "miner3": [0.738821, 0.449629, "red"],
+        "miner4": [0.821396, 0.473031, "red"]
       }
     },
     {
@@ -199,8 +203,8 @@
         "programmed": 1
       },
       "buttons": {
-        "load": [107, 38, "red"],
-        "smelt": [122, 98, "red"]
+        "load": [0.567706, 0.298032, "red"],
+        "smelt": [0.648492, 0.762907, "red"]
       }
     },
     {
@@ -212,19 +216,8 @@
         "programmed": 1
       },
       "buttons": {
-        "extract": [158, 58, "red"],
-        "pressurize": [159, 85, "blue"]
-      },
-      "interactions": {
-        "pressure_box": [130, 55]
-      },
-      "colors": {
-        "empty_color": [17, 11, 37],
-        "filled_colors": [
-          [72, 237, 56],
-          [23, 97, 19],
-          [45, 175, 37]
-        ]
+        "extract": [0.797665, 0.446989, "red"],
+        "pressurize": [0.803041, 0.657713, "blue"]
       }
     },
     {
@@ -236,18 +229,18 @@
         "programmed": 1
       },
       "buttons": {
-        "engrave": [104, 64, "blue"]
+        "engrave": [0.46725, 0.518302, "blue"]
       },
       "interactions": {
-        "lever_up": [53, 58],
-        "lever_down": [54, 80],
+        "lever_up": [0.27516, 0.454],
+        "lever_down": [0.287, 0.619126],
         "lever_pos": [
-          [53, 58],
-          [51, 61],
-          [50, 64],
-          [51, 67],
-          [52, 70],
-          [54, 73]
+          [0.275251, 0.454652],
+          [0.266291, 0.478043],
+          [0.264585, 0.503661],
+          [0.266471, 0.529128],
+          [0.273674, 0.552788],
+          [0.285466, 0.57349]
         ]
       },
       "colors": {
@@ -263,17 +256,17 @@
         "programmed": 1
       },
       "buttons": {
-        "answer1": [135, 73, "green"],
-        "answer2": [157, 73, "green"],
-        "answer3": [135, 94, "green"],
-        "answer4": [157, 94, "green"]
+        "answer1": [0.71, 0.58, "green"],
+        "answer2": [0.825, 0.58, "green"],
+        "answer3": [0.71, 0.745, "green"],
+        "answer4": [0.825, 0.745, "green"]
       },
       "bbox": {
-        "equation_bbox": [127, 54, 174, 61],
-        "answer1_bbox": [135, 73, 143, 81],
-        "answer2_bbox": [157, 73, 165, 81],
-        "answer3_bbox": [135, 94, 143, 102],
-        "answer4_bbox": [157, 94, 165, 102]
+        "equation_bbox": [0.6832, 0.427244, 0.884241, 0.485639],
+        "answer1_bbox": [0.71, 0.58, 0.74, 0.625],
+        "answer2_bbox": [0.825, 0.58, 0.855, 0.625],
+        "answer3_bbox": [0.71, 0.745, 0.74, 0.785],
+        "answer4_bbox": [0.825, 0.745, 0.855, 0.785]
       }
     },
     {
@@ -285,7 +278,7 @@
         "programmed": 1
       },
       "buttons": {
-        "call_lightning": [95, 110, "red"]
+        "call_lightning": [0.4971, 0.8598, "red"]
       }
     },
     {
@@ -297,10 +290,10 @@
         "programmed": 1
       },
       "buttons": {
-        "button1": [70, 45, "blue"],
-        "button2": [120, 45, "blue"],
-        "button3": [70, 75, "blue"],
-        "button4": [120, 75, "blue"]
+        "button1": [0.375, 0.375, "blue"],
+        "button2": [0.635, 0.375, "blue"],
+        "button3": [0.375, 0.575, "blue"],
+        "button4": [0.635, 0.575, "blue"]
       }
     },
     {
@@ -314,15 +307,13 @@
       "buttons": {
         "1": [1, 1, 1]
       },
-      "interactions": {
-        "output": [97, 66],
-        "input1": [81, 83],
-        "input2": [95, 83],
-        "input3": [109, 83]
+      "bbox": {
+        "output": [0.480752, 0.477373, 0.544539, 0.57304],
+        "input1": [0.41, 0.63, 0.47, 0.72],
+        "input2": [0.4825, 0.63, 0.5425, 0.72],
+        "input3": [0.555, 0.63, 0.615, 0.72]
       },
       "colors": {
-        "border": [0, 174, 4],
-        "empty": [35, 15, 20],
         "green": [
           [0, 152, 0],
           [0, 255, 0]

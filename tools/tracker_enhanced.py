@@ -8,10 +8,12 @@ All required utilities are included below. No external imports except PyQt6 and 
 
 import argparse
 import ctypes
+import io
 import logging
 import os
 import pyautogui
 import pyperclip
+import re
 import signal
 import subprocess
 import sys
@@ -47,6 +49,9 @@ from PyQt6.QtWidgets import (
     QGraphicsItemGroup,
     QGraphicsLineItem,
     QFrame,
+    QLineEdit,
+    QGraphicsEllipseItem,
+    QGraphicsRectItem,
 )
 
 
@@ -346,7 +351,6 @@ class MouseTracker(QObject):
 
 
 # --- Screenshot Viewer Window ---
-# --- Screenshot Viewer Window ---
 class ScreenshotViewer(QGraphicsView):
     """Complete screenshot viewer with banners, zoom, pan, grid, and coordinate copying."""
 
@@ -363,6 +367,7 @@ class ScreenshotViewer(QGraphicsView):
         self._photo.setShapeMode(QGraphicsPixmapItem.ShapeMode.BoundingRectShape)
         self._scene.addItem(self._photo)
         self.setScene(self._scene)
+
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -374,6 +379,22 @@ class ScreenshotViewer(QGraphicsView):
         # Grid overlay
         self.show_grid = False
         self._grid_item = None
+
+        # Locate functionality
+        self.locate_items = []  # Store locate animation items
+        self.locate_state = 0  # 0=none, 1=animation, 2=box, 3=none
+        self.locate_timer = QTimer()
+        self.locate_timer.timeout.connect(self._update_locate_animation)
+        self.locate_animation_step = 0
+
+        # Draw BBOX functionality
+        self.draw_bbox_mode = False
+        self.bbox_rect_item = None
+        self.bbox_handles = []  # Handle items for resizing
+        self.bbox_dragging = False
+        self.bbox_resizing = False
+        self.bbox_resize_handle = None
+        self.bbox_last_pos = None
 
         # Simple click detection
         self._mouse_pressed_pos = QPoint()
@@ -388,8 +409,6 @@ class ScreenshotViewer(QGraphicsView):
 
     def _pil_to_qpixmap(self, pil_image: Image.Image) -> QPixmap:
         """Convert PIL Image to QPixmap."""
-        import io
-
         buffer = io.BytesIO()
         pil_image.save(buffer, format="PNG")
         buffer.seek(0)
@@ -402,7 +421,7 @@ class ScreenshotViewer(QGraphicsView):
         # Create a wrapper widget to hold banners + this view
         self.window_widget = QWidget()
         self.window_widget.setWindowTitle("Frame Screenshot Viewer")
-        self.window_widget.setWindowFlags(Qt.WindowType.Window)
+        self.window_widget.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
         self.window_widget.resize(1280, 720)
         self.window_widget.setMinimumSize(800, 600)
         self.window_widget.setStyleSheet("""
@@ -416,21 +435,151 @@ class ScreenshotViewer(QGraphicsView):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Info banner
-        self.info_banner = QLabel()
-        self.info_banner.setFixedHeight(32)
-        self.info_banner.setStyleSheet("""
+        # Banner styling template
+        banner_style = """
             QLabel {
                 background-color: #2d2d2d;
                 color: #ffffff;
-                padding: 6px 10px;
-                border-bottom: 1px solid #555555;
-                font-family: 'Courier New', monospace;
-                font-size: 10pt;
+                padding: 2px 4px;
+                border-bottom: none;
+                font-family: 'Consolas', 'Courier New', monospace;
+                font-size: 12pt;
+            }
+        """
+
+        # Line 1: Frame info + stretch + Draw BBOX button
+        self.header_line1 = QWidget()
+        # self.header_line1.setFixedHeight(24)
+        self.header_line1.setStyleSheet("QWidget { background-color: #2d2d2d; }")
+        line1_layout = QHBoxLayout(self.header_line1)
+        line1_layout.setContentsMargins(2, 1, 2, 1)
+
+        self.frame_info_label = QLabel()
+        self.frame_info_label.setStyleSheet(banner_style)
+
+        # Draw BBOX button
+        self.draw_bbox_button = QPushButton("Draw BBOX")
+        self.draw_bbox_button.setFixedWidth(80)
+        self.draw_bbox_button.clicked.connect(self._on_draw_bbox_clicked)
+        self.draw_bbox_button.setStyleSheet("""
+            QPushButton {
+                background-color: #388e3c;
+                color: white;
+                border: none;
+                padding: 4px 8px;
+                border-radius: 2px;
+                font-weight: bold;
+                font-size: 9pt;
+            }
+            QPushButton:hover {
+                background-color: #4caf50;
+            }
+            QPushButton:pressed {
+                background-color: #2e7d32;
             }
         """)
 
-        # Footer
+        line1_layout.addWidget(self.frame_info_label)
+        line1_layout.addStretch()
+        line1_layout.addWidget(self.draw_bbox_button)
+
+        # Line 2: Copied info + input box
+        self.header_line2 = QWidget()
+        # self.header_line2.setFixedHeight(24)
+        self.header_line2.setStyleSheet("QWidget { background-color: #2d2d2d; border-bottom: 1px solid #555555; }")
+        line2_layout = QHBoxLayout(self.header_line2)
+        line2_layout.setContentsMargins(2, 1, 2, 1)
+
+        self.locate_text_label = QLabel("LOCATE:")
+        self.locate_text_label.setStyleSheet(banner_style + "QLabel { font-weight: bold; }")
+
+        self.copied_info_label = QLabel()
+        self.copied_info_label.setStyleSheet(banner_style)
+
+        self.coord_input = QLineEdit()
+        self.coord_input.setPlaceholderText("100,200 or 0.5,0.75 or 10,20,30,40")
+        self.coord_input.setFixedWidth(200)
+        self.coord_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #3d3d3d;
+                color: #ffffff;
+                border: 1px solid #555;
+                padding: 2px 5px;
+                font-size: 9pt;
+            }
+        """)
+
+        line2_layout.addWidget(self.copied_info_label)
+        line2_layout.addStretch()
+        line2_layout.addWidget(self.locate_text_label)
+        line2_layout.addWidget(self.coord_input)
+
+        # Line 3: Locate status + buttons
+        self.header_line3 = QWidget()
+        self.header_line3.setFixedHeight(32)
+        self.header_line3.setStyleSheet("QWidget { background-color: #2d2d2d; border-bottom: 1px solid #555555; }")
+        line3_layout = QHBoxLayout(self.header_line3)
+        line3_layout.setContentsMargins(2, 1, 2, 1)
+
+        self.locate_info_label = QLabel("Ready")
+        self.locate_info_label.setStyleSheet(banner_style)
+
+        # Buttons container
+        buttons_widget = QWidget()
+        buttons_layout = QHBoxLayout(buttons_widget)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_layout.setSpacing(5)
+
+        self.locate_button = QPushButton("LOCATE")
+        self.locate_button.setFixedWidth(60)
+        self.locate_button.clicked.connect(self._on_locate_clicked)
+        self.locate_button.setStyleSheet("""
+            QPushButton {
+                background-color: #1976d2;
+                color: white;
+                border: none;
+                padding: 4px 8px;
+                border-radius: 2px;
+                font-weight: bold;
+                font-size: 9pt;
+            }
+            QPushButton:hover {
+                background-color: #2196f3;
+            }
+            QPushButton:pressed {
+                background-color: #0d47a1;
+            }
+        """)
+
+        self.clear_button = QPushButton("CLEAR")
+        self.clear_button.setFixedWidth(50)
+        self.clear_button.clicked.connect(self._on_clear_clicked)
+        self.clear_button.setStyleSheet("""
+            QPushButton {
+                background-color: #666666;
+                color: white;
+                border: none;
+                padding: 4px 8px;
+                border-radius: 2px;
+                font-weight: bold;
+                font-size: 9pt;
+            }
+            QPushButton:hover {
+                background-color: #777777;
+            }
+            QPushButton:pressed {
+                background-color: #555555;
+            }
+        """)
+
+        buttons_layout.addWidget(self.locate_button)
+        buttons_layout.addWidget(self.clear_button)
+
+        line3_layout.addWidget(self.locate_info_label)
+        line3_layout.addStretch()
+        line3_layout.addWidget(buttons_widget)
+
+        # Footer - simplified
         self.footer_banner = QLabel()
         self.footer_banner.setFixedHeight(24)
         self.footer_banner.setStyleSheet("""
@@ -439,18 +588,20 @@ class ScreenshotViewer(QGraphicsView):
                 color: #888888;
                 padding: 4px 10px;
                 border-top: 1px solid #555555;
-                font-family: 'Courier New', monospace;
+                font-family: 'Consolas', 'Courier New', monospace;
                 font-size: 9pt;
                 font-style: italic;
             }
         """)
-        self.footer_banner.setText("Mouse: Wheel=Zoom, Drag=Pan, Right=Grid, Left=Copy%, F=Fit")
 
-        layout.addWidget(self.info_banner)
+        layout.addWidget(self.header_line1)
+        layout.addWidget(self.header_line2)
+        layout.addWidget(self.header_line3)
         layout.addWidget(self)  # Add this QGraphicsView to the layout
         layout.addWidget(self.footer_banner)
 
         self._update_info_banner()
+        self._update_footer_banner()  # Initialize footer
         self.window_widget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
     def show(self):
@@ -510,6 +661,7 @@ class ScreenshotViewer(QGraphicsView):
             else:
                 self.resetView()
             self._update_grid()
+            self._update_info_banner()  # Update zoom info immediately
 
     def wheelEvent(self, event: QWheelEvent):
         if self.hasPhoto():
@@ -533,42 +685,458 @@ class ScreenshotViewer(QGraphicsView):
         self._on_coordinates_changed(point)
 
     def _on_coordinates_changed(self, point):
-        """Handle coordinate changes and update banner."""
-        frame_section = f"Frame: {self.frame_area.get('x', 0)}, {self.frame_area.get('y', 0)} | "
-        frame_section += f"Size: {self.frame_area.get('width', 0)}x{self.frame_area.get('height', 0)}"
-
-        controls_section = f"Zoom: {self._zoom}x | Grid: {'ON' if self.show_grid else 'OFF'}"
-
+        """Handle coordinate changes and update banner with unified coordinate display."""
+        # Line 1: Current mouse coordinates only
         if not point.isNull():
             pixel_x = int(point.x())
             pixel_y = int(point.y())
-            pixel_section = f"Pixel: {pixel_x:>4}, {pixel_y:>4}"
+
+            # Calculate all coordinate types
+            frame_x = self.frame_area.get("x", 0)
+            frame_y = self.frame_area.get("y", 0)
+            frame_width = self.frame_area.get("width", 1)
+            frame_height = self.frame_area.get("height", 1)
+
+            # Screen coordinates
+            screen_x = frame_x + pixel_x
+            screen_y = frame_y + pixel_y
+
+            # Frame percentages
+            x_percent = max(0, min(100, (pixel_x / frame_width) * 100))
+            y_percent = max(0, min(100, (pixel_y / frame_height) * 100))
+
+            coord_section = f" MOUSE || Screen Coords: {screen_x:>5}, {screen_y:>4} | Frame Coords: {pixel_x:>4}, {pixel_y:>4} | Frame %: {x_percent:>7.4f}%, {y_percent:>7.4f}%"
         else:
-            pixel_section = "Pixel: ----, ----"
+            coord_section = (
+                " MOUSE || Screen Coords: -----, ---- | Frame Coords: ----, ---- | Frame %: --.----%, --.----%"
+            )
 
-        copied_section = f"Copied: {self._last_copied}"
+        self.frame_info_label.setText(coord_section)
 
-        banner_text = f"{frame_section} || {controls_section} || {pixel_section} || {copied_section}"
-        self.info_banner.setText(banner_text)
+        # Line 2: Copied coordinates - translate the copied percentage back to all formats
+        copied_section = self._get_copied_coordinates_display()
+        self.copied_info_label.setText(copied_section)
+
+        # Line 3: Show locate coordinates in same format when active, or blank when not locating
+        locate_section = self._get_locate_coordinates_display()
+        self.locate_info_label.setText(locate_section)
+
+    def _get_copied_coordinates_display(self):
+        """Convert the last copied percentage back to all coordinate formats for display."""
+        # Parse the copied coordinates (can be "x, y" as frame pixels or "x1,y1,x2,y2" as bbox)
+        try:
+            parts = self._last_copied.replace(" ", "").split(",")
+            if len(parts) == 2:
+                # Single point coordinates
+                copied_frame_x = int(parts[0])
+                copied_frame_y = int(parts[1])
+
+                # Calculate all coordinate types from the copied frame coordinates
+                frame_x = self.frame_area.get("x", 0)
+                frame_y = self.frame_area.get("y", 0)
+                frame_width = self.frame_area.get("width", 1)
+                frame_height = self.frame_area.get("height", 1)
+
+                # Screen coordinates
+                copied_screen_x = frame_x + copied_frame_x
+                copied_screen_y = frame_y + copied_frame_y
+
+                # Frame percentages
+                copied_x_percent = max(0, min(100, (copied_frame_x / frame_width) * 100))
+                copied_y_percent = max(0, min(100, (copied_frame_y / frame_height) * 100))
+
+                return f"COPIED || Screen Coords: {copied_screen_x:>5}, {copied_screen_y:>4} | Frame Coords: {copied_frame_x:>4}, {copied_frame_y:>4} | Frame %: {copied_x_percent:>7.4f}%, {copied_y_percent:>7.4f}%"
+
+            elif len(parts) == 4:
+                # Bbox coordinates
+                x1, y1, x2, y2 = int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3])
+
+                # Calculate screen coordinates for bbox
+                frame_x = self.frame_area.get("x", 0)
+                frame_y = self.frame_area.get("y", 0)
+
+                screen_x1 = frame_x + x1
+                screen_y1 = frame_y + y1
+                screen_x2 = frame_x + x2
+                screen_y2 = frame_y + y2
+
+                return f"COPIED || BBOX: Frame({x1:>4},{y1:>4},{x2:>4},{y2:>4}) | Screen({screen_x1:>4},{screen_y1:>4},{screen_x2:>4},{screen_y2:>4})"
+
+            else:
+                return "COPIED || Screen Coords: -----, ---- | Frame Coords: ----, ---- | Frame %:  --.----%, --.----%"
+        except Exception:
+            return "COPIED || Screen Coords: -----, ---- | Frame Coords: ----, ---- | Frame %: --.----%, --.----%"
+
+    def _get_locate_coordinates_display(self):
+        """Display locate coordinates in the same format as mouse/copied coordinates."""
+        if hasattr(self, "target_x") and hasattr(self, "target_y") and self.locate_state > 0:
+            # Calculate all coordinate types from the locate target coordinates
+            frame_x = self.frame_area.get("x", 0)
+            frame_y = self.frame_area.get("y", 0)
+            frame_width = self.frame_area.get("width", 1)
+            frame_height = self.frame_area.get("height", 1)
+
+            # Screen coordinates
+            locate_screen_x = frame_x + int(self.target_x)
+            locate_screen_y = frame_y + int(self.target_y)
+
+            # Frame percentages
+            locate_x_percent = max(0, min(100, (self.target_x / frame_width) * 100))
+            locate_y_percent = max(0, min(100, (self.target_y / frame_height) * 100))
+
+            return f"LOCATE || Screen Coords: {locate_screen_x:>5}, {locate_screen_y:>4} | Frame Coords: {int(self.target_x):>4}, {int(self.target_y):>4} | Frame %: {locate_x_percent:>7.4f}%, {locate_y_percent:>7.4f}%"
+        else:
+            return "LOCATE || Screen Coords: -----, ---- | Frame Coords: ----, ---- | Frame %: --.----%, --.----%"
+
+    def _update_footer_banner(self):
+        """Update the footer banner with instructions, frame info, and grid/zoom info."""
+        frame_size_section = f"Frame: {self.frame_area.get('x', 0):>4}, {self.frame_area.get('y', 0):>4} | Size: {self.frame_area.get('width', 0):>4}x{self.frame_area.get('height', 0):>4}"
+        grid_zoom_section = f"Grid: {'ON ' if self.show_grid else 'OFF'} | Zoom: {self._zoom:>2}x"
+        footer_text = f"Instructions: Mouse: Wheel=Zoom, Drag=Pan, Right=Grid, Left=Copy%, F=Fit                    {frame_size_section}                    {grid_zoom_section}"
+        self.footer_banner.setText(footer_text)
 
     def _update_info_banner(self):
-        """Update the information banner."""
+        """Update the information banner and footer."""
         self._on_coordinates_changed(QPoint())  # Update with null point
+        self._update_footer_banner()  # Update footer too
 
     def mouseMoveEvent(self, event: QMouseEvent):
-        self.updateCoordinates(event.position().toPoint())
+        # Handle bbox operations
+        if self.draw_bbox_mode:
+            scene_pos = self.mapToScene(event.position().toPoint())
+
+            if self.bbox_dragging and self.bbox_rect_item is not None and self.bbox_last_pos is not None:
+                # Move entire bbox with grid snapping
+                delta = scene_pos - self.bbox_last_pos
+                current_rect = self.bbox_rect_item.rect()
+
+                # Apply grid snapping to the movement
+                new_x = self._snap_to_grid(current_rect.x() + delta.x())
+                new_y = self._snap_to_grid(current_rect.y() + delta.y())
+
+                new_rect = QRectF(new_x, new_y, current_rect.width(), current_rect.height())
+                self.bbox_rect_item.setRect(new_rect)
+                self._create_resize_handles()  # Update handle positions
+                self.bbox_last_pos = scene_pos
+
+            elif (
+                self.bbox_resizing
+                and hasattr(self, "bbox_resize_direction")
+                and self.bbox_last_pos is not None
+                and self.bbox_rect_item is not None
+            ):
+                # Resize bbox based on direction with grid snapping
+                direction = self.bbox_resize_direction
+                delta = scene_pos - self.bbox_last_pos
+                current_rect = self.bbox_rect_item.rect()
+
+                new_rect = QRectF(current_rect)
+
+                # Apply resize based on direction with grid snapping
+                if "n" in direction:  # North (top)
+                    new_top = self._snap_to_grid(current_rect.top() + delta.y())
+                    new_rect.setTop(new_top)
+                if "s" in direction:  # South (bottom)
+                    new_bottom = self._snap_to_grid(current_rect.bottom() + delta.y())
+                    new_rect.setBottom(new_bottom)
+                if "w" in direction:  # West (left)
+                    new_left = self._snap_to_grid(current_rect.left() + delta.x())
+                    new_rect.setLeft(new_left)
+                if "e" in direction:  # East (right)
+                    new_right = self._snap_to_grid(current_rect.right() + delta.x())
+                    new_rect.setRight(new_right)
+
+                # Ensure minimum size
+                min_size = 10
+                if new_rect.width() >= min_size and new_rect.height() >= min_size:
+                    self.bbox_rect_item.setRect(new_rect)
+                    self._create_resize_handles()  # Update handle positions
+                    self.bbox_last_pos = scene_pos
+            else:
+                # Not actively dragging/resizing - update cursor based on hover
+                resize_direction = self._get_resize_direction_at_point(scene_pos)
+                if resize_direction:
+                    # Hovering over a handle - show resize cursor
+                    cursor = self._get_resize_cursor(resize_direction)
+                    self.setCursor(cursor)
+                elif self.bbox_rect_item is not None and self.bbox_rect_item.contains(
+                    self.bbox_rect_item.mapFromScene(scene_pos)
+                ):
+                    # Hovering over bbox center - show move cursor
+                    self.setCursor(Qt.CursorShape.SizeAllCursor)
+                else:
+                    # Not hovering over bbox - show normal cursor
+                    self.setCursor(Qt.CursorShape.ArrowCursor)
+        else:
+            # Not in bbox mode - ensure normal cursor
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+
+        # Regular coordinate updating (only if not dragging bbox)
+        if not (self.draw_bbox_mode and (self.bbox_dragging or self.bbox_resizing)):
+            self.updateCoordinates(event.position().toPoint())
         super().mouseMoveEvent(event)
 
+    def _on_draw_bbox_clicked(self):
+        """Handle draw bbox button click."""
+        self.draw_bbox_mode = not self.draw_bbox_mode
+        if self.draw_bbox_mode:
+            self.draw_bbox_button.setText("Done")
+            self.draw_bbox_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #1976d2;
+                    color: white;
+                    border: none;
+                    padding: 4px 8px;
+                    border-radius: 2px;
+                    font-weight: bold;
+                    font-size: 9pt;
+                }
+                QPushButton:hover {
+                    background-color: #2196f3;
+                }
+                QPushButton:pressed {
+                    background-color: #0d47a1;
+                }
+            """)
+            # Create initial bbox in center of image
+            self._create_initial_bbox()
+        else:
+            self.draw_bbox_button.setText("Draw BBOX")
+            self.draw_bbox_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #388e3c;
+                    color: white;
+                    border: none;
+                    padding: 4px 8px;
+                    border-radius: 2px;
+                    font-weight: bold;
+                    font-size: 9pt;
+                }
+                QPushButton:hover {
+                    background-color: #4caf50;
+                }
+                QPushButton:pressed {
+                    background-color: #2e7d32;
+                }
+            """)
+            # Clear bbox and handles
+            self._clear_bbox()
+
+    def _create_initial_bbox(self):
+        """Create initial 100x100 bbox in center of image."""
+        if not self.hasPhoto():
+            return
+
+        pixmap = self._photo.pixmap()
+        if pixmap.isNull():
+            return
+
+        # Calculate center position
+        center_x = pixmap.width() / 2
+        center_y = pixmap.height() / 2
+
+        # Create 100x100 bbox centered
+        bbox_size = 100
+        left = center_x - bbox_size / 2
+        top = center_y - bbox_size / 2
+
+        # Create the main bbox rectangle
+        self.bbox_rect_item = QGraphicsRectItem(left, top, bbox_size, bbox_size)
+        pen = QPen(QColor(255, 255, 0))  # Yellow
+        pen.setWidth(2)
+        pen.setCosmetic(True)
+        self.bbox_rect_item.setPen(pen)
+        self.bbox_rect_item.setBrush(QBrush())  # No fill
+        self._scene.addItem(self.bbox_rect_item)
+
+        # Create resize handles
+        self._create_resize_handles()
+
+        # Update copied coordinates
+        self._update_bbox_coordinates()
+
+    def _create_resize_handles(self):
+        """Create invisible edge handles for the entire bbox edges."""
+        if not self.bbox_rect_item:
+            return
+
+        # Clear existing handles
+        for handle in self.bbox_handles:
+            self._scene.removeItem(handle)
+        self.bbox_handles.clear()
+
+        rect = self.bbox_rect_item.rect()
+
+        # Get current zoom scale for proper handle sizing
+        transform = self.transform()
+        scale_factor = max(0.5, transform.m11())  # Minimum scale factor
+        handle_width = max(3, 6 / scale_factor)  # Scale inversely with zoom, min 3px
+
+        # Create invisible edge handles that cover the entire edges
+        # Top edge handle
+        top_handle = QGraphicsRectItem(rect.left(), rect.top() - handle_width / 2, rect.width(), handle_width)
+        top_handle.setPen(QPen(Qt.PenStyle.NoPen))  # Invisible
+        top_handle.setBrush(QBrush())  # No fill
+        top_handle.setData(0, "n")
+        self._scene.addItem(top_handle)
+        self.bbox_handles.append(top_handle)
+
+        # Bottom edge handle
+        bottom_handle = QGraphicsRectItem(rect.left(), rect.bottom() - handle_width / 2, rect.width(), handle_width)
+        bottom_handle.setPen(QPen(Qt.PenStyle.NoPen))  # Invisible
+        bottom_handle.setBrush(QBrush())  # No fill
+        bottom_handle.setData(0, "s")
+        self._scene.addItem(bottom_handle)
+        self.bbox_handles.append(bottom_handle)
+
+        # Left edge handle
+        left_handle = QGraphicsRectItem(rect.left() - handle_width / 2, rect.top(), handle_width, rect.height())
+        left_handle.setPen(QPen(Qt.PenStyle.NoPen))  # Invisible
+        left_handle.setBrush(QBrush())  # No fill
+        left_handle.setData(0, "w")
+        self._scene.addItem(left_handle)
+        self.bbox_handles.append(left_handle)
+
+        # Right edge handle
+        right_handle = QGraphicsRectItem(rect.right() - handle_width / 2, rect.top(), handle_width, rect.height())
+        right_handle.setPen(QPen(Qt.PenStyle.NoPen))  # Invisible
+        right_handle.setBrush(QBrush())  # No fill
+        right_handle.setData(0, "e")
+        self._scene.addItem(right_handle)
+        self.bbox_handles.append(right_handle)
+
+    def _clear_bbox(self):
+        """Clear bbox and all handles."""
+        if self.bbox_rect_item:
+            self._scene.removeItem(self.bbox_rect_item)
+            self.bbox_rect_item = None
+
+        for handle in self.bbox_handles:
+            self._scene.removeItem(handle)
+        self.bbox_handles.clear()
+
+        self.bbox_dragging = False
+        self.bbox_resizing = False
+        if hasattr(self, "bbox_resize_direction"):
+            delattr(self, "bbox_resize_direction")
+
+        # Reset cursor to normal
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+
+    def _update_bbox_coordinates(self):
+        """Update copied coordinates from current bbox position."""
+        if not self.bbox_rect_item:
+            return
+
+        rect = self.bbox_rect_item.rect()
+        x1, y1 = int(rect.left()), int(rect.top())
+        x2, y2 = int(rect.right()), int(rect.bottom())
+
+        # Copy bbox coordinates
+        bbox_text = f"{x1},{y1},{x2},{y2}"
+        pyperclip.copy(bbox_text)
+
+        # Update display
+        self._last_copied = f"{x1},{y1},{x2},{y2}"
+        self._update_info_banner()
+
+    def _get_resize_cursor(self, direction):
+        """Get the appropriate cursor for a resize direction."""
+        cursor_map = {
+            "nw": Qt.CursorShape.SizeFDiagCursor,  # Top-left diagonal
+            "ne": Qt.CursorShape.SizeBDiagCursor,  # Top-right diagonal
+            "sw": Qt.CursorShape.SizeBDiagCursor,  # Bottom-left diagonal
+            "se": Qt.CursorShape.SizeFDiagCursor,  # Bottom-right diagonal
+            "n": Qt.CursorShape.SizeVerCursor,  # Vertical
+            "s": Qt.CursorShape.SizeVerCursor,  # Vertical
+            "w": Qt.CursorShape.SizeHorCursor,  # Horizontal
+            "e": Qt.CursorShape.SizeHorCursor,  # Horizontal
+        }
+        return cursor_map.get(direction, Qt.CursorShape.ArrowCursor)
+
+    def _snap_to_grid(self, value, grid_size=1):
+        """Snap a value to the nearest grid point."""
+        return round(value / grid_size) * grid_size
+
+    def _get_resize_direction_at_point(self, scene_pos):
+        """Determine resize direction based on mouse position relative to bbox."""
+        if not self.bbox_rect_item:
+            return None
+
+        rect = self.bbox_rect_item.rect()
+
+        # Get current zoom scale for proper corner detection
+        transform = self.transform()
+        scale_factor = max(0.5, transform.m11())
+        corner_threshold = max(8, 12 / scale_factor)  # Scale inversely with zoom
+
+        # Check for corner proximity first (corners take priority)
+        corners = [
+            (rect.topLeft(), "nw"),
+            (rect.topRight(), "ne"),
+            (rect.bottomLeft(), "sw"),
+            (rect.bottomRight(), "se"),
+        ]
+
+        for corner_point, direction in corners:
+            distance = ((scene_pos.x() - corner_point.x()) ** 2 + (scene_pos.y() - corner_point.y()) ** 2) ** 0.5
+            if distance <= corner_threshold:
+                return direction
+
+        # Check if clicking on edge handles
+        for handle in self.bbox_handles:
+            if handle.contains(handle.mapFromScene(scene_pos)):
+                return handle.data(0)
+
+        return None
+
     def mousePressEvent(self, event: QMouseEvent):
-        if event.button() == Qt.MouseButton.RightButton:
+        if self.draw_bbox_mode and event.button() == Qt.MouseButton.LeftButton:
+            if self.hasPhoto():
+                scene_pos = self.mapToScene(event.position().toPoint())
+
+                # Get resize direction (corners or edges)
+                resize_direction = self._get_resize_direction_at_point(scene_pos)
+
+                if resize_direction:
+                    # Start resizing - disable view dragging
+                    self.bbox_resizing = True
+                    self.bbox_resize_direction = resize_direction  # Store direction directly
+                    self.bbox_last_pos = scene_pos
+                    self.setDragMode(QGraphicsView.DragMode.NoDrag)  # Disable panning during resize
+                elif self.bbox_rect_item is not None and self.bbox_rect_item.contains(
+                    self.bbox_rect_item.mapFromScene(scene_pos)
+                ):
+                    # Start dragging bbox
+                    self.bbox_dragging = True
+                    self.bbox_last_pos = scene_pos
+                    # Disable view dragging while bbox dragging
+                    self.setDragMode(QGraphicsView.DragMode.NoDrag)
+
+        elif event.button() == Qt.MouseButton.RightButton:
             self.show_grid = not self.show_grid
             self._update_grid()
-        elif event.button() == Qt.MouseButton.LeftButton:
+        elif event.button() == Qt.MouseButton.LeftButton and not self.draw_bbox_mode:
             self._mouse_pressed_pos = event.position().toPoint()
+
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
-        if event.button() == Qt.MouseButton.LeftButton:
+        if self.draw_bbox_mode and event.button() == Qt.MouseButton.LeftButton:
+            if self.bbox_dragging or self.bbox_resizing:
+                # Update coordinates after drag/resize
+                self._update_bbox_coordinates()
+
+                # Reset states
+                self.bbox_dragging = False
+                self.bbox_resizing = False
+                if hasattr(self, "bbox_resize_direction"):
+                    delattr(self, "bbox_resize_direction")
+
+                # Re-enable view dragging
+                self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
+        elif event.button() == Qt.MouseButton.LeftButton and not self.draw_bbox_mode:
             release_pos = event.position().toPoint()
             delta = release_pos - self._mouse_pressed_pos
 
@@ -600,7 +1168,7 @@ class ScreenshotViewer(QGraphicsView):
         # Update display
         pixel_x = int(scene_pos.x())
         pixel_y = int(scene_pos.y())
-        self._last_copied = f"{pixel_x}, {pixel_y}"
+        self._last_copied = f"{pixel_x:>4}, {pixel_y:>4}"
         self._update_info_banner()
 
     def leaveEvent(self, event):
@@ -629,6 +1197,9 @@ class ScreenshotViewer(QGraphicsView):
                     if grid_item:
                         self._grid_item = grid_item
                         self._scene.addItem(self._grid_item)
+
+        # Update footer to reflect grid state
+        self._update_footer_banner()
 
     def _create_pixel_grid(self, width, height):
         """Create a simple pixel grid."""
@@ -662,6 +1233,242 @@ class ScreenshotViewer(QGraphicsView):
             grid_group.addToGroup(line)
 
         return grid_group
+
+    def _on_locate_clicked(self):
+        """Handle locate button click."""
+        try:
+            coord_text = self.coord_input.text().strip()
+            if not coord_text:
+                self.locate_info_label.setText("Enter coordinates")
+                return
+
+            # Parse coordinates using regex to handle various formats
+            parsed_data = self._parse_coordinates_regex(coord_text)
+            if not parsed_data:
+                return
+
+            # Clear any existing locate items
+            self._clear_locate()
+
+            if parsed_data["type"] == "point":
+                # Single point - start radar animation
+                self.locate_state = 1
+                self.locate_animation_step = 0
+                self._start_locate_animation(parsed_data["x"], parsed_data["y"])
+
+            elif parsed_data["type"] == "bbox":
+                # Bounding box - draw rectangle immediately
+                self._draw_bbox(parsed_data["x1"], parsed_data["y1"], parsed_data["x2"], parsed_data["y2"])
+                self.locate_info_label.setText(
+                    f"BBox: {parsed_data['x1']},{parsed_data['y1']} to {parsed_data['x2']},{parsed_data['y2']}"
+                )
+
+        except Exception as e:
+            self.locate_info_label.setText(f"Error: {str(e)}")
+
+    def _on_clear_clicked(self):
+        """Handle clear button click."""
+        self._clear_locate()
+        self.locate_state = 0
+        self.locate_button.setText("LOCATE")
+        # Line 3 will be updated automatically through _get_locate_coordinates_display()
+
+    def _parse_coordinates_regex(self, coord_text):
+        """Parse coordinates using regex to handle multiple formats."""
+        # Remove any extra whitespace and normalize delimiters
+        coord_text = re.sub(r"\s+", " ", coord_text.strip())
+        coord_text = coord_text.replace(" ", ",")
+
+        # Split by comma and extract numbers
+        parts = [part.strip() for part in coord_text.split(",") if part.strip()]
+
+        try:
+            if len(parts) == 2:
+                # Two values - single point (x, y)
+                x, y = float(parts[0]), float(parts[1])
+
+                # Auto-detect coordinate type and convert to scene coordinates
+                scene_x, scene_y = self._convert_to_scene_coords(x, y)
+
+                return {"type": "point", "x": scene_x, "y": scene_y}
+
+            elif len(parts) == 4:
+                # Four values - bounding box (x1, y1, x2, y2)
+                x1, y1, x2, y2 = float(parts[0]), float(parts[1]), float(parts[2]), float(parts[3])
+
+                # Convert all coordinates to scene coordinates
+                scene_x1, scene_y1 = self._convert_to_scene_coords(x1, y1)
+                scene_x2, scene_y2 = self._convert_to_scene_coords(x2, y2)
+
+                return {"type": "bbox", "x1": scene_x1, "y1": scene_y1, "x2": scene_x2, "y2": scene_y2}
+            else:
+                self.locate_info_label.setText("Enter 2 values (x,y) or 4 values (x1,y1,x2,y2)")
+                return None
+
+        except ValueError:
+            self.locate_info_label.setText("Invalid number format")
+            return None
+
+    def _convert_to_scene_coords(self, x, y):
+        """Convert coordinates to scene coordinates with auto-detection."""
+        # Auto-detect coordinate type based on values
+        if 0 <= x <= 1.0 and 0 <= y <= 1.0:
+            # Decimal percentages (0.0 - 1.0)
+            frame_width = self.frame_area.get("width", 1)
+            frame_height = self.frame_area.get("height", 1)
+            scene_x = x * frame_width
+            scene_y = y * frame_height
+            coord_type = "Frame %"
+
+        elif 0 <= x <= 100 and 0 <= y <= 100 and (x > 1.0 or y > 1.0):
+            # Percentage format (0-100)
+            frame_width = self.frame_area.get("width", 1)
+            frame_height = self.frame_area.get("height", 1)
+            scene_x = (x / 100.0) * frame_width
+            scene_y = (y / 100.0) * frame_height
+            coord_type = "Frame %"
+
+        elif x >= 1000 or y >= 1000:
+            # Likely screen coordinates (large values)
+            frame_x = self.frame_area.get("x", 0)
+            frame_y = self.frame_area.get("y", 0)
+            scene_x = x - frame_x
+            scene_y = y - frame_y
+            coord_type = "Screen"
+
+        else:
+            # Assume frame coordinates
+            scene_x = x
+            scene_y = y
+            coord_type = "Frame"
+
+        # Update info label with detected type
+        self.locate_info_label.setText(f"Locating {x}, {y} ({coord_type})")
+
+        return scene_x, scene_y
+
+    def _draw_bbox(self, x1, y1, x2, y2):
+        """Draw a bounding box rectangle."""
+        # Ensure proper ordering (top-left to bottom-right)
+        left = min(x1, x2)
+        top = min(y1, y2)
+        right = max(x1, x2)
+        bottom = max(y1, y2)
+
+        width = right - left
+        height = bottom - top
+
+        # Create rectangle
+        bbox_rect = QGraphicsRectItem(left, top, width, height)
+
+        # Style the bounding box
+        pen = QPen(QColor(255, 255, 0))  # Yellow
+        pen.setWidth(2)
+        pen.setCosmetic(True)
+        bbox_rect.setPen(pen)
+        bbox_rect.setBrush(QBrush())  # No fill
+
+        self._scene.addItem(bbox_rect)
+        self.locate_items.append(bbox_rect)
+
+    def _start_locate_animation(self, target_x, target_y):
+        """Start the radar ping animation."""
+        self.target_x = target_x
+        self.target_y = target_y
+
+        # Check if target pixel is mostly white to choose color
+        try:
+            # Sample the target pixel color from the original screenshot
+            if 0 <= int(target_x) < self.screenshot.width and 0 <= int(target_y) < self.screenshot.height:
+                pixel_color = self.screenshot.getpixel((int(target_x), int(target_y)))
+                # Check if pixel is mostly white (RGB values > 200)
+                if isinstance(pixel_color, tuple) and len(pixel_color) >= 3:
+                    is_white = all(c > 200 for c in pixel_color[:3])
+                    self.locate_color = (
+                        QColor(255, 255, 0) if is_white else QColor(255, 255, 255)
+                    )  # Yellow if white, white otherwise
+                else:
+                    self.locate_color = QColor(255, 255, 255)  # Default white
+            else:
+                self.locate_color = QColor(255, 255, 255)  # Default white
+        except Exception:
+            self.locate_color = QColor(255, 255, 255)  # Default white
+
+        self.locate_timer.start(100)  # Update every 100ms
+
+    def _update_locate_animation(self):
+        """Update the locate animation frame."""
+        # Clear previous animation items
+        for item in self.locate_items:
+            self._scene.removeItem(item)
+        self.locate_items.clear()
+
+        # Animation: start from 50px radius and shrink down
+        max_radius = 50
+        total_steps = 20
+        current_radius = max_radius - (self.locate_animation_step * max_radius / total_steps)
+
+        if current_radius <= 1:
+            # Animation complete - highlight the single pixel
+            self._stop_locate_animation()
+            self._highlight_single_pixel()
+            return
+
+        # Create circle at target location
+        circle = QGraphicsEllipseItem(
+            self.target_x - current_radius, self.target_y - current_radius, current_radius * 2, current_radius * 2
+        )
+
+        # Set pen for the circle
+        pen = QPen(self.locate_color)
+        pen.setWidth(2)
+        pen.setCosmetic(True)
+        circle.setPen(pen)
+        circle.setBrush(QBrush())  # No fill
+
+        self._scene.addItem(circle)
+        self.locate_items.append(circle)
+
+        self.locate_animation_step += 1
+
+    def _stop_locate_animation(self):
+        """Stop the locate animation."""
+        self.locate_timer.stop()
+        for item in self.locate_items:
+            self._scene.removeItem(item)
+        self.locate_items.clear()
+
+    def _highlight_single_pixel(self):
+        """Highlight the single target pixel at the end of animation."""
+        # Create a 1x1 rectangle with solid fill and no border
+        pixel_highlight = QGraphicsRectItem(self.target_x, self.target_y, 1, 1)
+
+        # Use solid fill with no pen/border to highlight the exact pixel
+        pixel_highlight.setPen(QPen(Qt.PenStyle.NoPen))  # No border
+        pixel_highlight.setBrush(QBrush(self.locate_color))  # Solid fill
+
+        self._scene.addItem(pixel_highlight)
+        self.locate_items.append(pixel_highlight)
+
+    def _show_locate_box(self):
+        """Show a 1-pixel box around the target."""
+        # Create a small rectangle around the target pixel
+        box = QGraphicsRectItem(self.target_x - 1, self.target_y - 1, 3, 3)
+
+        pen = QPen(self.locate_color)
+        pen.setWidth(1)
+        pen.setCosmetic(True)
+        box.setPen(pen)
+        box.setBrush(QBrush())  # No fill, just outline
+
+        self._scene.addItem(box)
+        self.locate_items.append(box)
+
+    def _clear_locate(self):
+        """Clear all locate items."""
+        for item in self.locate_items:
+            self._scene.removeItem(item)
+        self.locate_items.clear()
 
 
 # --- Main Tracker Widget ---
@@ -701,6 +1508,7 @@ class TrackerWidget(QWidget):
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setMinimumSize(325, 100)
+        self.setMaximumSize(325, 16777215)  # Disable horizontal resizing, allow vertical
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  # Allow keyboard focus
 
         # Dark mode styling
@@ -795,12 +1603,12 @@ class TrackerWidget(QWidget):
         status_layout.addWidget(self.status_circle)
 
         # Coordinates table
-        self.coords_table = QTableWidget(3, 2)
+        self.coords_table = QTableWidget(2, 2)
         self.coords_table.setHorizontalHeaderLabels(["Top-Left", "Dimensions"])
-        self.coords_table.setVerticalHeaderLabels(["Screen", "Window", "Frame"])
+        self.coords_table.setVerticalHeaderLabels(["Window", "Frame"])
 
         # Set table properties
-        self.coords_table.setFixedHeight(120)
+        self.coords_table.setFixedHeight(90)
         self.coords_table.setAlternatingRowColors(True)
         # Fix type issues with header resize modes
         h_header = self.coords_table.horizontalHeader()
@@ -820,7 +1628,7 @@ class TrackerWidget(QWidget):
                 border: 1px solid #555;
                 border-radius: 4px;
                 gridline-color: #555;
-                font-family: 'Courier New', monospace;
+                font-family: 'Consolas', 'Courier New', monospace;
                 font-size: 9pt;
             }
             QTableWidget::item {
@@ -906,8 +1714,8 @@ class TrackerWidget(QWidget):
         """
         )
 
-        button_layout.addStretch()
         button_layout.addWidget(self.screenshot_button)
+        button_layout.addStretch()
         button_layout.addWidget(self.restart_button)
         button_layout.addWidget(self.close_button)
 
@@ -940,7 +1748,7 @@ class TrackerWidget(QWidget):
                 border: 1px solid #555;
                 border-radius: 4px;
                 gridline-color: #555;
-                font-family: 'Courier New', monospace;
+                font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
                 font-size: 9pt;
             }
             QTableWidget::item {
@@ -1143,34 +1951,24 @@ class TrackerWidget(QWidget):
             if "rect" in target_info and "client_rect" in target_info:
                 rect = target_info["rect"]
 
-                # Update Screen row - using primary screen info
-                screen = QApplication.primaryScreen()
-                if screen:
-                    screen_rect = screen.geometry()
-                    self.coords_table.setItem(0, 0, QTableWidgetItem(f"{screen_rect.x()}, {screen_rect.y()}"))
-                    self.coords_table.setItem(0, 1, QTableWidgetItem(f"{screen_rect.width()}x{screen_rect.height()}"))
-                else:
-                    self.coords_table.setItem(0, 0, QTableWidgetItem("0, 0"))
-                    self.coords_table.setItem(0, 1, QTableWidgetItem("N/A"))
-
                 # Update Window row
                 window_width = rect[2] - rect[0]
                 window_height = rect[3] - rect[1]
-                self.coords_table.setItem(1, 0, QTableWidgetItem(f"{rect[0]}, {rect[1]}"))
-                self.coords_table.setItem(1, 1, QTableWidgetItem(f"{window_width}x{window_height}"))
+                self.coords_table.setItem(0, 0, QTableWidgetItem(f"{rect[0]}, {rect[1]}"))
+                self.coords_table.setItem(0, 1, QTableWidgetItem(f"{window_width}x{window_height}"))
 
                 # Update Frame row
                 if "frame_area" in target_info and target_info["frame_area"]:
                     frame = target_info["frame_area"]
-                    self.coords_table.setItem(2, 0, QTableWidgetItem(f"{frame['x']}, {frame['y']}"))
-                    self.coords_table.setItem(2, 1, QTableWidgetItem(f"{frame['width']}x{frame['height']}"))
+                    self.coords_table.setItem(1, 0, QTableWidgetItem(f"{frame['x']}, {frame['y']}"))
+                    self.coords_table.setItem(1, 1, QTableWidgetItem(f"{frame['width']}x{frame['height']}"))
 
                     # Always update tracker coordinates
                     self.window_xy = target_info["window_info"]
                     self.frame_xy = frame
                 else:
-                    self.coords_table.setItem(2, 0, QTableWidgetItem("N/A"))
-                    self.coords_table.setItem(2, 1, QTableWidgetItem("N/A"))
+                    self.coords_table.setItem(1, 0, QTableWidgetItem("N/A"))
+                    self.coords_table.setItem(1, 1, QTableWidgetItem("N/A"))
 
         elif self.target_found:
             # Only update UI when going from found to not found
@@ -1185,7 +1983,7 @@ class TrackerWidget(QWidget):
             """
             )
             # Reset coordinates table to N/A
-            for row in range(3):
+            for row in range(2):
                 self.coords_table.setItem(row, 0, QTableWidgetItem("N/A"))
                 self.coords_table.setItem(row, 1, QTableWidgetItem("N/A"))
             self.window_xy = {}
