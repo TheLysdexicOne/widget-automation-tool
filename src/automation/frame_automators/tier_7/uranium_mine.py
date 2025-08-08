@@ -8,15 +8,6 @@ import time
 
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
-from utility.coordinate_utils import (
-    conv_frame_percent_to_frame_coords,
-    conv_frame_percent_to_screen_coords,
-    conv_frame_coords_to_frame_percent,
-    conv_frame_coords_to_screen_coords,
-    conv_screen_coords_to_frame_coords,
-    conv_screen_coords_to_frame_percent,
-    conv_frame_percent_to_screen_bbox,
-)
 
 
 class UraniumMineAutomator(BaseAutomator):
@@ -28,24 +19,18 @@ class UraniumMineAutomator(BaseAutomator):
     def run_automation(self):
         start_time = time.time()
 
-        test = (0.5, 0.5)
-        print(f"Converted {test} to frame coords: {conv_frame_percent_to_frame_coords(*test)}")
-        print(f"Converted {test} to screen coords: {conv_frame_percent_to_screen_coords(*test)}")
+        left = self.create_button("left")
+        right = self.create_button("right")
 
-        test2 = (1080, 720)
-        print(f"Converting {test2} to frame percent: {conv_frame_coords_to_frame_percent(*test2)}")
-        print(f"Converting {test2} to screen coords: {conv_frame_coords_to_screen_coords(*test2)}")
-
-        test3 = (-1280, 720)
-        print(f"Converting {test3} to frame percent: {conv_screen_coords_to_frame_percent(*test3)}")
-        print(f"Converting {test3} to frame coords: {conv_screen_coords_to_frame_coords(*test3)}")
-
-        test4 = (0.4, 0.6, 0.8, 0.9)
-        print(f"Converting {test4} to screen bbox: {conv_frame_percent_to_screen_bbox(test4)}")
         # Main automation loop
-        # while self.should_continue:
-        #     if time.time() - start_time > self.max_run_time:
-        #         break
+        while self.should_continue:
+            if time.time() - start_time > self.max_run_time:
+                break
 
-        #     if not self.sleep(0.1):
-        #         break
+            for button in [left, right]:
+                while self.should_continue and not button.inactive():
+                    pyautogui.mouseDown(button.x, button.y)
+                pyautogui.mouseUp()
+
+            if not self.sleep(0.1):
+                break
