@@ -66,19 +66,11 @@ def get_frame_screenshot():
     return ImageGrab.grab(bbox=bbox, all_screens=True)
 
 
-def get_bbox_screenshot(bbox):
+def get_cropped_bbox_of_frame_screenshot(bbox):
     """
     Screenshot a specific bounding box area using ImageGrab.grab.
     Returns a PIL Image or None if bbox is invalid.
     """
-    if not bbox or len(bbox) != 4:
-        logger.warning("Invalid bounding box provided for screenshot.")
-        return None
-    x1, y1, x2, y2 = bbox
-    if x1 >= x2 or y1 >= y2:
-        logger.warning("Invalid bounding box dimensions.")
-        return None
-    return ImageGrab.grab(bbox=(x1, y1, x2, y2), all_screens=True)
 
 
 def get_box_with_border(start_point, border_color, screenshot=None):

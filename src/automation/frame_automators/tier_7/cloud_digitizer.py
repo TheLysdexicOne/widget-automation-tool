@@ -20,8 +20,6 @@ class CloudDigitizerAutomator(BaseAutomator):
         start_time = time.time()
 
         interactions = self.frame_data["interactions"]
-        print("Interactions:", interactions)
-        print(interactions["0,0"][0])
 
         # Main automation loop
         while self.should_continue:

@@ -696,10 +696,24 @@
       "item": "AI Training Data",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "interactions": {
+        "0,0": [0.66, 0.44],
+        "0,1": [0.735, 0.44],
+        "0,2": [0.81, 0.44],
+        "0,3": [0.885, 0.44],
+        "1,0": [0.66, 0.59],
+        "1,1": [0.735, 0.59],
+        "1,2": [0.81, 0.59],
+        "1,3": [0.885, 0.59],
+        "2,0": [0.66, 0.74],
+        "2,1": [0.735, 0.74],
+        "2,2": [0.81, 0.74],
+        "2,3": [0.885, 0.74]
       }
     },
     {
@@ -708,10 +722,27 @@
       "item": "Ascension Matrix",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "interactions": {
+        "0,0": [0.693, 0.372],
+        "0,1": [0.693, 0.524],
+        "0,2": [0.693, 0.676],
+        "1,0": [0.795, 0.372],
+        "1,1": [0.795, 0.524],
+        "1,2": [0.795, 0.676],
+        "2,0": [0.896, 0.372],
+        "2,1": [0.896, 0.524],
+        "2,2": [0.896, 0.676]
+      },
+      "colors": {
+        "x_colors": [
+          [185, 255, 255],
+          [150, 249, 255]
+        ]
       }
     },
     {
@@ -719,7 +750,7 @@
       "name": "Ascension Facility",
       "item": "Ascended Widget",
       "automation": {
-        "can_automate": 1,
+        "can_automate": 0,
         "programmed": 0
       },
       "buttons": {
@@ -744,10 +775,27 @@
       "item": "Sentience Core",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "interactions": {
+        "source_shape_1": [0.594536, 0.212885],
+        "source_shape_2": [0.699051, 0.205175],
+        "source_shape_3": [0.804137, 0.206888],
+        "source_shape_4": [0.907509, 0.204746],
+        "target_shape_1": [0.594536, 0.363232],
+        "target_shape_2": [0.698194, 0.363232],
+        "target_shape_3": [0.803851, 0.370514],
+        "target_shape_4": [0.907509, 0.362804]
+      },
+      "colors": {
+        "yellow": [191, 191, 0],
+        "red": [191, 0, 0],
+        "blue": [0, 64, 191],
+        "green": [0, 191, 0],
+        "empty": [204, 204, 204]
       }
     },
     {
@@ -756,7 +804,7 @@
       "item": "Picoprocessor",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
@@ -768,7 +816,7 @@
       "item": "Sentient Widget",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
