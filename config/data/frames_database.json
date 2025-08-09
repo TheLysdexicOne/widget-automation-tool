@@ -511,10 +511,10 @@
       "item": "Widget Particle",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "shrink": [0.5, 0.5375, "blue"]
       }
     },
     {
@@ -523,10 +523,32 @@
       "item": "Nanoprocessor",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "interactions": {
+        "slider_origin": [0.562561, 0.5420035]
+      },
+      "bbox": {
+        "tracks_bbox": [0.437963, 0.354167, 0.687037, 0.729167],
+        "slider_bbox": [0.544305, 0.516438, 0.580817, 0.567569]
+      },
+      "colors": {
+        "slider_colors": [
+          [150, 149, 143],
+          [158, 157, 150],
+          [166, 165, 155],
+          [170, 169, 162],
+          [178, 41, 41],
+          [180, 180, 174],
+          [190, 190, 183],
+          [200, 46, 46],
+          [208, 205, 198],
+          [211, 62, 62],
+          [217, 88, 88]
+        ]
       }
     },
     {
@@ -535,10 +557,16 @@
       "item": "Portable Reactor",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "interactions": {
+        "left": [0.403198, 0.700915],
+        "top": [0.502829, 0.552837],
+        "right": [0.60246, 0.700915],
+        "bottom": [0.502829, 0.848993]
       }
     },
     {
@@ -547,10 +575,28 @@
       "item": "Quantum Widget",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "interactions": {
+        "source_shape_1": [0.6064815, 0.386111],
+        "source_shape_2": [0.6064815, 0.511111],
+        "source_shape_3": [0.6064815, 0.636111],
+        "source_shape_4": [0.6064815, 0.761111],
+        "target_shape_1": [0.8564815, 0.386111],
+        "target_shape_2": [0.8564815, 0.511111],
+        "target_shape_3": [0.8564815, 0.636111],
+        "target_shape_4": [0.8564815, 0.761111],
+        "source_dot_1": [0.648611, 0.3868055],
+        "source_dot_2": [0.648611, 0.5118055],
+        "source_dot_3": [0.648611, 0.6368055],
+        "source_dot_4": [0.648611, 0.7618055],
+        "target_dot_1": [0.8152775, 0.3868055],
+        "target_dot_2": [0.8152775, 0.5118055],
+        "target_dot_3": [0.8152775, 0.6368055],
+        "target_dot_4": [0.8152775, 0.7618055]
       }
     },
     {
@@ -571,10 +617,13 @@
       "item": "Helium",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "bbox": {
+        "click_box": [0.465686, 0.705065, 0.550654, 0.776961]
       }
     },
     {
@@ -583,10 +632,23 @@
       "item": "Superconductor",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
-        "1": [1, 1, 1]
+        "nullify": [0.512637, 0.766557, "red"]
+      },
+      "interactions": {
+        "handle1": [0.465137, 0.285873],
+        "handle1_active": [0.465137, 0.41],
+        "handle2": [0.284886, 0.657522],
+        "handle2_active": [0.37, 0.658552]
+      },
+      "colors": {
+        "handle_colors": [
+          [248, 128, 51],
+          [227, 80, 24],
+          [178, 55, 21]
+        ]
       }
     },
     {
@@ -595,10 +657,13 @@
       "item": "AI Core",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "bbox": {
+        "canvas": [0.333878, 0.270425, 0.649782, 0.736111]
       }
     },
     {
@@ -607,10 +672,22 @@
       "item": "Unshackled Widget",
       "automation": {
         "can_automate": 1,
-        "programmed": 0
+        "programmed": 1
       },
       "buttons": {
         "1": [1, 1, 1]
+      },
+      "interactions": {
+        "click_point": [0.735294, 0.511438]
+      },
+      "bbox": {
+        "watch_bbox": [0.600763, 0.459569, 0.87854, 0.718137]
+      },
+      "colors": {
+        "ball_colors": [
+          [183, 219, 255],
+          [176, 203, 230]
+        ]
       }
     },
     {
