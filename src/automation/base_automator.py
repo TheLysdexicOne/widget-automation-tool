@@ -6,7 +6,7 @@ Provides common functionality for all frame automations.
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import pyautogui
 
 from utility.button_manager import ButtonManager
@@ -48,6 +48,8 @@ class BaseAutomator(ABC):
 
         # UI callback for failsafe/emergency stop
         self.ui_callback = None
+
+        # Shorthand
 
     @abstractmethod
     def run_automation(self):
@@ -165,6 +167,73 @@ class BaseAutomator(ABC):
         """Create a button engine for the given button name."""
         return self.engine.create_button(self.button_manager.get_button(button_name), button_name)
 
+    def get_bbox(self) -> Dict[str, int]:
+        """Get bounding box for this frame."""
+        return self.frame_data.get("bbox", {})
+
+    def pixel(self, x: int, y: int) -> tuple[int, int, int]:
+        """Get pixel color at specified coordinates."""
+        try:
+            return pyautogui.pixel(x, y)
+        except Exception as e:
+            self.log_error(f"Failed to get pixel color at ({x}, {y}): {e}")
+            return (0, 0, 0)
+
+    def click(self, x: int, y: int, button: str = "left", duration: float = 0.1) -> bool:
+        """Click at specified coordinates with optional button and duration."""
+        try:
+            pyautogui.click(x, y, button=button, duration=duration)
+            self.log_debug(f"Clicked at ({x}, {y}) with {button} button")
+            return True
+        except Exception as e:
+            self.log_error(f"Failed to click at ({x}, {y}): {e}")
+            return False
+
+    def mouseDown(
+        self, x: Optional[int] = None, y: Optional[int] = None, button: str = "left", duration: float = 0.1
+    ) -> bool:
+        """Mouse down at specified coordinates with optional button and duration."""
+        try:
+            if self.should_continue and x is not None and y is not None:
+                pyautogui.mouseDown(x, y, button=button, duration=duration)
+                self.log_debug(f"Mouse down at ({x}, {y}) with {button} button")
+            else:
+                pyautogui.mouseDown(button=button, duration=duration)
+                self.log_debug(f"Mouse down at current position with {button} button")
+            return True
+        except Exception as e:
+            self.log_error(f"Failed to mouse down at ({x}, {y}): {e}")
+            return False
+
+    def mouseUp(
+        self, x: Optional[int] = None, y: Optional[int] = None, button: str = "left", duration: float = 0.1
+    ) -> bool:
+        """Mouse up at specified coordinates with optional button and duration.
+        If x or y are not provided, mouseUp occurs at the current mouse position.
+        """
+        try:
+            if self.should_continue and x is not None and y is not None:
+                pyautogui.mouseUp(x, y, button=button, duration=duration)
+                self.log_debug(f"Mouse up at ({x}, {y}) with {button} button")
+            else:
+                pyautogui.mouseUp(button=button, duration=duration)
+                self.log_debug(f"Mouse up at current position with {button} button")
+            return True
+        except Exception as e:
+            self.log_error(f"Failed to mouse up at ({x}, {y}): {e}")
+            return False
+
+    def moveTo(self, x: int, y: int, duration: float = 0.1) -> bool:
+        """Move mouse to specified coordinates with optional duration."""
+        try:
+            if self.should_continue:
+                pyautogui.moveTo(x, y, duration=duration)
+                self.log_debug(f"Moved mouse to ({x}, {y})")
+            return True
+        except Exception as e:
+            self.log_error(f"Failed to move mouse to ({x}, {y}): {e}")
+            return False
+
     """
     Predefined Logging Messages
     """
@@ -172,17 +241,23 @@ class BaseAutomator(ABC):
     def log_storage_error(self):
         self.should_stop = True
         self.cleanup_mouse_state()
-        self.log_info("Stopping. Storage is likely full or resources are missing.")
+        self.log_error("Stopping. Storage is likely full or resources are missing.")
 
     def log_frame_error(self):
         self.should_stop = True
         self.cleanup_mouse_state()
-        self.log_info("Stopping. Frame validation failed or frame is not active.")
+        self.log_error("Stopping. Frame validation failed or frame is not active.")
 
     def log_timeout_error(self):
         self.should_stop = True
         self.cleanup_mouse_state()
-        self.log_info("Stopping. Waiting for action timed out.")
+        self.log_error("Stopping. Waiting for action timed out.")
+
+    def fatal_error(self, reason: str):
+        """Log exit reason and stop automation."""
+        self.should_stop = True
+        self.cleanup_mouse_state()
+        self.log_error(f"Exiting automation: {reason}")
 
     """
     Repeated Automations

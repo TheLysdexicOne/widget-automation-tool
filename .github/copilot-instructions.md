@@ -17,13 +17,6 @@
 - **MainWindow (`main.py`)** - PyQt6 overlay that snaps to WidgetInc window, creates frame buttons dynamically from database
 - **Frame Automators (`automation/frame_automators/tier_*/`)** - Individual automation scripts inheriting from `BaseAutomator`
 
-### Critical Coordinate System
-
-- All coordinates are **frame-relative** (0,0 = top-left of game area), not screen coordinates
-- Use `frame_to_screen_coords(x, y)` for clicks: `automation_engine.frame_click(frame_x, frame_y)`
-- Screenshots: `ImageGrab.grab(...all_screens=True)` for multi-monitor support
-- Grid system: 192x128 pixel art units, use `PIXEL_ART_GRID_WIDTH/HEIGHT` constants
-
 ### Database & Caching Pattern
 
 - Frames database: `config/database/frames_database.json` → `frames.cache` (screen coords)
@@ -41,24 +34,6 @@
 .\venv.bat    # NOT ".venv\Scripts\activate"
 python src\main.py --debug    # Debug mode shows console output
 .\start.bat   # Production mode (INFO+ only to console)
-```
-
-### Key Automation Patterns
-
-```python
-# Frame automator template (inherit from BaseAutomator):
-class MyFrameAutomator(BaseAutomator):
-    def run_automation_sequence(self):
-        # Use automation_engine methods:
-        self.automation_engine.frame_click(x, y)
-        self.automation_engine.button_active(button_data)
-
-        # Coordinate conversion:
-        screen_x, screen_y = frame_to_screen_coords(frame_x, frame_y)
-
-        # Emergency stop check:
-        if self.should_stop:
-            return
 ```
 
 ### Threading & UI Patterns
@@ -110,7 +85,109 @@ except:
     x, y, color = 0, 0, "red"  # Don't mask data corruption
 ```
 
-## Project-Specific Conventions
+### Project-Specific Conventions
+
+#### Button Creation
+
+- To create a button:
+  ```python
+  button_name = self.create_button("button_name")
+  ```
+
+#### Single Point Interactions
+
+- For single point interactions:
+  ```python
+  interaction_name = self.frame_data["interactions"]["interaction_name"]
+  ```
+
+#### Bounding Boxes (BBoxes)
+
+- For bounding box coordinates:
+  ```python
+  bbox_name = self.frame_data["bbox"]["bbox_name"]
+  ```
+
+#### Colors
+
+- For color or color sets:
+  ```python
+  color_name = self.frame_data["colors"]["color_name"]
+  colors_name = self.frame_data["colors"]["colors_name"]
+  ```
+
+#### Frame Coordinates (frame_xy)
+
+- If frame coordinates are needed (e.g., for overlays or relative positioning):
+  ```python
+  bbox_name = self.frame_data["frame_xy"]["bbox"]["bbox_name"]
+  ```
+
+#### Screenshot Helpers (utility/window_utils.py)
+
+- To capture the full frame area:
+  ```python
+  img = get_frame_screenshot()
+  ```
+- To capture a specific bounding box:
+  ```python
+  img = get_cropped_bbox_of_frame_screenshot(bbox)
+  ```
+
+#### Coordinate Conversion Helpers (utility/coordinate_utils.py)
+
+- Use the helpers in `utility/coordinate_utils.py` for converting between grid, screen, and frame coordinates. Example usage:
+
+  ```python
+  from utility.coordinate_utils import (
+      conv_frame_percent_to_frame_coords,
+      conv_frame_percent_to_screen_coords,
+      conv_frame_coords_to_frame_percent,
+      conv_frame_coords_to_screen_coords,
+      conv_screen_coords_to_frame_coords,
+      conv_screen_coords_to_frame_percent,
+      conv_frame_percent_to_screen_bbox,
+      fp_to_fc_coord,
+      fp_to_sc_coord,
+      fc_to_fp_coord,
+      fc_to_sc_coord,
+      sc_to_fc_coord,
+      sc_to_fp_coord,
+      fp_to_sc_bbox,
+  )
+
+  # Frame percent to frame coords
+  frame_x, frame_y = conv_frame_percent_to_frame_coords(percent_x, percent_y)
+
+  # Frame percent to screen coords
+  screen_x, screen_y = conv_frame_percent_to_screen_coords(percent_x, percent_y)
+
+  # Frame coords to frame percent
+  percent_x, percent_y = conv_frame_coords_to_frame_percent(frame_x, frame_y)
+
+  # Frame coords to screen coords
+  screen_x, screen_y = conv_frame_coords_to_screen_coords(frame_x, frame_y)
+
+  # Screen coords to frame coords
+  frame_x, frame_y = conv_screen_coords_to_frame_coords(screen_x, screen_y)
+
+  # Screen coords to frame percent
+  percent_x, percent_y = conv_screen_coords_to_frame_percent(screen_x, screen_y)
+
+  # Frame percent bbox to screen bbox
+  screen_bbox = conv_frame_percent_to_screen_bbox((x1, y1, x2, y2))
+
+  # Shorthand functions (aliases)
+  frame_x, frame_y = fp_to_fc_coord(percent_x, percent_y)
+  screen_x, screen_y = fp_to_sc_coord(percent_x, percent_y)
+  percent_x, percent_y = fc_to_fp_coord(frame_x, frame_y)
+  screen_x, screen_y = fc_to_sc_coord(frame_x, frame_y)
+  frame_x, frame_y = sc_to_fc_coord(screen_x, screen_y)
+  percent_x, percent_y = sc_to_fp_coord(screen_x, screen_y)
+  screen_bbox = fp_to_sc_bbox((x1, y1, x2, y2))
+  ```
+
+---
 
 ### Logging System (New Timestamped Approach)
 
@@ -136,6 +213,7 @@ src/automation/
 src/utility/
 ├── cache_manager.py                # Window detection & coordinate caching
 ├── window_utils.py                 # Helper functions using CacheManager
+├── coordinate_utils.py             # Coordinate conversion helpers
 └── logging_utils.py                # Timestamped logging with compression
 tools/tracker.py                    # Standalone coordinate tracking tool
 ```

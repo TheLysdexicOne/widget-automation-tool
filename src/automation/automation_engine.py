@@ -5,12 +5,10 @@ Common automation utilities and routing for frame automators.
 
 import logging
 import sys
-from typing import Tuple
 import pyautogui
 
 from .button_engine import ButtonEngine
 from .scan_engine import ScanEngine
-from utility.coordinate_utils import conv_frame_coords_to_screen_coords
 
 
 class AutomationEngine:
@@ -187,8 +185,3 @@ class AutomationEngine:
                 return True
 
         return False
-
-    def frame_click(self, frame_x: int, frame_y: int, button: str = "left", duration: float = 0.1) -> bool:
-        """Click at frame-relative coordinates (converts to screen coordinates)."""
-        screen_x, screen_y = conv_frame_coords_to_screen_coords(frame_x, frame_y)
-        return self.click_at(screen_x, screen_y, button=button, duration=duration)

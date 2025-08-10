@@ -343,7 +343,7 @@ class MainWindow(QMainWindow, LoggerMixin):
 
         # Create button with appropriate text and functionality
         if programmed:
-            btn = QPushButton(name)
+            btn = QPushButton(item)
             tooltip = f"ID: {frame_id}\nItem: {item}\nAutomation: Ready"
             # Connect to actual automation
             btn.clicked.connect(lambda checked, f=frame: self.toggle_automation(f))
