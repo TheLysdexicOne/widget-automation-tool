@@ -4,8 +4,6 @@ Handles automation for the Omega Widget Distiller frame in WidgetInc.
 """
 
 import json
-import pyautogui
-import time
 
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
@@ -27,20 +25,15 @@ class OmegaWidgetDistillerAutomator(BaseAutomator):
         self.watch_bbox = self.frame_data["bbox"]["watch_bbox"]
 
     def run_automation(self):
-        start_time = time.time()
-
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             x1, y1, x2, y2 = self.watch_bbox
             center_y = round((y1 + y2) // 2)  # vertical center of the bbox
 
             found = False
             # Scan right-to-left, skipping 5px at a time
             for x in range(x2, x1 - 1, -5):
-                color = pyautogui.pixel(x, center_y)
+                color = self.pixel(x, center_y)
                 if self.should_continue and color[:3] in self.widget_color_map:
                     self.logger.info(f"Widget color found at ({x}, {center_y}): {color}")
                     self.moveTo(x, center_y, duration=0.1)

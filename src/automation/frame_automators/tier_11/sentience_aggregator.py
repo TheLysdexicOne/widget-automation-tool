@@ -3,8 +3,6 @@ Sentience Aggregator Automator (Frame ID: 11.3)
 Handles automation for the Sentience Aggregator frame in WidgetInc.
 """
 
-import time
-import pyautogui
 from imagehash import phash
 from PIL import ImageGrab
 from typing import Any, Dict
@@ -38,7 +36,7 @@ class SentienceAggregatorAutomator(BaseAutomator):
                 self.logger.debug("Clicking any face-down card to put game in correct state")
                 # Click the first face-down card to complete the pair
                 centers = [((x1 + x2) // 2, (y1 + y2) // 2) for (x1, y1, x2, y2) in bboxes]
-                pyautogui.click(*centers[face_down_cards[0]])
+                self.click(*centers[face_down_cards[0]])
                 self.sleep(0.5)  # Wait for flip animation
 
                 # Reassess board again after the click
@@ -54,7 +52,6 @@ class SentienceAggregatorAutomator(BaseAutomator):
         return None
 
     def run_automation(self):
-        start_time = time.time()
         all_bboxes = self.frame_data["bbox"]
         bboxes = [bbox for bbox in all_bboxes.values() if isinstance(bbox, (list, tuple)) and len(bbox) == 4]
         centers = [((x1 + x2) // 2, (y1 + y2) // 2) for (x1, y1, x2, y2) in bboxes]
@@ -72,9 +69,6 @@ class SentienceAggregatorAutomator(BaseAutomator):
         loop_detection_threshold = 5
 
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             # Build the initial queue
             cards = list(range(len(bboxes)))
             hashes = [None for _ in range(len(bboxes))]  # type: ignore
@@ -155,12 +149,12 @@ class SentienceAggregatorAutomator(BaseAutomator):
                     break
 
                 # Click first two cards in queue
-                pyautogui.click(*centers[card1])
+                self.click(*centers[card1])
                 self.sleep(0.15)
                 hashes[card1] = get_hash(card1)  # type: ignore
                 self.logger.debug(f"Flipped card {card1}, hash: {str(hashes[card1])}")
 
-                pyautogui.click(*centers[card2])
+                self.click(*centers[card2])
                 self.sleep(0.15)
                 hashes[card2] = get_hash(card2)  # type: ignore
                 self.logger.debug(f"Flipped card {card2}, hash: {str(hashes[card2])}")

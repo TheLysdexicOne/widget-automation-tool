@@ -172,7 +172,63 @@ class MainWindow(QMainWindow, LoggerMixin):
         scroll.setWidget(self.content_widget)
 
         content_container_layout = QVBoxLayout()
-        content_container_layout.addWidget(self.title_label)
+
+        # Create title container with docking buttons
+        title_container = QWidget()
+        title_container_layout = QHBoxLayout(title_container)
+        title_container_layout.setContentsMargins(4, 4, 4, 4)
+        title_container_layout.setSpacing(8)
+
+        # Left docking button
+        self.dock_left_btn = QPushButton("<")
+        self.dock_left_btn.setFixedSize(24, 24)
+        self.dock_left_btn.setToolTip("Dock to left side of frame")
+        self.dock_left_btn.clicked.connect(lambda: self.set_docking_side("left"))
+        self.dock_left_btn.setStyleSheet("""
+            QPushButton {
+                font-size: 14px;
+                font-weight: bold;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:pressed {
+                background-color: #d0d0d0;
+            }
+        """)
+
+        # Title label (centered)
+        title_container_layout.addWidget(self.dock_left_btn)
+        title_container_layout.addStretch()
+        title_container_layout.addWidget(self.title_label)
+        title_container_layout.addStretch()
+
+        # Right docking button
+        self.dock_right_btn = QPushButton(">")
+        self.dock_right_btn.setFixedSize(24, 24)
+        self.dock_right_btn.setToolTip("Dock to right side of frame")
+        self.dock_right_btn.clicked.connect(lambda: self.set_docking_side("right"))
+        self.dock_right_btn.setStyleSheet("""
+            QPushButton {
+                font-size: 14px;
+                font-weight: bold;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background-color: #f0f0f0;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+            QPushButton:pressed {
+                background-color: #d0d0d0;
+            }
+        """)
+        title_container_layout.addWidget(self.dock_right_btn)
+
+        content_container_layout.addWidget(title_container)
         content_container_layout.addWidget(scroll)
 
         self.content_container = QWidget()  # Store reference for later use
@@ -184,6 +240,9 @@ class MainWindow(QMainWindow, LoggerMixin):
 
         # Initialize window snapping (must be after content_container is created)
         self.setup_window_snapping()
+
+        # Initialize docking button states
+        self.update_docking_button_states()
 
     def toggle_minimize_titlebar(self):
         """Toggle between normal view and title bar only view."""
@@ -286,7 +345,7 @@ class MainWindow(QMainWindow, LoggerMixin):
             overlay_y = overlay_position["y"]
             available_height = overlay_position.get("available_height") or 200
 
-            # Calculate content width dynamically
+            # Calculate content width dynamically for window sizing
             content_width = self.content_widget.sizeHint().width() + 15  # Add padding for scroll area
 
             current_position = (overlay_x, overlay_y)
@@ -474,6 +533,64 @@ class MainWindow(QMainWindow, LoggerMixin):
         self.automation_controller.stop_all_automations()
 
         self.log_info("All automations stopped")
+
+    def set_docking_side(self, side: str):
+        """Set the docking side for the overlay window."""
+        self.window_manager.set_docking_side(side)
+        self.log_info(f"Docking side changed to: {side}")
+
+        # Update button states to show current selection
+        self.update_docking_button_states()
+
+        # Force window position update
+        self.check_and_snap_to_window()
+
+    def update_docking_button_states(self):
+        """Update docking button appearance based on current side."""
+        current_side = self.window_manager.get_docking_side()
+
+        # Style for active buttons (green)
+        active_style = """
+            QPushButton {
+                font-size: 14px;
+                font-weight: bold;
+                border: 2px solid #28a745;
+                border-radius: 4px;
+                background-color: #d4edda;
+                color: #155724;
+            }
+            QPushButton:hover {
+                background-color: #c3e6cb;
+                border-color: #1e7e34;
+            }
+        """
+
+        # Style for inactive buttons (red)
+        inactive_style = """
+            QPushButton {
+                font-size: 14px;
+                font-weight: bold;
+                border: 2px solid #dc3545;
+                border-radius: 4px;
+                background-color: #f8d7da;
+                color: #721c24;
+            }
+            QPushButton:hover {
+                background-color: #f1b0b7;
+                border-color: #bd2130;
+            }
+            QPushButton:pressed {
+                background-color: #ea868f;
+            }
+        """
+
+        # Apply styles based on current docking side
+        if current_side == "left":
+            self.dock_left_btn.setStyleSheet(active_style)
+            self.dock_right_btn.setStyleSheet(inactive_style)
+        else:
+            self.dock_left_btn.setStyleSheet(inactive_style)
+            self.dock_right_btn.setStyleSheet(active_style)
 
 
 def main():

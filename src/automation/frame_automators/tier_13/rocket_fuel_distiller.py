@@ -3,8 +3,6 @@ Rocket Fuel Distiller Automator (Frame ID: 13.2)
 Handles automation for the Rocket Fuel Distiller frame in WidgetInc.
 """
 
-import time
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 
@@ -16,8 +14,6 @@ class RocketFuelDistillerAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
         distill = self.create_button("distill")
 
         piston1 = self.frame_data["interactions"]["piston1_retracted"]
@@ -29,8 +25,6 @@ class RocketFuelDistillerAutomator(BaseAutomator):
         piston_color_map = self.frame_data["colors"]["piston_color_map"]
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
             while self.should_continue and self.pixel(*piston3) not in piston_color_map:
                 self.sleep(0.1)
             self.mouseDown(*piston3)

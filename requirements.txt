@@ -10,3 +10,5 @@ pystray
 PyQt6
 pytest
 pytest-qt
+screeninfo
+screeninfo

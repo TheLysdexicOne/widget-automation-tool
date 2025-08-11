@@ -157,16 +157,14 @@ class AiDelimiterAutomator(BaseAutomator):
         return (screen_x, screen_y)
 
     def run_automation(self):
-        start_time = time.time()
         watch_box = self.frame_data["frame_xy"]["bbox"]["watch_bbox"]
+        click_point = self.frame_data["interactions"]["click_point"]
         # Use watch_box horizontally; paddle_y just below its bottom
         ax1, ay1, ax2, ay2 = watch_box
-        paddle_y = ay2 + 20  # heuristic offset; adjust as needed
+        paddle_y = ay2 + 20  # heuris tic offset; adjust as needed
+        self.click(*click_point)
 
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             now = time.time()
             pos = self.find_ball_fast(watch_box, return_frame=True)
             if pos:

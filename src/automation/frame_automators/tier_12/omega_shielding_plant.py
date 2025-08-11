@@ -3,9 +3,6 @@ Omega Shielding Plant Automator (Frame ID: 12.5)
 Handles automation for the Omega Shielding Plant frame in WidgetInc.
 """
 
-import pyautogui
-import time
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 
@@ -17,8 +14,6 @@ class OmegaShieldingPlantAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
         lever_up = self.frame_data["interactions"]["lever_up"]
         lever_down = self.frame_data["interactions"]["lever_down"]
         indicator_x = self.frame_data["interactions"]["indicator_x"][0]
@@ -33,25 +28,22 @@ class OmegaShieldingPlantAutomator(BaseAutomator):
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             # Find indicator y
             for y in range(watch_bbox[1], watch_bbox[3]):
-                if pyautogui.pixelMatchesColor(indicator_xy1[0], y, indicator_color):
+                if self.pixelMatchesColor(indicator_xy1[0], y, indicator_color):
                     indicator_y = y
                     break
             print(y)
 
-            pyautogui.mouseDown(lever_up[0], lever_up[1])
-            pyautogui.moveTo(lever_down[0], lever_down[1])
+            self.mouseDown(lever_up[0], lever_up[1])
+            self.moveTo(lever_down[0], lever_down[1])
 
             # watch bbox at indicator y value
-            while self.should_continue and pyautogui.pixel(center_x, indicator_y + 20) == background_color:
+            while self.should_continue and self.pixel(center_x, indicator_y + 20) == background_color:
                 self.sleep(0.05)
 
-            pyautogui.mouseUp()
-            while self.should_continue and pyautogui.pixel(center_x, bottom_y) != background_color:
+            self.mouseUp()
+            while self.should_continue and self.pixel(center_x, bottom_y) != background_color:
                 self.sleep(0.1)
 
             if not self.sleep(0.1):

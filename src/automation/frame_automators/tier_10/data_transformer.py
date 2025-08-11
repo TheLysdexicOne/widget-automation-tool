@@ -3,14 +3,13 @@ Data Transformer Automator (Frame ID: 10.2)
 Handles automation for the Data Transformer frame in WidgetInc.
 """
 
-import pyautogui
-import time
-
 from typing import Any, Dict, List, Optional
 from automation.base_automator import BaseAutomator
 
 
 class DataTransformerAutomator(BaseAutomator):
+    """Tic-Tac-Toe automation."""
+
     def is_winner(self, board, player):
         wins = [
             [0, 1, 2],
@@ -63,9 +62,14 @@ class DataTransformerAutomator(BaseAutomator):
             return best, best_move
 
     def place_o(self, idx):
+        # Safety check: don't place O on occupied squares
+        if self.board[idx] is not None:
+            self.log_error(f"Attempted to place O on occupied square {idx} (contains: {self.board[idx]})")
+            return
+
         x, y = list(self.grid_centers)[idx]
-        pyautogui.moveTo(x, y)
-        pyautogui.click()
+        self.moveTo(x, y)
+        self.click()
         self.board[idx] = "O"
 
     """Automation logic for Data Transformer (Frame 10.2)."""
@@ -74,25 +78,25 @@ class DataTransformerAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def scan_board(self):
-        # Only scan for Xs; Os are tracked by our own moves
+        # Scan for Xs; Os are tracked by our own moves
         for i, (x, y) in enumerate(self.grid_centers):
-            color = pyautogui.pixel(x, y)
+            # Skip positions where we placed O - never overwrite our own moves
+            if self.board[i] == "O":
+                continue
+
+            color = self.pixel(x, y)
             if color in self.x_colors:
                 self.board[i] = "X"
-            elif self.board[i] != "O":
+            else:
+                # No X detected - this position is empty
                 self.board[i] = None
 
     def run_automation(self):
-        start_time = time.time()
-
-        self.grid_centers = list(self.frame_data["interactions"].values())
+        self.grid_centers = list(self.frame_data["interactions"]["board"].values())
         self.x_colors = self.frame_data["colors"]["x_colors"]
         self.board: List[Optional[str]] = [None] * 9
 
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             self.scan_board()
 
             # Check for win or draw
@@ -101,15 +105,28 @@ class DataTransformerAutomator(BaseAutomator):
                 or self.is_winner(self.board, "X")
                 or all(v is not None for v in self.board)
             ):
+                if self.is_winner(self.board, "O"):
+                    self.log_info("We won!")
+                elif self.is_winner(self.board, "X"):
+                    self.log_info("Computer won!")
+                else:
+                    self.log_info("Draw!")
+
                 self.board = [None] * 9
                 if not self.sleep(0.5):
                     break
                 continue
 
             # If it's our turn (there are more Xs or equal Xs to Os, we play O)
-            if self.board.count("O") <= self.board.count("X"):
+            x_count = self.board.count("X")
+            o_count = self.board.count("O")
+
+            if o_count <= x_count:
                 _, move = self.minimax(self.board[:], True)
                 if move is not None:
                     self.place_o(move)
-            if not self.sleep(0.1):
+                else:
+                    self.log_error("Minimax returned no valid move")
+
+            if not self.sleep(0.5):
                 break

@@ -3,8 +3,6 @@ Rocket Part Assembler Automator (Frame ID: 13.3)
 Handles automation for the Rocket Part Assembler frame in WidgetInc.
 """
 
-import time
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 
@@ -16,10 +14,8 @@ class RocketPartAssemblerAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
-        handle1 = self.frame_data["interactions"]["handle1"]
-        handle2 = self.frame_data["interactions"]["handle2"]
+        lever1 = self.frame_data["interactions"]["lever1"]
+        lever2 = self.frame_data["interactions"]["lever2"]
         catch_point1 = self.frame_data["interactions"]["catch_point1"]
         catch_point2 = self.frame_data["interactions"]["catch_point2"]
         piston_retracted = self.frame_data["interactions"]["piston_retracted"]
@@ -30,17 +26,14 @@ class RocketPartAssemblerAutomator(BaseAutomator):
         background_color_map = self.frame_data["colors"]["background_color_map"]
         processing_color = self.frame_data["colors"]["processing_color"]
 
-        # For each handle/catch_point pair, perform the drag-and-drop sequence
-        handle_points = [handle1, handle2]
+        # For each lever/catch_point pair, perform the drag-and-drop sequence
+        lever_points = [lever1, lever2]
         catch_points = [catch_point1, catch_point2]
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
-            for handle, catch_point in zip(handle_points, catch_points):
-                self.mouseDown(*handle)
+            for lever, catch_point in zip(lever_points, catch_points):
+                self.mouseDown(*lever)
                 self.moveTo(catch_point[0], catch_point[1], duration=0.1)
                 self.mouseUp()
 

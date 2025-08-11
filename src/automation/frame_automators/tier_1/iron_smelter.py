@@ -15,4 +15,20 @@ class IronSmelterAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        self.smelter_cycle()
+        load = self.create_button("load")
+        smelt = self.create_button("smelt")
+
+        # Main automation loop
+        while self.should_continue:
+            if load.active():
+                load.click()
+                self.sleep(0.1)
+                if load.active():
+                    smelt.click()
+
+                    while self.should_continue and smelt.inactive():
+                        self.sleep(0.2)
+
+            while self.should_continue and load.inactive():
+                if not self.sleep(0.2):
+                    return

@@ -66,7 +66,7 @@ def get_frame_screenshot():
     return ImageGrab.grab(bbox=bbox, all_screens=True)
 
 
-def get_cropped_bbox_of_frame_screenshot(bbox):
+def get_cropped_bbox_screenshot(bbox):
     """
     Screenshot a specific bounding box area using ImageGrab.grab.
     Returns a PIL Image or None if bbox is invalid.

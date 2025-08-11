@@ -3,10 +3,6 @@ Capacitor Bank Automator (Frame 3.4)
 Handles automation for the Capacitor Bank frame in WidgetInc.
 """
 
-import time
-import pyautogui
-
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 from utility.window_utils import get_vertical_fill
@@ -19,8 +15,6 @@ class CapacitorBankAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
         # Create button objects
         self.plus1 = self.create_button("plus1")
         self.plus2 = self.create_button("plus2")
@@ -41,8 +35,6 @@ class CapacitorBankAutomator(BaseAutomator):
         one_volt = self.frame_data["interactions"]["1v"]
 
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
             # Get voltage box fill - fix argument order
             fill = get_vertical_fill(vbox_x, vbox_y_top, vbox_y_bot, empty_color, filled_colors)
             voltage = round(15 * fill / 100)
@@ -53,8 +45,8 @@ class CapacitorBankAutomator(BaseAutomator):
             print("waiting 4 seconds")
             self.sleep(4)
 
-            while self.should_continue and pyautogui.pixel(*one_volt) not in filled_colors:
-                print(f"{pyautogui.pixel(*one_volt)} not in {filled_colors}")
+            while self.should_continue and self.pixel(*one_volt) not in filled_colors:
+                print(f"{self.pixel(*one_volt)} not in {filled_colors}")
                 print("Waiting for 1V to fill...")
                 self.sleep(0.5)
             if not self.sleep(0.5):
@@ -68,4 +60,4 @@ class CapacitorBankAutomator(BaseAutomator):
             while voltage >= value:
                 button.click()
                 voltage -= value
-                time.sleep(0.1)
+                self.sleep(0.1)

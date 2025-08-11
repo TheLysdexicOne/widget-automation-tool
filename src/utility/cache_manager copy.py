@@ -65,10 +65,8 @@ class CacheManager(QObject):
             "frame_area_refined": None,  # Store refined frame area with border checking
             "refinement_failed": False,  # Track if border refinement failed
             "overlay_position": None,
-            "overlay_width": 178,  # Default overlay width, updated when overlay provides actual width
             "monitor_info": None,  # Store monitor info for multi-monitor support
             "leftmost_x_offset": None,  # Store leftmost x offset
-            "docking_side": "right",  # Default docking side: "left" or "right"
         }
 
         # Validation timer - checks every 1000ms (1 second)
@@ -403,35 +401,6 @@ class CacheManager(QObject):
             self.logger.error(f"Error in window detection: {e}")
             return None
 
-    def _find_overlay_window(self) -> Optional[int]:
-        """Find the overlay window by title and return its width."""
-        try:
-
-            def enum_windows_callback(hwnd, _):
-                try:
-                    title = win32gui.GetWindowText(hwnd)
-                    if "Widget Automation Tool" in title and win32gui.IsWindowVisible(hwnd):
-                        overlay_windows.append(hwnd)
-                except Exception:
-                    pass
-                return True
-
-            overlay_windows = []
-            win32gui.EnumWindows(enum_windows_callback, None)
-
-            if overlay_windows:
-                hwnd = overlay_windows[0]
-                window_rect = win32gui.GetWindowRect(hwnd)
-                width = window_rect[2] - window_rect[0]  # right - left
-                self.logger.debug(f"Found overlay window with width: {width}")
-                return width
-
-            return None
-
-        except Exception as e:
-            self.logger.debug(f"Error finding overlay window: {e}")
-            return None
-
     def _build_window_info(self, pid: int, hwnd: int) -> Optional[Dict[str, Any]]:
         """Build window information dictionary."""
         try:
@@ -567,43 +536,10 @@ class CacheManager(QObject):
             frame_x = frame_area["x"]
             frame_width = frame_area["width"]
 
-            # Get actual overlay width by detecting the window
-            overlay_width = self._find_overlay_window()
-            if overlay_width is None:
-                # Fallback to cached width if window not found
-                overlay_width = self._cache.get("overlay_width", 200)
-            else:
-                # Update cache with detected width
-                self._cache["overlay_width"] = overlay_width
-
-            # Calculate overlay position based on docking preference
+            # Calculate overlay position to the right of frame area
             offset_y = max(32, client_width // 80)
-            bottom_margin = 800
-            margin = 3  # Gap between frame and overlay
-
-            docking_side = self._cache.get("docking_side", "right")
-            if docking_side == "left":
-                # Position to the left of frame area
-                overlay_x = frame_x - overlay_width - margin
-                # For multi-monitor: ensure we stay within the monitor bounds
-                # Don't use simple max() since coordinates can be negative
-                monitor_info = self._cache.get("monitor_info")
-                if monitor_info:
-                    monitor_left = monitor_info["x"]
-                    min_x = monitor_left + 10  # 10px margin from monitor edge
-                    if overlay_x < min_x:
-                        overlay_x = min_x
-            else:
-                # Position to the right of frame area (default)
-                overlay_x = frame_x + frame_width + margin
-                # For multi-monitor: ensure we don't go beyond monitor bounds
-                monitor_info = self._cache.get("monitor_info")
-                if monitor_info:
-                    monitor_right = monitor_info["x"] + monitor_info["width"]
-                    max_x = monitor_right - overlay_width - 10  # 10px margin from monitor edge
-                    if overlay_x + overlay_width > monitor_right:
-                        overlay_x = max_x
-
+            bottom_margin = 100
+            overlay_x = frame_x + frame_width + 3
             overlay_y = client_y + offset_y
             available_height = client_height - offset_y - bottom_margin
 
@@ -611,8 +547,6 @@ class CacheManager(QObject):
                 "x": overlay_x,
                 "y": overlay_y,
                 "available_height": available_height,
-                "docking_side": docking_side,
-                "overlay_width": overlay_width,
             }
 
         except Exception as e:
@@ -632,134 +566,10 @@ class CacheManager(QObject):
                         frame_data["colors"][color_key] = [tuple(color) for color in color_value]
         return frame_data
 
-    def _convert_coordinates_recursive(self, data, frame_area=None):
-        """
-        Recursively convert percentage coordinates and colors to screen coordinates.
-        Detects patterns automatically regardless of key names.
-        """
-        if isinstance(data, dict):
-            converted = {}
-            for key, value in data.items():
-                if key == "buttons":
-                    # Special handling for buttons (maintains existing behavior)
-                    converted[key] = self._convert_buttons(value)
-                else:
-                    # Recursive conversion for any nested dictionaries
-                    converted[key] = self._convert_coordinates_recursive(value, frame_area)
-            return converted
-
-        elif isinstance(data, list):
-            # Check if this is a coordinate/color pattern
-            return self._convert_list_pattern(data)
-
-        else:
-            return data
-
-    def _convert_list_pattern(self, data):
-        """
-        Convert list patterns based on content detection:
-        [x, y] -> screen coordinates
-        [x1, y1, x2, y2] -> screen bbox
-        [r, g, b] -> unchanged (colors)
-        [[nested]] -> recursive conversion
-        """
-        from .coordinate_utils import conv_frame_percent_to_screen_coords, conv_frame_percent_to_screen_bbox
-
-        if not isinstance(data, list) or len(data) == 0:
-            return data
-
-        # Check for nested lists (like color arrays or coordinate arrays)
-        if isinstance(data[0], list):
-            return [self._convert_list_pattern(item) for item in data]
-
-        # Check for coordinate patterns
-        if len(data) == 2 and all(isinstance(x, (int, float)) for x in data):
-            x, y = data
-            if 0 <= x <= 1 and 0 <= y <= 1:
-                # Percentage coordinates -> screen coordinates
-                screen_x, screen_y = conv_frame_percent_to_screen_coords(x, y)
-                return [screen_x, screen_y]
-
-        elif len(data) == 4 and all(isinstance(x, (int, float)) for x in data):
-            x1, y1, x2, y2 = data
-            if all(0 <= coord <= 1 for coord in data):
-                # Percentage bbox -> screen bbox
-                return list(conv_frame_percent_to_screen_bbox((x1, y1, x2, y2)))
-
-        elif len(data) == 3 and all(isinstance(x, int) for x in data):
-            # Check if it's RGB color values
-            if all(0 <= x <= 255 for x in data):
-                return data  # Colors stay unchanged
-
-        # If no pattern matches, return as-is
-        return data
-
-    def _convert_buttons(self, buttons_data):
-        """Convert buttons with special 3-element format [x, y, color]."""
-        from .coordinate_utils import conv_frame_percent_to_screen_coords
-
-        converted_buttons = {}
-        for button_name, button_data in buttons_data.items():
-            if len(button_data) != 3:
-                self.logger.error(f"Invalid button data for {button_name}: {button_data}")
-                sys.exit("Exiting due to invalid database")
-            percent_x, percent_y, color = button_data
-            screen_x, screen_y = conv_frame_percent_to_screen_coords(percent_x, percent_y)
-            converted_buttons[button_name] = [screen_x, screen_y, color]
-        return converted_buttons
-
-    def _create_frame_coordinates(self, screen_data):
-        """
-        Create frame-relative coordinates from screen coordinates.
-        Handles the nested dictionary structure recursively.
-        """
-        if isinstance(screen_data, dict):
-            frame_data = {}
-            for key, value in screen_data.items():
-                if key == "buttons":
-                    # Skip buttons for frame coordinates (they're always screen-based)
-                    continue
-                frame_data[key] = self._create_frame_coordinates(value)
-            return frame_data
-
-        elif isinstance(screen_data, list):
-            return self._convert_screen_to_frame_pattern(screen_data)
-
-        else:
-            return screen_data
-
-    def _convert_screen_to_frame_pattern(self, screen_data):
-        """Convert screen coordinate patterns to frame-relative coordinates."""
-        from .coordinate_utils import conv_screen_coords_to_frame_coords
-
-        if not isinstance(screen_data, list) or len(screen_data) == 0:
-            return screen_data
-
-        # Handle nested lists
-        if isinstance(screen_data[0], list):
-            return [self._convert_screen_to_frame_pattern(item) for item in screen_data]
-
-        # Convert coordinate patterns
-        if len(screen_data) == 2 and all(isinstance(x, (int, float)) for x in screen_data):
-            # Screen coordinates -> frame coordinates
-            frame_x, frame_y = conv_screen_coords_to_frame_coords(screen_data[0], screen_data[1])
-            return [frame_x, frame_y]
-
-        elif len(screen_data) == 4 and all(isinstance(x, (int, float)) for x in screen_data):
-            # Screen bbox -> frame bbox
-            x1, y1, x2, y2 = screen_data
-            fx1, fy1 = conv_screen_coords_to_frame_coords(x1, y1)
-            fx2, fy2 = conv_screen_coords_to_frame_coords(x2, y2)
-            return [fx1, fy1, fx2, fy2]
-
-        elif len(screen_data) == 3 and all(isinstance(x, int) for x in screen_data):
-            # Colors stay unchanged
-            return screen_data
-
-        return screen_data
-
     def generate_db_cache(self):
         """Generate frames.cache with screen coordinates as main and frame coordinates as additional key."""
+        from .coordinate_utils import conv_screen_coords_to_frame_coords, conv_frame_percent_to_screen_coords
+
         frames_file = Path(__file__).parent.parent.parent / "config" / "data" / "frames_database.json"
         frames_cache = Path(__file__).parent.parent.parent / "config" / "cache" / "frames.cache"
 
@@ -769,17 +579,69 @@ class CacheManager(QObject):
         frames_with_coords = []
 
         for frame in frames_data["frames"]:
-            # Process frame data with automatic coordinate conversion
-            frame_copy = self._convert_coordinates_recursive(frame.copy())
+            frame_copy = frame.copy()
+            frame_xy = {}
 
-            # Create frame-relative coordinates
-            frame_xy_data = self._create_frame_coordinates(frame_copy)
-            if isinstance(frame_copy, dict):
-                frame_copy["frame_xy"] = frame_xy_data
+            # Buttons
+            if "buttons" in frame:
+                frame_xy["buttons"] = {}
+                for button_name, button_data in frame["buttons"].items():
+                    if len(button_data) != 3:
+                        self.logger.error(f"Invalid button data for {button_name}: {button_data}")
+                        sys.exit("Exiting due to invalid database")
+                    percent_x, percent_y, color = button_data
+                    screen_x, screen_y = conv_frame_percent_to_screen_coords(percent_x, percent_y)
+                    frame_x, frame_y = conv_screen_coords_to_frame_coords(screen_x, screen_y)
+                    frame_copy["buttons"][button_name] = [screen_x, screen_y, color]
+                    frame_xy["buttons"][button_name] = [frame_x, frame_y, color]
+
+            # Interactions
+            if "interactions" in frame:
+                frame_xy["interactions"] = {}
+                for interaction_name, interaction_data in frame["interactions"].items():
+                    if len(interaction_data) == 2 and all(isinstance(x, (int, float)) for x in interaction_data):
+                        percent_x, percent_y = interaction_data
+                        screen_x, screen_y = conv_frame_percent_to_screen_coords(percent_x, percent_y)
+                        frame_x, frame_y = conv_screen_coords_to_frame_coords(screen_x, screen_y)
+                        frame_copy["interactions"][interaction_name] = [screen_x, screen_y]
+                        frame_xy["interactions"][interaction_name] = [frame_x, frame_y]
+                    elif isinstance(interaction_data, list) and all(
+                        isinstance(item, list) and len(item) == 2 for item in interaction_data
+                    ):
+                        screen_coords = []
+                        frame_coords = []
+                        for percent_x, percent_y in interaction_data:
+                            screen_x, screen_y = conv_frame_percent_to_screen_coords(percent_x, percent_y)
+                            frame_x, frame_y = conv_screen_coords_to_frame_coords(screen_x, screen_y)
+                            screen_coords.append([screen_x, screen_y])
+                            frame_coords.append([frame_x, frame_y])
+                        frame_copy["interactions"][interaction_name] = screen_coords
+                        frame_xy["interactions"][interaction_name] = frame_coords
+                    else:
+                        self.logger.error(f"Invalid interaction data for {interaction_name}: {interaction_data}")
+                        sys.exit("Exiting due to invalid database")
+
+            # BBox
+            if "bbox" in frame:
+                frame_xy["bbox"] = {}
+                for bbox_name, bbox_data in frame["bbox"].items():
+                    if len(bbox_data) == 4 and all(isinstance(x, (int, float)) for x in bbox_data):
+                        percent_x1, percent_y1, percent_x2, percent_y2 = bbox_data
+                        screen_x1, screen_y1 = conv_frame_percent_to_screen_coords(percent_x1, percent_y1)
+                        screen_x2, screen_y2 = conv_frame_percent_to_screen_coords(percent_x2, percent_y2)
+                        frame_x1, frame_y1 = conv_screen_coords_to_frame_coords(screen_x1, screen_y1)
+                        frame_x2, frame_y2 = conv_screen_coords_to_frame_coords(screen_x2, screen_y2)
+                        frame_copy["bbox"][bbox_name] = [screen_x1, screen_y1, screen_x2, screen_y2]
+                        frame_xy["bbox"][bbox_name] = [frame_x1, frame_y1, frame_x2, frame_y2]
+                    else:
+                        self.logger.error(f"Invalid bbox data for {bbox_name}: {bbox_data}")
+                        sys.exit("Exiting due to invalid database")
 
             # Convert colors to tuples for pixel comparison
             frame_copy = self._convert_colors_to_tuples(frame_copy)
 
+            # Add frame coordinates as additional key
+            frame_copy["frame_xy"] = frame_xy
             frames_with_coords.append(frame_copy)
 
         frames_cache.parent.mkdir(exist_ok=True)
@@ -795,7 +657,9 @@ class CacheManager(QObject):
         with open(frames_cache, "w") as f:
             f.write(json_str)
 
-        self.logger.info(f"Generated coordinate cache with automatic pattern detection at {frames_cache}")
+        self.logger.info(
+            f"Generated coordinate cache with screen coordinates as main and frame_xy as additional key at {frames_cache}"
+        )
 
     # Public API methods
     def get_window_info(self) -> Optional[Dict[str, Any]]:
@@ -820,7 +684,11 @@ class CacheManager(QObject):
 
     def get_overlay_position(self) -> Optional[Dict[str, Any]]:
         """Get overlay position coordinates from cache (fast cached calculation)."""
-        # Always recalculate to get current overlay width from window detection
+        cached_position = self._cache.get("overlay_position")
+        if cached_position:
+            return cached_position
+
+        # Calculate and cache if not available
         calculated_position = self._calculate_overlay_position()
         if calculated_position:
             self._cache["overlay_position"] = calculated_position
@@ -872,35 +740,6 @@ class CacheManager(QObject):
         self._cache["leftmost_x_offset"] = offset
         self._save_cache_to_file()
         return offset
-
-    def set_docking_side(self, side: str):
-        """Set overlay docking side ('left' or 'right') and recalculate positions."""
-        if side not in ["left", "right"]:
-            self.logger.warning(f"Invalid docking side: {side}. Using 'right'.")
-            side = "right"
-
-        self._cache["docking_side"] = side
-        # Force recalculation of overlay position with current settings
-        self._cache["overlay_position"] = self._calculate_overlay_position()
-        self._save_cache_to_file()  # Save debug cache
-        self.logger.debug(f"Docking side set to: {side}")
-
-    def get_docking_side(self) -> str:
-        """Get current docking side ('left' or 'right')."""
-        return self._cache.get("docking_side", "right")
-
-    def set_overlay_width(self, width: int):
-        """Set actual overlay width and recalculate positions."""
-        if width > 0:
-            self._cache["overlay_width"] = width
-            # Recalculate overlay position with new width
-            self._cache["overlay_position"] = self._calculate_overlay_position()
-            self._save_cache_to_file()
-            self.logger.debug(f"Overlay width set to: {width}")
-
-    def get_overlay_width(self) -> int:
-        """Get current overlay width."""
-        return self._cache.get("overlay_width", 200)
 
 
 # Global WindowManager instance

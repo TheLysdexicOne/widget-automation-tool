@@ -3,9 +3,6 @@ Fuel Rod Assembler Automator (Frame ID: 7.2)
 Handles automation for the Fuel Rod Assembler frame in WidgetInc.
 """
 
-import pyautogui
-import time
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 
@@ -17,8 +14,6 @@ class FuelRodAssemblerAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
         refine = self.create_button("refine")
         lever_up = self.frame_data["interactions"]["lever_up"]
         lever_down = self.frame_data["interactions"]["lever_down"]
@@ -34,22 +29,19 @@ class FuelRodAssemblerAutomator(BaseAutomator):
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
-            pyautogui.mouseDown(lever_up[0], lever_up[1])
-            pyautogui.moveTo(lever_down[0], lever_down[1], duration=0.2)
-            pyautogui.mouseUp()
+            self.mouseDown(lever_up[0], lever_up[1])
+            self.moveTo(lever_down[0], lever_down[1], duration=0.2)
+            self.mouseUp()
             self.sleep(1.5)
             for x in range(x1, x2 + 1, 5):
-                color = pyautogui.pixel(x, int(y))
+                color = self.pixel(x, int(y))
                 if self.should_continue and color not in background_colors:
-                    pyautogui.mouseDown(x + 20, y)
-                    pyautogui.moveTo(pickup_point[0], pickup_point[1], duration=0.5)
-                    pyautogui.moveTo(drop_point[0], drop_point[1], duration=0.75)
+                    self.mouseDown(x + 20, y)
+                    self.moveTo(pickup_point[0], pickup_point[1], duration=0.5)
+                    self.moveTo(drop_point[0], drop_point[1], duration=1.5)
 
-                    self.sleep(2)
-                    pyautogui.mouseUp()
+                    self.sleep(1)
+                    self.mouseUp()
                     self.sleep(0.5)
                     break
 

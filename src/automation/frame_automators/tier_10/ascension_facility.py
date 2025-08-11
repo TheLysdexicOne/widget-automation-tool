@@ -4,7 +4,7 @@ Handles automation for the Ascension Facility frame in WidgetInc.
 """
 
 import pyautogui
-import time
+
 import numpy as np
 
 from typing import Any, Dict
@@ -19,7 +19,6 @@ class AscensionFacilityAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
         canvas = self.frame_data["bbox"]["canvas"]
         space_ship = self.frame_data["bbox"]["space_ship"]
         brick_color = tuple(self.frame_data["colors"]["brick"])
@@ -80,9 +79,6 @@ class AscensionFacilityAutomator(BaseAutomator):
         ship_collision_y = ship_y - ship_h // 2  # y at which brick bottom collides
 
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             screenshot = get_frame_screenshot()
             if screenshot is None:
                 if not self.sleep(0.02):

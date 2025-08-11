@@ -4,7 +4,7 @@ Handles automation for the Widget Minitizers frame in WidgetInc.
 """
 
 import pyautogui
-import time
+
 
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
@@ -15,19 +15,14 @@ class WidgetMinitizersAutomator(BaseAutomator):
 
     def __init__(self, frame_data: Dict[str, Any]):
         super().__init__(frame_data)
+        pyautogui.PAUSE = 0
 
     def run_automation(self):
-        start_time = time.time()
-
         shrink = self.create_button("shrink")
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
-            pyautogui.PAUSE = 0
-            pyautogui.click(shrink.x, shrink.y)
+            self.click(shrink.x, shrink.y)
 
             if not self.sleep(0.05):
                 break

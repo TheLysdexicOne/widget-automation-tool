@@ -6,6 +6,7 @@ Provides centralized logging configuration with timestamped files and console ou
 import gzip
 import logging
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -42,6 +43,202 @@ class LoggerMixin:
             self.logging.warning(message)
         else:
             logging.getLogger(self.__class__.__name__).warning(message)
+
+
+class DeduplicatingFilter(logging.Filter):
+    """Filter that suppresses consecutive repeated log messages and logs summaries instead."""
+
+    def __init__(self, max_repeat_time=2.0, max_repeat_count=500):
+        super().__init__()
+        self.max_repeat_time = max_repeat_time
+        self.max_repeat_count = max_repeat_count
+        self.last_message = None
+        self.consecutive_count = 0
+        self.first_repeat_time = None
+        # Fuzzy pattern tracking
+        self.fuzzy_pattern = None
+        self.fuzzy_count = 0
+        self.fuzzy_coordinates = []
+        self.first_fuzzy_time = None
+
+    def extract_click_pattern(self, message):
+        """Extract click pattern from message, return base pattern and coordinates if matched."""
+        import re
+
+        # Pattern for click messages: "Clicked at (x, y) with {button} button"
+        click_pattern = r"Clicked at \((-?\d+), (-?\d+)\) with (\w+) button"
+        match = re.match(click_pattern, message)
+
+        if match:
+            x, y, button = match.groups()
+            base_pattern = f"Clicked at {{coords}} with {button} button"
+            return base_pattern, (int(x), int(y))
+
+        return None, None
+
+    def is_fuzzy_match(self, message, pattern):
+        """Check if message matches the fuzzy pattern."""
+        if not pattern:
+            return False
+
+        base_pattern, coords = self.extract_click_pattern(message)
+        return base_pattern == pattern
+
+    def filter(self, record):
+        """Filter consecutive repeated messages and emit summaries."""
+        message = record.getMessage()
+        current_time = time.time()
+
+        # Check for fuzzy pattern matching (like rapid clicks)
+        base_pattern, coords = self.extract_click_pattern(message)
+
+        if base_pattern:
+            # This is a click message - check for fuzzy pattern
+            if self.fuzzy_pattern == base_pattern:
+                # Same click pattern, accumulate
+                self.fuzzy_count += 1
+                self.fuzzy_coordinates.append(coords)
+                if self.first_fuzzy_time is None:
+                    self.first_fuzzy_time = current_time
+
+                time_diff = current_time - self.first_fuzzy_time
+
+                # Emit summary if thresholds reached
+                if self.fuzzy_count >= 99999 or time_diff >= 2.0:
+                    coord_summary = f"({len(self.fuzzy_coordinates)} locations)"
+                    summary_msg = base_pattern.replace("{coords}", coord_summary)
+                    summary_msg += f" | {self.fuzzy_count} rapid clicks over {time_diff:.1f} seconds"
+
+                    record.msg = summary_msg
+                    record.args = ()
+
+                    # Reset fuzzy tracking
+                    self.fuzzy_pattern = None
+                    self.fuzzy_count = 0
+                    self.fuzzy_coordinates = []
+                    self.first_fuzzy_time = None
+
+                    return True
+                else:
+                    # Still accumulating, suppress this one
+                    return False
+            else:
+                # Different or new click pattern
+                if self.fuzzy_count > 3 and self.fuzzy_pattern:
+                    # Emit summary for previous pattern first
+                    time_diff = current_time - self.first_fuzzy_time if self.first_fuzzy_time else 0
+                    coord_summary = f"({len(self.fuzzy_coordinates)} locations)"
+                    summary_msg = self.fuzzy_pattern.replace("{coords}", coord_summary)
+                    summary_msg += f" | {self.fuzzy_count} rapid clicks over {time_diff:.1f} seconds"
+
+                    record.msg = summary_msg
+                    record.args = ()
+
+                    # Start tracking new pattern
+                    self.fuzzy_pattern = base_pattern
+                    self.fuzzy_count = 1
+                    self.fuzzy_coordinates = [coords]
+                    self.first_fuzzy_time = None
+
+                    return True
+                else:
+                    # Start tracking new pattern or show accumulated clicks if not enough
+                    if self.fuzzy_count > 1 and self.fuzzy_pattern:
+                        # Show the accumulated clicks normally since not enough for summary
+                        self.fuzzy_pattern = None
+                        self.fuzzy_count = 0
+                        self.fuzzy_coordinates = []
+                        self.first_fuzzy_time = None
+
+                    self.fuzzy_pattern = base_pattern
+                    self.fuzzy_count = 1
+                    self.fuzzy_coordinates = [coords]
+                    self.first_fuzzy_time = None
+                    return True
+        else:
+            # Not a click message - handle previous fuzzy pattern if exists
+            if self.fuzzy_count > 3 and self.fuzzy_pattern:
+                # Emit summary for accumulated fuzzy pattern
+                time_diff = current_time - self.first_fuzzy_time if self.first_fuzzy_time else 0
+                coord_summary = f"({len(self.fuzzy_coordinates)} locations)"
+                summary_msg = self.fuzzy_pattern.replace("{coords}", coord_summary)
+                summary_msg += f" | {self.fuzzy_count} rapid clicks over {time_diff:.1f} seconds"
+
+                record.msg = summary_msg
+                record.args = ()
+
+                # Reset fuzzy tracking
+                self.fuzzy_pattern = None
+                self.fuzzy_count = 0
+                self.fuzzy_coordinates = []
+                self.first_fuzzy_time = None
+
+                return True
+
+        # Reset fuzzy tracking for non-click messages
+        if not base_pattern:
+            self.fuzzy_pattern = None
+            self.fuzzy_count = 0
+            self.fuzzy_coordinates = []
+            self.first_fuzzy_time = None
+
+        # Original exact duplicate logic for non-click messages
+        if message == self.last_message:
+            # This is a consecutive repeat
+            self.consecutive_count += 1
+            if self.first_repeat_time is None:
+                self.first_repeat_time = current_time
+
+            time_diff = current_time - self.first_repeat_time
+
+            if self.consecutive_count >= self.max_repeat_count or time_diff >= self.max_repeat_time:
+                # Emit summary and reset
+                if self.consecutive_count > 1:
+                    summary_msg = f"{message} | Repeated {self.consecutive_count} times over {time_diff:.1f} seconds"
+
+                    record.msg = summary_msg
+                    record.args = ()
+
+                    # Reset tracking
+                    self.last_message = None
+                    self.consecutive_count = 0
+                    self.first_repeat_time = None
+
+                    return True
+                else:
+                    # Single occurrence, just show it
+                    self.last_message = None
+                    self.consecutive_count = 0
+                    self.first_repeat_time = None
+                    return True
+            else:
+                # Still accumulating repeats, suppress this one
+                return False
+        else:
+            # Different message - emit previous summary if we had repeats
+            if self.consecutive_count > 1:
+                # We have accumulated repeats, need to emit summary first
+                time_diff = current_time - self.first_repeat_time if self.first_repeat_time else 0
+                summary_msg = (
+                    f"{self.last_message} | Repeated {self.consecutive_count} times over {time_diff:.1f} seconds"
+                )
+
+                # Modify current record to show the summary
+                record.msg = summary_msg
+                record.args = ()
+
+                # Reset tracking for the new message
+                self.last_message = message
+                self.consecutive_count = 1
+                self.first_repeat_time = None
+
+                return True
+            else:
+                # No accumulated repeats, just track this new message
+                self.last_message = message
+                self.consecutive_count = 1
+                self.first_repeat_time = None
+                return True
 
 
 def create_timestamped_log_filename(base_name: str = "widget") -> str:
@@ -210,6 +407,7 @@ def setup_logging():
     file_handler = logging.FileHandler(log_file, encoding="utf-8")
     file_handler.setLevel(logging.DEBUG)  # Always log debug to file
     file_handler.setFormatter(BaseCustomFormatter(file_format, datefmt="%Y-%m-%d %H:%M:%S"))
+    file_handler.addFilter(DeduplicatingFilter(max_repeat_time=2.0, max_repeat_count=999999))
 
     # Setup console handler - level depends on debug mode
     console_handler = logging.StreamHandler(sys.stdout)
@@ -221,6 +419,7 @@ def setup_logging():
         root_logger.setLevel(logging.DEBUG)  # But root logger still at DEBUG for file
 
     console_handler.setFormatter(ConsoleFormatter(console_format, datefmt="%Y-%m-%d %H:%M:%S"))
+    console_handler.addFilter(DeduplicatingFilter(max_repeat_time=2.0, max_repeat_count=999999))
 
     # Add handlers to root logger
     root_logger.addHandler(file_handler)

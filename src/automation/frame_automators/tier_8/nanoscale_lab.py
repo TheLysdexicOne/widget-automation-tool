@@ -4,7 +4,7 @@ Handles automation for the Nanoscale Lab frame in WidgetInc.
 """
 
 import pyautogui
-import time
+
 import numpy as np
 
 from typing import Any, Dict, Tuple
@@ -18,6 +18,7 @@ class NanoscaleLabAutomator(BaseAutomator):
 
     def __init__(self, frame_data: Dict[str, Any]):
         super().__init__(frame_data)
+        pyautogui.PAUSE = 0
 
     def find_slider_position(self) -> Tuple[int, int]:
         """Check track lines for slider colors, then determine the center
@@ -95,8 +96,6 @@ class NanoscaleLabAutomator(BaseAutomator):
         return sx, sy
 
     def run_automation(self):
-        start_time = time.time()
-        pyautogui.PAUSE = 0
         self.slider_colors = self.frame_data["colors"]["slider_colors"]
 
         tracks = self.frame_data["bbox"]["tracks_bbox"]
@@ -108,17 +107,14 @@ class NanoscaleLabAutomator(BaseAutomator):
         slider_pos = self.find_slider_position()
         self.slider_x, self.slider_y = slider_pos
 
-        pyautogui.mouseDown(self.slider_x, self.slider_y)
+        self.mouseDown(self.slider_x, self.slider_y)
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             result = self.track_slider()
             if result is not None:
-                pyautogui.moveTo(result[0], result[1], duration=0)
+                self.moveTo(result[0], result[1], duration=0)
 
             if not self.sleep(0.01):
                 break
-        pyautogui.mouseUp()
+        self.mouseUp()

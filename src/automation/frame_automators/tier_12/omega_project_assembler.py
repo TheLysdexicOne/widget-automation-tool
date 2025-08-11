@@ -3,9 +3,6 @@ Omega Project Assembler Automator (Frame ID: 12.6)
 Handles automation for the Omega Project Assembler frame in WidgetInc.
 """
 
-import pyautogui
-import time
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 
@@ -17,8 +14,6 @@ class OmegaProjectAssemblerAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
         imbue = self.create_button("imbue")
         sacrifice = self.create_button("sacrifice")
         install = self.create_button("install")
@@ -31,20 +26,17 @@ class OmegaProjectAssemblerAutomator(BaseAutomator):
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
-            pyautogui.mouseDown(lever_up[0], lever_up[1])
-            pyautogui.moveTo(lever_down[0], lever_down[1], duration=0.1)
-            pyautogui.mouseUp(duration=0.1)
+            self.mouseDown(lever_up[0], lever_up[1])
+            self.moveTo(lever_down[0], lever_down[1], duration=0.1)
+            self.mouseUp(duration=0.1)
 
             imbue.click()
             sacrifice.click()
             install.click()
 
-            pyautogui.mouseDown(slider_left[0], slider_left[1])
-            pyautogui.moveTo(slider_right[0], slider_right[1], duration=0.1)
-            pyautogui.mouseUp(duration=0.1)
+            self.mouseDown(slider_left[0], slider_left[1])
+            self.moveTo(slider_right[0], slider_right[1], duration=0.1)
+            self.mouseUp(duration=0.1)
 
             assemble.click()
 

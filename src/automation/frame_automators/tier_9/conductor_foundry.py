@@ -3,9 +3,6 @@ Conductor Foundry Automator (Frame ID: 9.2)
 Handles automation for the Conductor Foundry frame in WidgetInc.
 """
 
-import pyautogui
-import time
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 
@@ -17,30 +14,25 @@ class ConductorFoundryAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
         nullify = self.create_button("nullify")
 
-        handle1 = self.frame_data["interactions"]["handle1"]
-        handle1_active = self.frame_data["interactions"]["handle1_active"]
-        handle2 = self.frame_data["interactions"]["handle2"]
-        handle2_active = self.frame_data["interactions"]["handle2_active"]
+        piston1_retracted = self.frame_data["interactions"]["piston1_retracted"]
+        piston1_extended = self.frame_data["interactions"]["piston1_extended"]
+        piston2_retracted = self.frame_data["interactions"]["piston2_retracted"]
+        piston2_extended = self.frame_data["interactions"]["piston2_extended"]
 
-        handle_colors = self.frame_data["colors"]["handle_colors"]
+        piston_color_map = self.frame_data["colors"]["piston_color_map"]
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
-            if pyautogui.pixel(*handle1) in handle_colors:
-                pyautogui.mouseDown(*handle1, duration=0.1)
-                pyautogui.moveTo(*handle1_active)
-                pyautogui.mouseUp()
-            if pyautogui.pixel(*handle2) in handle_colors:
-                pyautogui.mouseDown(*handle2, duration=0.1)
-                pyautogui.moveTo(*handle2_active)
-                pyautogui.mouseUp()
+            if self.pixel(*piston1_retracted) in piston_color_map:
+                self.mouseDown(*piston1_retracted, duration=0.1)
+                self.moveTo(*piston1_extended)
+                self.mouseUp()
+            if self.pixel(*piston2_retracted) in piston_color_map:
+                self.mouseDown(*piston2_retracted, duration=0.1)
+                self.moveTo(*piston2_extended)
+                self.mouseUp()
 
             nullify.click()
 

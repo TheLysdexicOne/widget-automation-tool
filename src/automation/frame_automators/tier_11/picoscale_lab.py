@@ -5,7 +5,6 @@ Handles automation for the Picoscale Lab frame in WidgetInc.
 
 from imagehash import phash
 
-import time
 
 from PIL import ImageGrab
 from typing import Any, Dict
@@ -19,8 +18,6 @@ class PicoscaleLabAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
         pass_button = self.create_button("pass")
         fail_button = self.create_button("fail")
 
@@ -29,9 +26,6 @@ class PicoscaleLabAutomator(BaseAutomator):
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             sample_hash = phash(ImageGrab.grab(bbox=sample_bbox, all_screens=True))
             compare_hash = phash(ImageGrab.grab(bbox=compare_bbox, all_screens=True))
 

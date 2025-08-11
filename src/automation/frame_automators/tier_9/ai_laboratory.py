@@ -3,8 +3,6 @@ AI Laboratory Automator (Frame ID: 9.3)
 Handles automation for the AI Laboratory frame in WidgetInc.
 """
 
-import pyautogui
-import time
 import numpy as np
 
 
@@ -68,21 +66,15 @@ class AiLaboratoryAutomator(BaseAutomator):
         return centers
 
     def run_automation(self):
-        start_time = time.time()
-
         self.canvas = self.frame_data["frame_xy"]["bbox"]["canvas"]
 
         # canvas for blobs of white in a sea of black
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             dots = self.find_dots()
             for dot in dots:
-                pyautogui.moveTo(dot[0], dot[1], duration=0.05)
-                pyautogui.click()
+                self.click(dot[0], dot[1])
 
             if not self.sleep(1.5):
                 break

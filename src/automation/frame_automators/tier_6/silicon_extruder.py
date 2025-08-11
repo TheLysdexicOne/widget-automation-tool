@@ -3,9 +3,6 @@ Silicon Extruder Automator (Frame ID: 6.1)
 Handles automation for the Silicon Extruder frame in WidgetInc.
 """
 
-import pyautogui
-import time
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 
@@ -17,21 +14,17 @@ class SiliconExtruderAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
-        slider = self.frame_data["interactions"]["slider"]
-        slider_color = pyautogui.pixel(slider[0], slider[1])
+        slider_left = self.frame_data["interactions"]["slider_left"]
+        slider_right = self.frame_data["interactions"]["slider_right"]
+        slider_color = self.pixel(*slider_left)
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
-            color = pyautogui.pixel(slider[0], slider[1])
+            color = self.pixel(*slider_left)
             if color == slider_color:
-                pyautogui.mouseDown(slider[0], slider[1])
-                pyautogui.moveTo(slider[0] + 500, slider[1], duration=0.1)
-                pyautogui.mouseUp()
+                self.mouseDown(*slider_left)
+                self.moveTo(*slider_right, duration=0.1)
+                self.mouseUp()
 
             if not self.sleep(0.1):
                 break

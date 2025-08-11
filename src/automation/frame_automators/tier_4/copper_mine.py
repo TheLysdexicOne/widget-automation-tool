@@ -15,4 +15,18 @@ class CopperMineAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        self.ore_miner()
+        miners = [
+            self.create_button("miner1"),
+            self.create_button("miner2"),
+            self.create_button("miner3"),
+            self.create_button("miner4"),
+        ]
+
+        # Main automation loop
+        while self.should_continue:
+            for miner in miners:
+                if self.should_continue and miner.active():
+                    miner.click()
+
+            if not self.sleep(0.05):
+                break

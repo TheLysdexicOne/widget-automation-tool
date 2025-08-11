@@ -3,9 +3,6 @@ Omega Casing Factory Automator (Frame ID: 12.4)
 Handles automation for the Omega Casing Factory frame in WidgetInc.
 """
 
-import pyautogui
-import time
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 
@@ -17,45 +14,35 @@ class OmegaCasingFactoryAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
         lever_off = self.frame_data["interactions"]["lever_off"]
         lever_on = self.frame_data["interactions"]["lever_on"]
-        handle_up = self.frame_data["interactions"]["handle_up"]
-        handle_down = self.frame_data["interactions"]["handle_down"]
+        piston_retracted = self.frame_data["interactions"]["piston_retracted"]
+        piston_extended = self.frame_data["interactions"]["piston_extended"]
         watch_point = self.frame_data["interactions"]["watch_point"]
-
-        print(handle_up)
 
         background_colors = self.frame_data["colors"]["background_colors"]
         lever_color = self.frame_data["colors"]["lever_color"]
 
-        if pyautogui.pixel(*watch_point) in background_colors:
-            pyautogui.mouseDown(*lever_off)
-            pyautogui.moveTo(*lever_on)
-        while self.should_continue and pyautogui.pixel(*watch_point) in background_colors:
+        if self.pixel(*watch_point) in background_colors:
+            self.mouseDown(*lever_off)
+            self.moveTo(*lever_on)
+        while self.should_continue and self.pixel(*watch_point) in background_colors:
             self.sleep(0.1)
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
+            self.mouseDown(*piston_retracted)
+            self.moveTo(*piston_extended, duration=0.1)
+            self.mouseUp()
 
-            self.logger.debug("Moving Handle")
-            pyautogui.mouseDown(*handle_up)
-            pyautogui.moveTo(*handle_down, duration=0.1)
-            pyautogui.mouseUp()
-
-            while pyautogui.pixel(*lever_off) != lever_color:
+            while self.pixel(*lever_off) != lever_color:
                 self.sleep(0.05)
-            pyautogui.mouseDown(*lever_off)
-            pyautogui.moveTo(*lever_on, duration=0.1)
-            while self.should_continue and pyautogui.pixel(*watch_point) not in background_colors:
-                self.logger.debug("waiting for object to pass")
+            self.mouseDown(*lever_off)
+            self.moveTo(*lever_on, duration=0.1)
+            while self.should_continue and self.pixel(*watch_point) not in background_colors:
                 self.sleep(0.05)
 
-            while self.should_continue and pyautogui.pixel(*watch_point) in background_colors:
-                self.logger.debug("waiting for new object")
+            while self.should_continue and self.pixel(*watch_point) in background_colors:
                 self.sleep(0.05)
-            pyautogui.mouseUp()
+            self.mouseUp()
             continue

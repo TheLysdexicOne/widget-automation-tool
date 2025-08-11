@@ -3,7 +3,6 @@ Rocket Electronics Lab Automator (Frame ID: 13.1)
 Handles automation for the Rocket Electronics Lab frame in WidgetInc.
 """
 
-import time
 import easyocr
 import numpy as np
 
@@ -48,17 +47,12 @@ class RocketElectronicsLabAutomator(BaseAutomator):
         return "", 0.0
 
     def run_automation(self):
-        start_time = time.time()
-
         reading_bbox = self.frame_data["bbox"]["reading_bbox"]
         zero = self.frame_data["interactions"]["0"]
         one = self.frame_data["interactions"]["1"]
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             binary_text, confidence = self.read_binary(reading_bbox)
             self.logger.info(f"Read binary: {binary_text} (confidence: {confidence})")
 

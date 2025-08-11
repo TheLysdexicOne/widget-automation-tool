@@ -17,6 +17,10 @@ from automation.automation_engine import AutomationEngine
 class BaseAutomator(ABC):
     """Base class for all frame automators."""
 
+    # ==============================
+    # Construction / Initialization
+    # ==============================
+
     def __init__(self, frame_data: Dict[str, Any]):
         self.frame_data = frame_data
         self.frame_id = frame_data.get("id", "unknown")
@@ -49,7 +53,9 @@ class BaseAutomator(ABC):
         # UI callback for failsafe/emergency stop
         self.ui_callback = None
 
-        # Shorthand
+    # ==============================
+    # Abstract Entry Point
+    # ==============================
 
     @abstractmethod
     def run_automation(self):
@@ -58,6 +64,10 @@ class BaseAutomator(ABC):
         This method contains the frame-specific automation logic.
         """
         pass
+
+    # ==============================
+    # Lifecycle Control
+    # ==============================
 
     def start_automation(self) -> bool:
         """Start the automation process for this frame."""
@@ -68,6 +78,9 @@ class BaseAutomator(ABC):
         self.log_info(f"Starting {self.frame_name} automation")
         self.is_running = True
         self.should_stop = False
+
+        # Set start time for automatic timeout checking
+        self.start_time = time.time()
 
         # Run the automation directly (controller handles threading)
         self.run_automation()
@@ -96,51 +109,6 @@ class BaseAutomator(ABC):
         except Exception as e:
             self.log_debug(f"Error during mouse cleanup: {e}")
 
-    def get_status(self) -> Dict[str, Any]:
-        """Get current automation status."""
-        return {
-            "frame_id": self.frame_id,
-            "frame_name": self.frame_name,
-            "is_running": self.is_running,
-            "should_stop": self.should_stop,
-        }
-
-    @property
-    def should_continue(self) -> bool:
-        """Check if automation should continue running."""
-        return self.is_running and not self.should_stop
-
-    def sleep(self, duration: float) -> bool:
-        """
-        Sleep for given duration while checking for stop signal.
-        Returns True if sleep completed normally, False if interrupted.
-        """
-        end_time = time.time() + duration
-        while time.time() < end_time:
-            if self.should_stop:
-                return False
-            time.sleep(0.01)  # Check every 100ms
-        return True
-
-    def log_info(self, message: str):
-        """Log info message with emoji-safe encoding."""
-        safe_message = message.encode("ascii", "replace").decode("ascii")
-        self.logger.info(safe_message)
-
-    def log_debug(self, message: str):
-        """Log debug message with emoji-safe encoding."""
-        safe_message = message.encode("ascii", "replace").decode("ascii")
-        self.logger.debug(safe_message)
-
-    def log_error(self, message: str):
-        """Log error message with emoji-safe encoding."""
-        safe_message = message.encode("ascii", "replace").decode("ascii")
-        self.logger.error(safe_message)
-
-    def set_ui_callback(self, callback):
-        """Set the UI callback function for automation events."""
-        self.ui_callback = callback
-
     def trigger_failsafe_stop(self, reason: str):
         """Trigger a failsafe stop and notify the UI."""
         self.should_stop = True
@@ -157,6 +125,75 @@ class BaseAutomator(ABC):
             except Exception as e:
                 self.log_error(f"Error calling UI callback: {e}")
 
+    # ==============================
+    # State / Status Helpers
+    # ==============================
+
+    def get_status(self) -> Dict[str, Any]:
+        """Get current automation status."""
+        return {
+            "frame_id": self.frame_id,
+            "frame_name": self.frame_name,
+            "is_running": self.is_running,
+            "should_stop": self.should_stop,
+        }
+
+    @property
+    def should_continue(self) -> bool:
+        """Check if automation should continue running with automatic timeout checking."""
+        if not self.is_running or self.should_stop:
+            return False
+
+        # Check timeout automatically
+        if hasattr(self, "start_time") and time.time() - self.start_time > self.max_run_time:
+            self.log_timeout_error()
+            return False
+
+        return True
+
+    def sleep(self, duration: float) -> bool:
+        """
+        Sleep for given duration while checking for stop signal.
+        Returns True if sleep completed normally, False if interrupted.
+        """
+        end_time = time.time() + duration
+        while time.time() < end_time:
+            if self.should_stop:
+                return False
+            time.sleep(0.01)  # Check every 100ms
+        return True
+
+    # ==============================
+    # Logging Utilities
+    # ==============================
+
+    def log_info(self, message: str):
+        """Log info message with emoji-safe encoding."""
+        safe_message = message.encode("ascii", "replace").decode("ascii")
+        self.logger.info(safe_message)
+
+    def log_debug(self, message: str):
+        """Log debug message with emoji-safe encoding."""
+        safe_message = message.encode("ascii", "replace").decode("ascii")
+        self.logger.debug(safe_message)
+
+    def log_error(self, message: str):
+        """Log error message with emoji-safe encoding."""
+        safe_message = message.encode("ascii", "replace").decode("ascii")
+        self.logger.error(safe_message)
+
+    # ==============================
+    # UI / Callback
+    # ==============================
+
+    def set_ui_callback(self, callback):
+        """Set the UI callback function for automation events."""
+        self.ui_callback = callback
+
+    # ==============================
+    # Data Access / Buttons / BBox
+    # ==============================
+
     def check_button_failsafe(self, button_data: list, button_name: str) -> bool:
         """Check if button is valid and trigger failsafe if not."""
         return self.engine.failsafe_color_validation(
@@ -171,19 +208,45 @@ class BaseAutomator(ABC):
         """Get bounding box for this frame."""
         return self.frame_data.get("bbox", {})
 
-    def pixel(self, x: int, y: int) -> tuple[int, int, int]:
+    # ==============================
+    # Mouse / Input Operations
+    # ==============================
+
+    def pixel(self, x: Optional[int], y: Optional[int]) -> tuple[int, int, int]:
         """Get pixel color at specified coordinates."""
+        if x is None or y is None:
+            self.log_error(f"Cannot get pixel color: x or y is None (x={x}, y={y})")
+            return (0, 0, 0)
         try:
             return pyautogui.pixel(x, y)
         except Exception as e:
             self.log_error(f"Failed to get pixel color at ({x}, {y}): {e}")
             return (0, 0, 0)
 
-    def click(self, x: int, y: int, button: str = "left", duration: float = 0.1) -> bool:
+    def pixelMatchesColor(self, x: Optional[int], y: Optional[int], color: tuple[int, int, int]) -> bool:
+        """Check if pixel at specified coordinates matches the given color."""
+        if x is None or y is None:
+            self.log_error(f"Cannot check pixel color: x or y is None (x={x}, y={y})")
+            return False
+        try:
+            return pyautogui.pixelMatchesColor(x, y, color)
+        except Exception as e:
+            self.log_error(f"Failed to check pixel color at ({x}, {y}): {e}")
+            return False
+
+    def click(
+        self, x: Optional[int] = None, y: Optional[int] = None, button: str = "left", duration: float = 0.1
+    ) -> bool:
         """Click at specified coordinates with optional button and duration."""
         try:
-            pyautogui.click(x, y, button=button, duration=duration)
-            self.log_debug(f"Clicked at ({x}, {y}) with {button} button")
+            if self.should_continue:
+                if x is not None and y is not None:
+                    pyautogui.click(x, y, button=button, duration=duration)
+                    self.log_debug(f"Clicked at ({x}, {y}) with {button} button")
+                else:
+                    current_x, current_y = pyautogui.position()
+                    pyautogui.click(button=button, duration=duration)
+                    self.log_debug(f"Clicked at ({current_x}, {current_y}) with {button} button")
             return True
         except Exception as e:
             self.log_error(f"Failed to click at ({x}, {y}): {e}")
@@ -194,12 +257,14 @@ class BaseAutomator(ABC):
     ) -> bool:
         """Mouse down at specified coordinates with optional button and duration."""
         try:
-            if self.should_continue and x is not None and y is not None:
-                pyautogui.mouseDown(x, y, button=button, duration=duration)
-                self.log_debug(f"Mouse down at ({x}, {y}) with {button} button")
-            else:
-                pyautogui.mouseDown(button=button, duration=duration)
-                self.log_debug(f"Mouse down at current position with {button} button")
+            if self.should_continue:
+                if x is not None and y is not None:
+                    pyautogui.mouseDown(x, y, button=button, duration=duration)
+                    self.log_debug(f"Mouse down at ({x}, {y}) with {button} button")
+                else:
+                    current_x, current_y = pyautogui.position()
+                    pyautogui.mouseDown(button=button, duration=duration)
+                    self.log_debug(f"Mouse down at ({current_x}, {current_y}) with {button} button")
             return True
         except Exception as e:
             self.log_error(f"Failed to mouse down at ({x}, {y}): {e}")
@@ -212,12 +277,14 @@ class BaseAutomator(ABC):
         If x or y are not provided, mouseUp occurs at the current mouse position.
         """
         try:
-            if self.should_continue and x is not None and y is not None:
-                pyautogui.mouseUp(x, y, button=button, duration=duration)
-                self.log_debug(f"Mouse up at ({x}, {y}) with {button} button")
-            else:
-                pyautogui.mouseUp(button=button, duration=duration)
-                self.log_debug(f"Mouse up at current position with {button} button")
+            if self.should_continue:
+                if x is not None and y is not None:
+                    pyautogui.mouseUp(x, y, button=button, duration=duration)
+                    self.log_debug(f"Mouse up at ({x}, {y}) with {button} button")
+                else:
+                    current_x, current_y = pyautogui.position()
+                    pyautogui.mouseUp(button=button, duration=duration)
+                    self.log_debug(f"Mouse up at ({current_x}, {current_y}) with {button} button")
             return True
         except Exception as e:
             self.log_error(f"Failed to mouse up at ({x}, {y}): {e}")
@@ -234,9 +301,9 @@ class BaseAutomator(ABC):
             self.log_error(f"Failed to move mouse to ({x}, {y}): {e}")
             return False
 
-    """
-    Predefined Logging Messages
-    """
+    # ==============================
+    # Fatal / Structured Errors
+    # ==============================
 
     def log_storage_error(self):
         self.should_stop = True
@@ -259,9 +326,9 @@ class BaseAutomator(ABC):
         self.cleanup_mouse_state()
         self.log_error(f"Exiting automation: {reason}")
 
-    """
-    Repeated Automations
-    """
+    # ==============================
+    # Reusable Automation Patterns
+    # ==============================
 
     def ore_miner(self):
         # For all miners in frame_data["buttons"]

@@ -3,7 +3,6 @@ Sentience Facility Automator (Frame ID: 11.1)
 Handles automation for the Sentience Facility frame in WidgetInc.
 """
 
-import pyautogui
 import numpy as np
 from typing import Any, Dict, List, Tuple
 from automation.base_automator import BaseAutomator
@@ -155,7 +154,7 @@ class SentienceFacilityAutomator(BaseAutomator):
                     continue
                 tx, ty = tc
                 sx, sy = conv_frame_coords_to_screen_coords(tx, ty)
-                pyautogui.click(sx, sy)
+                self.click(sx, sy)
                 if not self.sleep(0.1):
                     return
 

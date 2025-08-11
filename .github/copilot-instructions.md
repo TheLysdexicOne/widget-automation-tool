@@ -10,6 +10,12 @@
 - **Clean Functional Design** - Don't go overboard on looks until application functions correctly
 - **Virtual Environment is Absolute Must** - Everything needed is in the virtual environment, no global installs
 
+### Code Style & Comments
+
+- **If the code explains itself, don't use comments**
+- **Exception:** Categorization comment headers for functions are encouraged (e.g., `# ==============================`)
+- **Exception:** Triple quotes for docstrings explaining a function as a whole
+
 ### Core Components & Data Flow
 
 - **CacheManager (`utility/cache_manager.py`)** - Centralized window detection & caching. Get via `get_cache_manager()` singleton

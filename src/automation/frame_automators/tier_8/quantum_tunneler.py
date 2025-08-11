@@ -3,9 +3,6 @@ Quantum Tunneler Automator (Frame ID: 8.4)
 Handles automation for the Quantum Tunneler frame in WidgetInc.
 """
 
-import pyautogui
-import time
-
 from typing import Any, Dict
 from automation.base_automator import BaseAutomator
 
@@ -17,8 +14,6 @@ class QuantumTunnelerAutomator(BaseAutomator):
         super().__init__(frame_data)
 
     def run_automation(self):
-        start_time = time.time()
-
         source_shape_1 = self.frame_data["interactions"]["source_shape_1"]
         source_shape_2 = self.frame_data["interactions"]["source_shape_2"]
         source_shape_3 = self.frame_data["interactions"]["source_shape_3"]
@@ -51,39 +46,14 @@ class QuantumTunnelerAutomator(BaseAutomator):
 
         # Main automation loop
         while self.should_continue:
-            if time.time() - start_time > self.max_run_time:
-                break
-
             for source in source_shapes.values():
                 for target in target_shapes.values():
-                    if self.should_continue and pyautogui.pixel(
-                        source["location"][0], source["location"][1]
-                    ) == pyautogui.pixel(target["location"][0], target["location"][1]):
-                        pyautogui.mouseDown(*source["dot"], duration=0.1)
-                        pyautogui.moveTo(*target["dot"])
-                        pyautogui.mouseUp()
+                    if self.should_continue and self.pixel(source["location"][0], source["location"][1]) == self.pixel(
+                        target["location"][0], target["location"][1]
+                    ):
+                        self.mouseDown(*source["dot"], duration=0.1)
+                        self.moveTo(*target["dot"])
+                        self.mouseUp()
                         self.sleep(0.1)
             if not self.sleep(2.5):
                 break
-
-
-"""
-0.590741, 0.362500, 0.622222, 0.409722 = (0.6064815, 0.386111)
-0.590741, 0.487500, 0.622222, 0.534722 = (0.6064815, 0.511111)
-0.590741, 0.612500, 0.622222, 0.659722 = (0.6064815, 0.636111)
-0.590741, 0.737500, 0.622222, 0.784722 = (0.6064815, 0.761111)
-0.840741, 0.362500, 0.872222, 0.409722 = (0.8564815, 0.386111)
-0.840741, 0.487500, 0.872222, 0.534722 = (0.8564815, 0.511111)
-0.840741, 0.612500, 0.872222, 0.659722 = (0.8564815, 0.636111)
-0.840741, 0.737500, 0.872222, 0.784722 = (0.8564815, 0.761111)
-
-
-0.640741, 0.375000, 0.656481, 0.398611 = (0.648611,  0.3868055)
-0.640741, 0.500000, 0.656481, 0.523611 = (0.648611,  0.5118055)
-0.640741, 0.625000, 0.656481, 0.648611 = (0.648611,  0.6368055)
-0.640741, 0.750000, 0.656481, 0.773611 = (0.648611,  0.7618055)
-0.807407, 0.375000, 0.823148, 0.398611 = (0.8152775, 0.3868055)
-0.807407, 0.500000, 0.823148, 0.523611 = (0.8152775, 0.5118055)
-0.807407, 0.625000, 0.823148, 0.648611 = (0.8152775, 0.6368055)
-0.807407, 0.750000, 0.823148, 0.773611 = (0.8152775, 0.7618055)
-"""
