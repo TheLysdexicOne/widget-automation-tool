@@ -225,3 +225,25 @@ tools/tracker.py                    # Standalone coordinate tracking tool
 ```
 
 Use `semantic_search` to find automation patterns, coordinate usage, or threading examples in the codebase.
+
+# Ongoing Development for Frame Detector
+
+**Unless explicity told, AI is to not alter this file.**
+
+## Key Principles
+
+- KISS and DRY
+- Start simple and work towards complex. Sometimes the simple solutions work best.
+- Don't try to do too much at once. It'll just end in disaster.
+
+## Design Philosophy
+
+- There is **NO AUTOSTART**
+  - Under no circumstance should the application auto-start any programmed automation on a frame.
+- For now, the start button will be about 1/4 up the frame centered. This may vary frame-to-frame _later_.
+- In the end, it will only be displayed on frames that have automation programmed.
+- Once activated, it will transform, but for now, we shrink it to a small green orb attached to (0, 32) of the frame itself
+
+## Prompt Analysis over time
+
+---
