@@ -16,7 +16,7 @@ The Frame Border Analysis Tool is a standalone application for analyzing the lef
 
 ## Border Analysis Regions
 
-```
+```text
 Frame Layout:
 ┌─────────────────────────┐
 │ 5%  │    90%     │ 5% │  ← Analyzed borders
@@ -79,7 +79,7 @@ Frame Layout:
 
 ## File Structure
 
-```
+```text
 src/analyze/
 ├── frame_analyzer.py          # Main PyQt6 application
 ├── border_analysis_engine.py  # Core image processing

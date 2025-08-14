@@ -107,6 +107,7 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Minimize button
         minimize_btn = QPushButton("−")
         minimize_btn.setFixedSize(30, 30)
+        minimize_btn.setToolTip("Minimize: Toggle between full view and title bar only")
         minimize_btn.clicked.connect(self.toggle_minimize_titlebar)
 
         # Close button
@@ -247,9 +248,28 @@ class MainWindow(QMainWindow, LoggerMixin):
     def toggle_minimize_titlebar(self):
         """Toggle between normal view and title bar only view."""
         if self._is_minimized_to_titlebar:
+            # Currently minimized to title bar - restore to full view
             self.restore_from_titlebar()
         else:
+            # Currently in normal mode - minimize to title bar only
             self.minimize_to_titlebar()
+
+    def restore_from_titlebar(self):
+        """Restore from title bar only view to normal view."""
+        if self._is_minimized_to_titlebar:
+            # Remove the fixed height constraint
+            self.setMinimumHeight(0)
+            self.setMaximumHeight(16777215)  # Qt's default max height
+
+            # Show the content container
+            self.content_container.show()
+
+            # Restore original size if we have it
+            if hasattr(self, "_original_size") and self._original_size is not None:
+                self.resize(self._original_size)
+
+            self._is_minimized_to_titlebar = False
+            self.logging.debug("Restored from title bar to normal view")
 
     def minimize_to_titlebar(self):
         """Minimize window to just the title bar instead of taskbar."""
@@ -267,25 +287,10 @@ class MainWindow(QMainWindow, LoggerMixin):
             self._is_minimized_to_titlebar = True
             self.logging.debug("Minimized to title bar")
 
-    def restore_from_titlebar(self):
-        """Restore window from title bar minimization."""
-        if self._is_minimized_to_titlebar:
-            # Remove height constraint
-            self.setMinimumHeight(0)
-            self.setMaximumHeight(16777215)
-
-            # Show the main content
-            self.content_container.show()
-
-            # Restore original size if available
-            if self._original_size is not None:
-                self.resize(self._original_size)
-
-            self._is_minimized_to_titlebar = False
-            self.logging.debug("Restored from title bar minimization")
-
-            # Re-snap to window position after restoration
-            self.check_and_snap_to_window()
+    def showEvent(self, event):
+        """Handle window show events for debugging."""
+        self.logging.debug(f"Window show event - visible: {self.isVisible()}, minimized: {self.isMinimized()}")
+        super().showEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:
