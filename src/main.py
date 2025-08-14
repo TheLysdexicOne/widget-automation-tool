@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
 
 from automation.automation_controller import AutomationController
 from automation.global_hotkey_manager import GlobalHotkeyManager
+from detection.frame_detector import FrameDetector
 from utility.cache_manager import get_cache_manager
 from utility.logging_utils import setup_logging, LoggerMixin
 
@@ -49,6 +50,9 @@ class MainWindow(QMainWindow, LoggerMixin):
         # Track minimized state for title bar minimization
         self._is_minimized_to_titlebar = False
         self._original_size = None
+
+        # Initialize frame detector overlay
+        self.frame_detector = FrameDetector(self)
 
         self.setWindowTitle("Widget Automation Tool")
         self.setWindowFlags(
@@ -323,6 +327,11 @@ class MainWindow(QMainWindow, LoggerMixin):
         self.logging.info("Application closing - cleaning up")
         self.hotkey_manager.stop_monitoring()
         self.automation_controller.stop_all_automations()
+
+        # Cleanup frame detector
+        if hasattr(self, "frame_detector"):
+            self.frame_detector.cleanup()
+
         event.accept()
 
     def setup_window_snapping(self):
