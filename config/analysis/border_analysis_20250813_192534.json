@@ -1,0 +1,5602 @@
+{
+  "1.1_Iron_Mine": {
+    "frame_id": "1.1",
+    "frame_name": "Iron Mine",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [70, 64, 70],
+      "color_variance": 2143.284456374787,
+      "dominant_colors": [
+        [43, 34, 39],
+        [54, 23, 16],
+        [123, 134, 149],
+        [99, 105, 120],
+        [143, 155, 169]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 32,
+          "max": 159,
+          "std": 36.61042333070093
+        },
+        "green": {
+          "min": 20,
+          "max": 181,
+          "std": 47.246774931056
+        },
+        "blue": {
+          "min": 16,
+          "max": 198,
+          "std": 53.20124454903972
+        },
+        "diversity": 0.0014146090534979425,
+        "unique_colors": 11,
+        "brightness": {
+          "average": 68.38138717421126,
+          "min": 25.333333333333332,
+          "max": 179.33333333333334,
+          "std": 45.301891410652615
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.682973587453265,
+        "edge_variance": 327.90503164962985,
+        "max_edge_strength": 90.17837262275744,
+        "horizontal_tendency": 1.6339163237311385,
+        "vertical_tendency": 8.355967078189302,
+        "edge_ratio": 0.1955388656324386
+      },
+      "signature": "487f7a027e31b5f9782acc750ab17d72",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [61, 53, 59],
+      "color_variance": 1685.2796530576038,
+      "dominant_colors": [
+        [43, 34, 39],
+        [32, 20, 24],
+        [46, 48, 58],
+        [70, 66, 74],
+        [54, 23, 16]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 32,
+          "max": 222,
+          "std": 35.099476704138084
+        },
+        "green": {
+          "min": 20,
+          "max": 181,
+          "std": 41.3391870786955
+        },
+        "blue": {
+          "min": 16,
+          "max": 198,
+          "std": 45.64592828803423
+        },
+        "diversity": 0.001800411522633745,
+        "unique_colors": 14,
+        "brightness": {
+          "average": 58.40239197530864,
+          "min": 25.333333333333332,
+          "max": 179.33333333333334,
+          "std": 39.89214053734856
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.4388166654311,
+        "edge_variance": 189.46432526236612,
+        "max_edge_strength": 71.24390812163833,
+        "horizontal_tendency": 1.4638631687242796,
+        "vertical_tendency": 6.25934499314129,
+        "edge_ratio": 0.23386842718021061
+      },
+      "signature": "7c797df4623ee17b711c50cde07cfc55",
+      "pixel_count": 7776
+    },
+    "combined_signature": "2c9040d2cc0ebda0c49d6a997bbae1473d6228b6670e18af9e187208c9351118",
+    "timestamp": "2025-08-13T19:05:24.091734",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "1.2_Iron_Smelter": {
+    "frame_id": "1.2",
+    "frame_name": "Iron Smelter",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [42, 46, 56],
+      "color_variance": 1370.3709471923978,
+      "dominant_colors": [
+        [11, 10, 10],
+        [62, 63, 75],
+        [43, 56, 75],
+        [48, 62, 81],
+        [36, 37, 53]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 11,
+          "max": 143,
+          "std": 33.16816292466441
+        },
+        "green": {
+          "min": 10,
+          "max": 138,
+          "std": 35.330155019117704
+        },
+        "blue": {
+          "min": 10,
+          "max": 150,
+          "std": 40.77803602253879
+        },
+        "diversity": 0.0033436213991769547,
+        "unique_colors": 26,
+        "brightness": {
+          "average": 48.626371742112475,
+          "min": 10.333333333333334,
+          "max": 143.66666666666666,
+          "std": 36.135474601779165
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.151477839391267,
+        "edge_variance": 153.9339224433758,
+        "max_edge_strength": 78.76582733365755,
+        "horizontal_tendency": 2.2542866941015087,
+        "vertical_tendency": 4.157943244170096,
+        "edge_ratio": 0.5421638925115854
+      },
+      "signature": "fff6083e36aef09b66de5048cb972c39",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [44, 45, 57],
+      "color_variance": 1139.6868515199124,
+      "dominant_colors": [
+        [25, 24, 34],
+        [36, 37, 53],
+        [62, 63, 75],
+        [11, 10, 10],
+        [110, 115, 129]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 11,
+          "max": 123,
+          "std": 31.168282068902705
+        },
+        "green": {
+          "min": 10,
+          "max": 127,
+          "std": 33.31823392102231
+        },
+        "blue": {
+          "min": 10,
+          "max": 138,
+          "std": 35.28086962761798
+        },
+        "diversity": 0.0014146090534979425,
+        "unique_colors": 11,
+        "brightness": {
+          "average": 49.187157064471876,
+          "min": 10.333333333333334,
+          "max": 129.33333333333334,
+          "std": 33.168931130684676
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.965841687202327,
+        "edge_variance": 185.58683896926405,
+        "max_edge_strength": 76.13183010775161,
+        "horizontal_tendency": 1.2439557613168724,
+        "vertical_tendency": 5.964248971193416,
+        "edge_ratio": 0.20856871792660311
+      },
+      "signature": "2f4749c7cf31dfb7e5fc9474136b559f",
+      "pixel_count": 7776
+    },
+    "combined_signature": "1de7cbe479d3f4c85dde531d982b45d4a1373269792bd6302bc66f71723210f1",
+    "timestamp": "2025-08-13T19:05:27.513962",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "1.3_Widget_Factory": {
+    "frame_id": "1.3",
+    "frame_name": "Widget Factory",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [50, 59, 61],
+      "color_variance": 1354.9511446237682,
+      "dominant_colors": [
+        [44, 48, 50],
+        [29, 33, 34],
+        [89, 113, 122],
+        [10, 12, 11],
+        [110, 136, 144]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 10,
+          "max": 110,
+          "std": 30.219314412462495
+        },
+        "green": {
+          "min": 12,
+          "max": 136,
+          "std": 37.86658499339131
+        },
+        "blue": {
+          "min": 11,
+          "max": 144,
+          "std": 40.63705425830211
+        },
+        "diversity": 0.00102880658436214,
+        "unique_colors": 8,
+        "brightness": {
+          "average": 57.37791495198903,
+          "min": 11.0,
+          "max": 130.0,
+          "std": 36.16219378883812
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.890512502052815,
+        "edge_variance": 208.29698266528203,
+        "max_edge_strength": 84.14570696119915,
+        "horizontal_tendency": 1.1784122085048012,
+        "vertical_tendency": 6.974965706447187,
+        "edge_ratio": 0.1689488175426521
+      },
+      "signature": "71d92213c4b4a2e9d2ca1e3d8a33e5eb",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [74, 69, 66],
+      "color_variance": 1408.5386750933283,
+      "dominant_colors": [
+        [44, 48, 50],
+        [121, 90, 71],
+        [95, 70, 59],
+        [10, 12, 11],
+        [62, 71, 74]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 10,
+          "max": 250,
+          "std": 41.97900194241083
+        },
+        "green": {
+          "min": 12,
+          "max": 164,
+          "std": 33.99873652149542
+        },
+        "blue": {
+          "min": 11,
+          "max": 171,
+          "std": 35.67959665118433
+        },
+        "diversity": 0.001800411522633745,
+        "unique_colors": 14,
+        "brightness": {
+          "average": 70.34426440329219,
+          "min": 11.0,
+          "max": 155.0,
+          "std": 33.704798058675415
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.475326030716745,
+        "edge_variance": 200.7004835305563,
+        "max_edge_strength": 73.07701416998371,
+        "horizontal_tendency": 1.3936471193415636,
+        "vertical_tendency": 6.3431069958847734,
+        "edge_ratio": 0.21971048576757762
+      },
+      "signature": "5faea6272a135c63cf8c7e657fcf686b",
+      "pixel_count": 7776
+    },
+    "combined_signature": "0ea39b61d3a1cffe75129a7e2ecab887e6b1723965765ca866951167d80cbea3",
+    "timestamp": "2025-08-13T19:05:30.207129",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "2.1_Sand_Pit": {
+    "frame_id": "2.1",
+    "frame_name": "Sand Pit",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [166, 133, 103],
+      "color_variance": 2831.123156234579,
+      "dominant_colors": [
+        [172, 180, 179],
+        [207, 154, 103],
+        [150, 98, 58],
+        [137, 134, 133],
+        [193, 139, 91]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 44,
+          "max": 238,
+          "std": 47.92551835628845
+        },
+        "green": {
+          "min": 28,
+          "max": 199,
+          "std": 45.097677262377545
+        },
+        "blue": {
+          "min": 30,
+          "max": 179,
+          "std": 46.28300729413504
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 134.29368141289436,
+          "min": 34.0,
+          "max": 196.0,
+          "std": 42.36970076947061
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.030228509090892,
+        "edge_variance": 170.8099048854572,
+        "max_edge_strength": 74.5672701510373,
+        "horizontal_tendency": 1.6865997942386832,
+        "vertical_tendency": 5.64471879286694,
+        "edge_ratio": 0.2987925273390037
+      },
+      "signature": "387c62c3dd13e7829575ec07bda0dd76",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [148, 126, 106],
+      "color_variance": 3822.8283162474177,
+      "dominant_colors": [
+        [172, 180, 179],
+        [78, 51, 39],
+        [137, 134, 133],
+        [44, 28, 30],
+        [238, 199, 151]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 44,
+          "max": 246,
+          "std": 63.900798264744
+        },
+        "green": {
+          "min": 28,
+          "max": 228,
+          "std": 59.866810316090415
+        },
+        "blue": {
+          "min": 30,
+          "max": 224,
+          "std": 54.10807432034611
+        },
+        "diversity": 0.00205761316872428,
+        "unique_colors": 16,
+        "brightness": {
+          "average": 126.91795267489714,
+          "min": 34.0,
+          "max": 226.0,
+          "std": 56.66246969704701
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.488078457070543,
+        "edge_variance": 285.0081458847463,
+        "max_edge_strength": 74.5672701510373,
+        "horizontal_tendency": 1.66366598079561,
+        "vertical_tendency": 8.131430041152264,
+        "edge_ratio": 0.20459697401022714
+      },
+      "signature": "002c03291866d8abd3a877cb3d1d5f9f",
+      "pixel_count": 7776
+    },
+    "combined_signature": "182203cff78e57c3ded363b617f04b1017cf359fbda63e2e4f64c7f90492e703",
+    "timestamp": "2025-08-13T19:05:32.434913",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "2.2_Glass_Kiln": {
+    "frame_id": "2.2",
+    "frame_name": "Glass Kiln",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [76, 65, 77],
+      "color_variance": 319.2315237530483,
+      "dominant_colors": [
+        [80, 69, 79],
+        [84, 71, 85],
+        [88, 74, 88],
+        [40, 34, 52],
+        [71, 60, 72]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 24,
+          "max": 138,
+          "std": 18.82505379565698
+        },
+        "green": {
+          "min": 21,
+          "max": 123,
+          "std": 16.964321061748297
+        },
+        "blue": {
+          "min": 35,
+          "max": 127,
+          "std": 14.84248352116471
+        },
+        "diversity": 0.001286008230452675,
+        "unique_colors": 10,
+        "brightness": {
+          "average": 73.47145061728395,
+          "min": 26.666666666666668,
+          "max": 129.33333333333334,
+          "std": 16.82899131070712
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 3.2399847823267383,
+        "edge_variance": 48.79559417499166,
+        "max_edge_strength": 45.7241122871122,
+        "horizontal_tendency": 0.8876457475994514,
+        "vertical_tendency": 2.5100737311385464,
+        "edge_ratio": 0.35363333617966014
+      },
+      "signature": "8b01a20cd3ba04fb31f35da44acd5a64",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [76, 64, 77],
+      "color_variance": 575.716708173435,
+      "dominant_colors": [
+        [80, 69, 79],
+        [84, 71, 85],
+        [40, 34, 52],
+        [84, 74, 81],
+        [56, 43, 58]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 24,
+          "max": 155,
+          "std": 25.838582202403742
+        },
+        "green": {
+          "min": 21,
+          "max": 139,
+          "std": 23.349682834611325
+        },
+        "blue": {
+          "min": 35,
+          "max": 141,
+          "std": 20.571024544619032
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 72.67794067215364,
+          "min": 26.666666666666668,
+          "max": 145.0,
+          "std": 23.18796701919874
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.355270724688625,
+        "edge_variance": 92.93183696496745,
+        "max_edge_strength": 61.98790204547981,
+        "horizontal_tendency": 0.970679012345679,
+        "vertical_tendency": 3.5825617283950617,
+        "edge_ratio": 0.2709455093689425
+      },
+      "signature": "5c73d5fd51a060b22bc37db8fa1fab49",
+      "pixel_count": 7776
+    },
+    "combined_signature": "5cc864944dd5da66f334a90a1803167e45e9678768c03100f2fb286b5504fc3e",
+    "timestamp": "2025-08-13T19:05:34.779401",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "2.3_Gyroscope_Fabricator": {
+    "frame_id": "2.3",
+    "frame_name": "Gyroscope Fabricator",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [113, 110, 121],
+      "color_variance": 3263.910019460944,
+      "dominant_colors": [
+        [101, 95, 109],
+        [104, 97, 114],
+        [98, 95, 103],
+        [19, 33, 57],
+        [144, 141, 151]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 9,
+          "max": 241,
+          "std": 62.45241627012074
+        },
+        "green": {
+          "min": 12,
+          "max": 233,
+          "std": 58.694784551734685
+        },
+        "blue": {
+          "min": 24,
+          "max": 222,
+          "std": 48.84705013237243
+        },
+        "diversity": 0.0014146090534979425,
+        "unique_colors": 11,
+        "brightness": {
+          "average": 114.85759602194788,
+          "min": 15.0,
+          "max": 232.0,
+          "std": 56.527292290454554
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 12.2770937997211,
+        "edge_variance": 541.8503998173032,
+        "max_edge_strength": 123.98678244967171,
+        "horizontal_tendency": 1.9720936213991767,
+        "vertical_tendency": 10.62855795610425,
+        "edge_ratio": 0.1855466780671364
+      },
+      "signature": "a1f00f8debf71b8aa9e64119e99efa3e",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [100, 103, 116],
+      "color_variance": 2911.0880735537166,
+      "dominant_colors": [
+        [144, 141, 151],
+        [98, 95, 103],
+        [104, 97, 114],
+        [50, 83, 113],
+        [9, 12, 24]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 9,
+          "max": 255,
+          "std": 58.31482084985542
+        },
+        "green": {
+          "min": 12,
+          "max": 233,
+          "std": 52.22313049690575
+        },
+        "blue": {
+          "min": 24,
+          "max": 222,
+          "std": 49.64465687850127
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 106.78202160493827,
+          "min": 15.0,
+          "max": 232.0,
+          "std": 50.842523419249524
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 10.379928347039122,
+        "edge_variance": 307.38162311847265,
+        "max_edge_strength": 67.36302975503534,
+        "horizontal_tendency": 1.697959533607682,
+        "vertical_tendency": 8.965835048010975,
+        "edge_ratio": 0.18938108101647105
+      },
+      "signature": "d5c422dd31c030586f2b3ee7cf492bb3",
+      "pixel_count": 7776
+    },
+    "combined_signature": "ec8ef08c6d225c1a3ddf54c513c388afe1e5ca37426b74c51ce24e3425e19b8d",
+    "timestamp": "2025-08-13T19:05:37.324908",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "2.4_Widget_Spinner": {
+    "frame_id": "2.4",
+    "frame_name": "Widget Spinner",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [113, 110, 121],
+      "color_variance": 3263.910019460944,
+      "dominant_colors": [
+        [101, 95, 109],
+        [104, 97, 114],
+        [98, 95, 103],
+        [19, 33, 57],
+        [144, 141, 151]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 9,
+          "max": 241,
+          "std": 62.45241627012074
+        },
+        "green": {
+          "min": 12,
+          "max": 233,
+          "std": 58.694784551734685
+        },
+        "blue": {
+          "min": 24,
+          "max": 222,
+          "std": 48.84705013237243
+        },
+        "diversity": 0.0014146090534979425,
+        "unique_colors": 11,
+        "brightness": {
+          "average": 114.85759602194788,
+          "min": 15.0,
+          "max": 232.0,
+          "std": 56.527292290454554
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 12.2770937997211,
+        "edge_variance": 541.8503998173032,
+        "max_edge_strength": 123.98678244967171,
+        "horizontal_tendency": 1.9720936213991767,
+        "vertical_tendency": 10.62855795610425,
+        "edge_ratio": 0.1855466780671364
+      },
+      "signature": "a1f00f8debf71b8aa9e64119e99efa3e",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [100, 103, 116],
+      "color_variance": 2911.0880735537166,
+      "dominant_colors": [
+        [144, 141, 151],
+        [98, 95, 103],
+        [104, 97, 114],
+        [50, 83, 113],
+        [9, 12, 24]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 9,
+          "max": 255,
+          "std": 58.31482084985542
+        },
+        "green": {
+          "min": 12,
+          "max": 233,
+          "std": 52.22313049690575
+        },
+        "blue": {
+          "min": 24,
+          "max": 222,
+          "std": 49.64465687850127
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 106.78202160493827,
+          "min": 15.0,
+          "max": 232.0,
+          "std": 50.842523419249524
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 10.379928347039122,
+        "edge_variance": 307.38162311847265,
+        "max_edge_strength": 67.36302975503534,
+        "horizontal_tendency": 1.697959533607682,
+        "vertical_tendency": 8.965835048010975,
+        "edge_ratio": 0.18938108101647105
+      },
+      "signature": "d5c422dd31c030586f2b3ee7cf492bb3",
+      "pixel_count": 7776
+    },
+    "combined_signature": "ec8ef08c6d225c1a3ddf54c513c388afe1e5ca37426b74c51ce24e3425e19b8d",
+    "timestamp": "2025-08-13T19:05:41.022210",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "3.1_Oil_Field": {
+    "frame_id": "3.1",
+    "frame_name": "Oil Field",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [74, 65, 61],
+      "color_variance": 1684.911878092344,
+      "dominant_colors": [
+        [25, 31, 39],
+        [32, 51, 66],
+        [167, 110, 68],
+        [50, 78, 99],
+        [17, 18, 19]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 17,
+          "max": 196,
+          "std": 57.239640709245315
+        },
+        "green": {
+          "min": 18,
+          "max": 133,
+          "std": 31.92628118595046
+        },
+        "blue": {
+          "min": 19,
+          "max": 162,
+          "std": 25.790810401144352
+        },
+        "diversity": 0.001800411522633745,
+        "unique_colors": 14,
+        "brightness": {
+          "average": 67.3346622085048,
+          "min": 18.0,
+          "max": 138.0,
+          "std": 33.55180353950475
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.2627134191754505,
+        "edge_variance": 74.95284581010891,
+        "max_edge_strength": 56.69117117231649,
+        "horizontal_tendency": 1.829818244170096,
+        "vertical_tendency": 3.712234224965706,
+        "edge_ratio": 0.49291562258224697
+      },
+      "signature": "b2f237bffb88102729b45b7aa3818c79",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [63, 62, 62],
+      "color_variance": 1748.7181948889167,
+      "dominant_colors": [
+        [25, 31, 39],
+        [17, 18, 19],
+        [32, 51, 66],
+        [50, 78, 99],
+        [167, 110, 68]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 17,
+          "max": 196,
+          "std": 52.556241980371084
+        },
+        "green": {
+          "min": 18,
+          "max": 203,
+          "std": 35.34161985766525
+        },
+        "blue": {
+          "min": 19,
+          "max": 236,
+          "std": 35.1332986167502
+        },
+        "diversity": 0.001800411522633745,
+        "unique_colors": 14,
+        "brightness": {
+          "average": 62.86158264746227,
+          "min": 18.0,
+          "max": 188.66666666666666,
+          "std": 35.68936973563897
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.8072953402628995,
+        "edge_variance": 144.29213875811678,
+        "max_edge_strength": 98.2878425849301,
+        "horizontal_tendency": 2.2166923868312756,
+        "vertical_tendency": 4.917181069958848,
+        "edge_ratio": 0.45080552359033366
+      },
+      "signature": "f56ee62e3500c2f275514778fe4edc1a",
+      "pixel_count": 7776
+    },
+    "combined_signature": "8e414a5cf859d793e331d1088601316db52cb912e8bfa6b6b4d12811cbe6689e",
+    "timestamp": "2025-08-13T19:05:45.141021",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "3.2_Oil_Power_Plant": {
+    "frame_id": "3.2",
+    "frame_name": "Oil Power Plant",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [36, 46, 51],
+      "color_variance": 695.3637205240533,
+      "dominant_colors": [
+        [13, 26, 43],
+        [43, 52, 48],
+        [17, 34, 53],
+        [58, 71, 66],
+        [8, 10, 10]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 8,
+          "max": 208,
+          "std": 27.279415814864233
+        },
+        "green": {
+          "min": 10,
+          "max": 122,
+          "std": 27.053033239485448
+        },
+        "blue": {
+          "min": 10,
+          "max": 112,
+          "std": 22.249853095581486
+        },
+        "diversity": 0.0015432098765432098,
+        "unique_colors": 12,
+        "brightness": {
+          "average": 44.80731310013718,
+          "min": 9.333333333333334,
+          "max": 111.0,
+          "std": 23.872800178855503
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 3.690483697274975,
+        "edge_variance": 52.423361344436614,
+        "max_edge_strength": 39.1379327223319,
+        "horizontal_tendency": 1.2376543209876543,
+        "vertical_tendency": 2.6323302469135803,
+        "edge_ratio": 0.47017441008354094
+      },
+      "signature": "48c290b83596f6cbe68733ef86b87055",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [42, 53, 56],
+      "color_variance": 816.06354291732,
+      "dominant_colors": [
+        [13, 26, 43],
+        [28, 32, 31],
+        [43, 52, 48],
+        [84, 105, 97],
+        [58, 71, 66]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 8,
+          "max": 140,
+          "std": 28.015425765772772
+        },
+        "green": {
+          "min": 10,
+          "max": 172,
+          "std": 30.79312442611665
+        },
+        "blue": {
+          "min": 10,
+          "max": 168,
+          "std": 24.503146864481657
+        },
+        "diversity": 0.0015432098765432098,
+        "unique_colors": 12,
+        "brightness": {
+          "average": 50.767532578875176,
+          "min": 9.333333333333334,
+          "max": 160.0,
+          "std": 26.806911357086847
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.508783293059197,
+        "edge_variance": 104.079789826271,
+        "max_edge_strength": 99.39050368230468,
+        "horizontal_tendency": 2.214420438957476,
+        "vertical_tendency": 3.586848422496571,
+        "edge_ratio": 0.617372182517867
+      },
+      "signature": "12930e81dddbd836aa468687695cab44",
+      "pixel_count": 7776
+    },
+    "combined_signature": "4a0bf988e0aa51e54677ee4dc30be31d9e8749a4ccecae257371f86224a96ea4",
+    "timestamp": "2025-08-13T19:05:49.992513",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "3.3_Battery_Assembler": {
+    "frame_id": "3.3",
+    "frame_name": "Battery Assembler",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [65, 76, 93],
+      "color_variance": 2710.5673581044716,
+      "dominant_colors": [
+        [0, 0, 0],
+        [90, 100, 127],
+        [95, 107, 126],
+        [89, 104, 126],
+        [171, 181, 194]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 171,
+          "std": 45.932637911554565
+        },
+        "green": {
+          "min": 0,
+          "max": 181,
+          "std": 51.41691620214404
+        },
+        "blue": {
+          "min": 0,
+          "max": 194,
+          "std": 54.739960610360434
+        },
+        "diversity": 0.029578189300411523,
+        "unique_colors": 230,
+        "brightness": {
+          "average": 78.41396604938272,
+          "min": 0.0,
+          "max": 182.0,
+          "std": 50.34283640462798
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 8.071082448538746,
+        "edge_variance": 258.9069965359588,
+        "max_edge_strength": 80.95557766797515,
+        "horizontal_tendency": 1.3291752400548693,
+        "vertical_tendency": 6.965920781893004,
+        "edge_ratio": 0.19081113346994782
+      },
+      "signature": "3ac2b5d52a8bf179febe87db8b14691a",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [53, 60, 77],
+      "color_variance": 1980.0446553274494,
+      "dominant_colors": [
+        [37, 42, 61],
+        [37, 39, 68],
+        [37, 40, 62],
+        [22, 21, 34],
+        [21, 21, 28]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 3,
+          "max": 165,
+          "std": 41.012363504008725
+        },
+        "green": {
+          "min": 8,
+          "max": 177,
+          "std": 44.437044176993595
+        },
+        "blue": {
+          "min": 14,
+          "max": 192,
+          "std": 44.476035737142695
+        },
+        "diversity": 0.033050411522633744,
+        "unique_colors": 257,
+        "brightness": {
+          "average": 63.763545953360776,
+          "min": 8.333333333333334,
+          "max": 175.66666666666666,
+          "std": 43.07252339863
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.603591908190627,
+        "edge_variance": 183.9565306401086,
+        "max_edge_strength": 68.60029154456998,
+        "horizontal_tendency": 1.0371656378600824,
+        "vertical_tendency": 6.779149519890261,
+        "edge_ratio": 0.15299347430190208
+      },
+      "signature": "4dfc8e66caa4aed7a1ff06434361e08d",
+      "pixel_count": 7776
+    },
+    "combined_signature": "e2b507507fbc91eb02425aa79836aa14b474fcc8f5376d2ef9c3129d773fd8e6",
+    "timestamp": "2025-08-13T19:06:07.731997",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "3.4_Capacitor_Bank": {
+    "frame_id": "3.4",
+    "frame_name": "Capacitor Bank",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [60, 68, 93],
+      "color_variance": 2416.202616930828,
+      "dominant_colors": [
+        [48, 49, 77],
+        [6, 11, 27],
+        [146, 158, 181],
+        [15, 24, 48],
+        [78, 99, 122]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 6,
+          "max": 197,
+          "std": 44.31094812577829
+        },
+        "green": {
+          "min": 11,
+          "max": 218,
+          "std": 48.11395605139435
+        },
+        "blue": {
+          "min": 27,
+          "max": 232,
+          "std": 48.61674014265658
+        },
+        "diversity": 0.001800411522633745,
+        "unique_colors": 14,
+        "brightness": {
+          "average": 73.91062242798354,
+          "min": 14.666666666666666,
+          "max": 215.66666666666666,
+          "std": 46.83346909522336
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.708488006576287,
+        "edge_variance": 339.8261862663107,
+        "max_edge_strength": 108.90617776579782,
+        "horizontal_tendency": 1.8204303840877913,
+        "vertical_tendency": 8.215020576131687,
+        "edge_ratio": 0.2215977875182634
+      },
+      "signature": "9dc2a3a5eee6aa980aeba510b9c2d4ea",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [56, 65, 87],
+      "color_variance": 1993.1313008817065,
+      "dominant_colors": [
+        [15, 24, 48],
+        [27, 39, 69],
+        [146, 158, 181],
+        [6, 11, 27],
+        [40, 56, 83]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 6,
+          "max": 146,
+          "std": 41.033153800129526
+        },
+        "green": {
+          "min": 11,
+          "max": 158,
+          "std": 43.336233385599
+        },
+        "blue": {
+          "min": 15,
+          "max": 181,
+          "std": 43.59821860945337
+        },
+        "diversity": 0.00360082304526749,
+        "unique_colors": 28,
+        "brightness": {
+          "average": 69.56772976680384,
+          "min": 12.0,
+          "max": 161.66666666666666,
+          "std": 42.34052744207721
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 10.573959760638019,
+        "edge_variance": 278.3961575021272,
+        "max_edge_strength": 96.26496997581438,
+        "horizontal_tendency": 1.8628686556927296,
+        "vertical_tendency": 9.112311385459533,
+        "edge_ratio": 0.20443426227348852
+      },
+      "signature": "0d0b0c9879588d86c97ceaeeae7b8d1e",
+      "pixel_count": 7776
+    },
+    "combined_signature": "a8c0af9bc0b33ce285b29befbdf46a5eb69c157d9a1eba90ab0b81987424d2b5",
+    "timestamp": "2025-08-13T19:06:35.742240",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "4.1_Copper_Mine": {
+    "frame_id": "4.1",
+    "frame_name": "Copper Mine",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [58, 48, 49],
+      "color_variance": 820.9787559834372,
+      "dominant_colors": [
+        [45, 42, 46],
+        [29, 31, 36],
+        [102, 101, 97],
+        [17, 18, 22],
+        [80, 40, 40]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 17,
+          "max": 217,
+          "std": 33.449231242599986
+        },
+        "green": {
+          "min": 18,
+          "max": 126,
+          "std": 26.986644692249765
+        },
+        "blue": {
+          "min": 22,
+          "max": 114,
+          "std": 23.658816197404185
+        },
+        "diversity": 0.0011574074074074073,
+        "unique_colors": 9,
+        "brightness": {
+          "average": 52.17292524005487,
+          "min": 19.0,
+          "max": 132.0,
+          "std": 26.62867429763381
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.87298574606256,
+        "edge_variance": 125.86824218740561,
+        "max_edge_strength": 67.44977555353482,
+        "horizontal_tendency": 1.5256772976680386,
+        "vertical_tendency": 4.565243484224965,
+        "edge_ratio": 0.3341940693721949
+      },
+      "signature": "eff6f3bd5b9fd5889fe3a93e0e4efced",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [51, 44, 46],
+      "color_variance": 842.6477969637475,
+      "dominant_colors": [
+        [45, 42, 46],
+        [17, 18, 22],
+        [29, 31, 36],
+        [80, 40, 40],
+        [102, 101, 97]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 17,
+          "max": 122,
+          "std": 31.35998988467837
+        },
+        "green": {
+          "min": 18,
+          "max": 230,
+          "std": 28.92448021427577
+        },
+        "blue": {
+          "min": 22,
+          "max": 231,
+          "std": 26.166248275492784
+        },
+        "diversity": 0.001286008230452675,
+        "unique_colors": 10,
+        "brightness": {
+          "average": 47.50287208504802,
+          "min": 19.0,
+          "max": 169.33333333333334,
+          "std": 27.209073266467364
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.961914946931949,
+        "edge_variance": 138.05485714543053,
+        "max_edge_strength": 92.85128491900966,
+        "horizontal_tendency": 1.525934499314129,
+        "vertical_tendency": 4.682098765432099,
+        "edge_ratio": 0.3259082252984692
+      },
+      "signature": "c2c684b764932725849e6bdaa86b1b52",
+      "pixel_count": 7776
+    },
+    "combined_signature": "adb15a47ebf030a56dbcac90ae1b404505293545967daae37c66724ea99b156b",
+    "timestamp": "2025-08-13T19:06:40.042045",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "4.2_Copper_Forge": {
+    "frame_id": "4.2",
+    "frame_name": "Copper Forge",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [60, 46, 49],
+      "color_variance": 1544.1751931287267,
+      "dominant_colors": [
+        [52, 52, 64],
+        [9, 4, 5],
+        [49, 47, 57],
+        [80, 82, 95],
+        [233, 80, 23]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 9,
+          "max": 254,
+          "std": 52.648073387118345
+        },
+        "green": {
+          "min": 4,
+          "max": 176,
+          "std": 29.09744113238565
+        },
+        "blue": {
+          "min": 5,
+          "max": 118,
+          "std": 30.108139930647017
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 52.0020147462277,
+          "min": 6.0,
+          "max": 164.66666666666666,
+          "std": 31.43146096866704
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.819769032901896,
+        "edge_variance": 89.48081040866602,
+        "max_edge_strength": 63.14885412877875,
+        "horizontal_tendency": 1.3284465020576133,
+        "vertical_tendency": 3.720721879286694,
+        "edge_ratio": 0.3570399898614008
+      },
+      "signature": "b084e1abdefad8940425bf175d837f21",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [55, 47, 53],
+      "color_variance": 932.8698258878189,
+      "dominant_colors": [
+        [49, 47, 57],
+        [25, 27, 37],
+        [52, 52, 64],
+        [9, 4, 5],
+        [96, 97, 105]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 9,
+          "max": 254,
+          "std": 37.55925274036935
+        },
+        "green": {
+          "min": 4,
+          "max": 176,
+          "std": 26.300448924700692
+        },
+        "blue": {
+          "min": 5,
+          "max": 118,
+          "std": 25.719467324653102
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 52.43111282578876,
+          "min": 6.0,
+          "max": 164.66666666666666,
+          "std": 26.651841808690353
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.260576932680223,
+        "edge_variance": 97.46147551139293,
+        "max_edge_strength": 62.63762624990048,
+        "horizontal_tendency": 0.9531035665294924,
+        "vertical_tendency": 4.472736625514403,
+        "edge_ratio": 0.21309181521947476
+      },
+      "signature": "09fb7ea1f7324ff6dcc1144404dacc17",
+      "pixel_count": 7776
+    },
+    "combined_signature": "0c26856ea7b6df90d0fc73371c236e75cad93251ad0523d062d787c06dddb04f",
+    "timestamp": "2025-08-13T19:06:42.646715",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "4.3_Plastic_Extractor": {
+    "frame_id": "4.3",
+    "frame_name": "Plastic Extractor",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [81, 69, 80],
+      "color_variance": 1518.1902964486385,
+      "dominant_colors": [
+        [88, 89, 104],
+        [15, 18, 34],
+        [70, 48, 60],
+        [83, 87, 99],
+        [90, 92, 110]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 15,
+          "max": 254,
+          "std": 49.14225423575557
+        },
+        "green": {
+          "min": 18,
+          "max": 169,
+          "std": 34.1488342503485
+        },
+        "blue": {
+          "min": 22,
+          "max": 181,
+          "std": 29.821509585373295
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 77.10138031550069,
+          "min": 22.333333333333332,
+          "max": 167.0,
+          "std": 34.56605533541432
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.261429202452873,
+        "edge_variance": 143.3279794599675,
+        "max_edge_strength": 79.59707560233883,
+        "horizontal_tendency": 1.1865997942386832,
+        "vertical_tendency": 4.249014060356652,
+        "edge_ratio": 0.27926473703856913
+      },
+      "signature": "4387b365f9e780c7204a9ed489ebfe57",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [68, 50, 61],
+      "color_variance": 1882.06074170385,
+      "dominant_colors": [
+        [33, 35, 59],
+        [70, 48, 60],
+        [15, 18, 34],
+        [45, 51, 79],
+        [113, 47, 50]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 15,
+          "max": 254,
+          "std": 62.19261369733617
+        },
+        "green": {
+          "min": 18,
+          "max": 169,
+          "std": 35.02116558148175
+        },
+        "blue": {
+          "min": 22,
+          "max": 111,
+          "std": 19.51054557603539
+        },
+        "diversity": 0.0015432098765432098,
+        "unique_colors": 12,
+        "brightness": {
+          "average": 60.1908864883402,
+          "min": 22.333333333333332,
+          "max": 166.33333333333334,
+          "std": 34.518585774627965
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.457726165131694,
+        "edge_variance": 152.77111668335226,
+        "max_edge_strength": 68.11795325430408,
+        "horizontal_tendency": 1.6106395747599451,
+        "vertical_tendency": 5.126286008230453,
+        "edge_ratio": 0.31419229675714544
+      },
+      "signature": "b7e10a34d8c0d1082bec57e3cb12c5fa",
+      "pixel_count": 7776
+    },
+    "combined_signature": "77108a69ccab27f6eb534630c99396115e834e150cd5372fc9efd36356ad1a62",
+    "timestamp": "2025-08-13T19:06:46.251634",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "4.4_Circuit_Fab": {
+    "frame_id": "4.4",
+    "frame_name": "Circuit Fab",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [20, 53, 60],
+      "color_variance": 1370.08238999602,
+      "dominant_colors": [
+        [15, 42, 55],
+        [1, 7, 7],
+        [20, 51, 62],
+        [56, 135, 135],
+        [23, 76, 79]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 56,
+          "std": 16.49309981022308
+        },
+        "green": {
+          "min": 7,
+          "max": 135,
+          "std": 38.50561120065861
+        },
+        "blue": {
+          "min": 7,
+          "max": 135,
+          "std": 37.59933022760367
+        },
+        "diversity": 0.0011574074074074073,
+        "unique_colors": 9,
+        "brightness": {
+          "average": 44.83281893004115,
+          "min": 5.0,
+          "max": 108.66666666666667,
+          "std": 30.653721375489084
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.546476656078277,
+        "edge_variance": 87.90029475739053,
+        "max_edge_strength": 58.68986283848344,
+        "horizontal_tendency": 0.7690757887517147,
+        "vertical_tendency": 3.9011917009602195,
+        "edge_ratio": 0.19713868163987386
+      },
+      "signature": "dcbc6e3177fb84827877847d4a8d2dc1",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [20, 66, 58],
+      "color_variance": 2636.8381547157137,
+      "dominant_colors": [
+        [1, 7, 7],
+        [15, 42, 55],
+        [20, 51, 62],
+        [42, 89, 97],
+        [49, 250, 114]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 96,
+          "std": 18.892524296111777
+        },
+        "green": {
+          "min": 7,
+          "max": 255,
+          "std": 68.8533765945311
+        },
+        "blue": {
+          "min": 7,
+          "max": 153,
+          "std": 40.13273284089538
+        },
+        "diversity": 0.0015432098765432098,
+        "unique_colors": 12,
+        "brightness": {
+          "average": 48.688571673525374,
+          "min": 5.0,
+          "max": 168.0,
+          "std": 40.91925281814061
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.367482626796679,
+        "edge_variance": 213.3148070826694,
+        "max_edge_strength": 82.89920251593364,
+        "horizontal_tendency": 0.9127229080932785,
+        "vertical_tendency": 6.655521262002743,
+        "edge_ratio": 0.13713770449568466
+      },
+      "signature": "de0e54e0de49315a7974ca17000ae149",
+      "pixel_count": 7776
+    },
+    "combined_signature": "efd99dc6ee5d178ba79577bbd8fffc9526c8fb485384a421f3907557b469fc04",
+    "timestamp": "2025-08-13T19:06:49.796291",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "4.5_Compute_Engine": {
+    "frame_id": "4.5",
+    "frame_name": "Compute Engine",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [86, 76, 95],
+      "color_variance": 2757.6527442879806,
+      "dominant_colors": [
+        [0, 0, 0],
+        [15, 41, 52],
+        [73, 65, 94],
+        [255, 126, 74],
+        [26, 40, 56]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 255,
+          "std": 58.42580254563047
+        },
+        "green": {
+          "min": 0,
+          "max": 247,
+          "std": 48.02283740349029
+        },
+        "blue": {
+          "min": 0,
+          "max": 243,
+          "std": 48.85264124934675
+        },
+        "diversity": 0.034079218106995886,
+        "unique_colors": 265,
+        "brightness": {
+          "average": 86.02430555555556,
+          "min": 0.0,
+          "max": 238.33333333333334,
+          "std": 45.98194103258178
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.317551580403043,
+        "edge_variance": 255.0311906512384,
+        "max_edge_strength": 150.61374439273462,
+        "horizontal_tendency": 2.3545953360768177,
+        "vertical_tendency": 7.423053840877915,
+        "edge_ratio": 0.31720035804001967
+      },
+      "signature": "a1bd9ec029df6caa7457316961780ab4",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [84, 81, 104],
+      "color_variance": 2419.3201872931772,
+      "dominant_colors": [
+        [255, 230, 109],
+        [48, 75, 103],
+        [49, 63, 88],
+        [78, 60, 100],
+        [76, 60, 102]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 13,
+          "max": 255,
+          "std": 54.532839480854406
+        },
+        "green": {
+          "min": 1,
+          "max": 247,
+          "std": 44.603550552746775
+        },
+        "blue": {
+          "min": 11,
+          "max": 232,
+          "std": 44.37182627192189
+        },
+        "diversity": 0.03343621399176955,
+        "unique_colors": 260,
+        "brightness": {
+          "average": 90.26753257887518,
+          "min": 26.666666666666668,
+          "max": 240.66666666666666,
+          "std": 40.88442920028921
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.579221489626793,
+        "edge_variance": 296.1254612402351,
+        "max_edge_strength": 87.24168218868267,
+        "horizontal_tendency": 1.9140517832647461,
+        "vertical_tendency": 8.028592249657065,
+        "edge_ratio": 0.23840440811357724
+      },
+      "signature": "7778114349383df4b3bb0756eebf57ac",
+      "pixel_count": 7776
+    },
+    "combined_signature": "b9e77d09c9bcc673a5aea592a19494c743146afb91ce0094ffb6299df51dd985",
+    "timestamp": "2025-08-13T19:06:52.124654",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "5.1_Tesla_Coil": {
+    "frame_id": "5.1",
+    "frame_name": "Tesla Coil",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [40, 36, 97],
+      "color_variance": 2496.9903546718233,
+      "dominant_colors": [
+        [5, 4, 20],
+        [36, 45, 130],
+        [131, 100, 159],
+        [36, 50, 167],
+        [45, 37, 103]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 189,
+          "std": 38.21371076732858
+        },
+        "green": {
+          "min": 4,
+          "max": 137,
+          "std": 28.994240219589408
+        },
+        "blue": {
+          "min": 20,
+          "max": 221,
+          "std": 53.85966954569241
+        },
+        "diversity": 0.0015432098765432098,
+        "unique_colors": 12,
+        "brightness": {
+          "average": 58.107981824417,
+          "min": 9.666666666666666,
+          "max": 154.0,
+          "std": 37.300561139236365
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.8819900883890615,
+        "edge_variance": 97.02963442524775,
+        "max_edge_strength": 76.7667824575766,
+        "horizontal_tendency": 1.2938100137174213,
+        "vertical_tendency": 3.793252743484225,
+        "edge_ratio": 0.3410819423883195
+      },
+      "signature": "78229816644743e0b069059f63c8a014",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [40, 35, 87],
+      "color_variance": 2264.0869220265486,
+      "dominant_colors": [
+        [5, 4, 20],
+        [36, 50, 167],
+        [36, 45, 130],
+        [86, 49, 98],
+        [131, 100, 159]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 189,
+          "std": 36.8117804464875
+        },
+        "green": {
+          "min": 4,
+          "max": 137,
+          "std": 26.74468258315012
+        },
+        "blue": {
+          "min": 20,
+          "max": 221,
+          "std": 55.11156267762049
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 54.30508401920438,
+          "min": 9.666666666666666,
+          "max": 154.0,
+          "std": 36.24241070278276
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.217971179483235,
+        "edge_variance": 71.88571672850009,
+        "max_edge_strength": 62.300793645738494,
+        "horizontal_tendency": 1.0055727023319614,
+        "vertical_tendency": 3.3840020576131686,
+        "edge_ratio": 0.29715487319804407
+      },
+      "signature": "2d1b67752d1ee2737202b807b927b25d",
+      "pixel_count": 7776
+    },
+    "combined_signature": "816e57071935303ca779c56f5c830ae898fed3877fd6fc1b9c8d5e95197d3e2d",
+    "timestamp": "2025-08-13T19:06:54.600111",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "5.2_Core_Foundry": {
+    "frame_id": "5.2",
+    "frame_name": "Core Foundry",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [70, 76, 85],
+      "color_variance": 2417.131666419403,
+      "dominant_colors": [
+        [13, 14, 20],
+        [28, 38, 55],
+        [79, 92, 107],
+        [82, 93, 111],
+        [189, 172, 151]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 13,
+          "max": 189,
+          "std": 51.849224712885736
+        },
+        "green": {
+          "min": 14,
+          "max": 172,
+          "std": 49.112148109811294
+        },
+        "blue": {
+          "min": 20,
+          "max": 151,
+          "std": 45.14762793494596
+        },
+        "diversity": 0.0014146090534979425,
+        "unique_colors": 11,
+        "brightness": {
+          "average": 77.30049725651578,
+          "min": 15.666666666666666,
+          "max": 170.66666666666666,
+          "std": 47.7613751486032
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.5927625390941795,
+        "edge_variance": 243.3732766408403,
+        "max_edge_strength": 94.07812946931101,
+        "horizontal_tendency": 1.273105281207133,
+        "vertical_tendency": 6.559542181069959,
+        "edge_ratio": 0.1940844720659256
+      },
+      "signature": "fbf3163c1e5b4cc640a4e6011a6f07b0",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [78, 78, 86],
+      "color_variance": 2492.92708688904,
+      "dominant_colors": [
+        [82, 93, 111],
+        [79, 92, 107],
+        [61, 23, 25],
+        [28, 38, 55],
+        [13, 14, 20]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 13,
+          "max": 220,
+          "std": 52.44649736291855
+        },
+        "green": {
+          "min": 14,
+          "max": 207,
+          "std": 50.72596724433169
+        },
+        "blue": {
+          "min": 20,
+          "max": 183,
+          "std": 45.91578651510294
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 81.36792695473251,
+          "min": 15.666666666666666,
+          "max": 203.33333333333334,
+          "std": 47.930686690033056
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 8.670325850082717,
+        "edge_variance": 349.1874824037303,
+        "max_edge_strength": 132.70037260267543,
+        "horizontal_tendency": 1.6998456790123457,
+        "vertical_tendency": 7.297453703703703,
+        "edge_ratio": 0.2329368226275443
+      },
+      "signature": "f2234957d67fd2e6f61cfa700c9dd067",
+      "pixel_count": 7776
+    },
+    "combined_signature": "9fb5e606e0bc94065a3770408d30e3514ac80b85f84581342c641e1554fc8360",
+    "timestamp": "2025-08-13T19:06:57.061034",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "5.3_Integrator": {
+    "frame_id": "5.3",
+    "frame_name": "Integrator",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [59, 75, 95],
+      "color_variance": 3753.3341481561897,
+      "dominant_colors": [
+        [41, 48, 71],
+        [146, 187, 213],
+        [11, 14, 24],
+        [25, 31, 54],
+        [51, 68, 90]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 11,
+          "max": 146,
+          "std": 48.164947792625405
+        },
+        "green": {
+          "min": 14,
+          "max": 187,
+          "std": 62.37492452053417
+        },
+        "blue": {
+          "min": 24,
+          "max": 213,
+          "std": 66.2591788146822
+        },
+        "diversity": 0.001286008230452675,
+        "unique_colors": 10,
+        "brightness": {
+          "average": 77.05071159122086,
+          "min": 16.333333333333332,
+          "max": 182.0,
+          "std": 58.89713417514927
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.318798703876558,
+        "edge_variance": 383.3563713179089,
+        "max_edge_strength": 102.76618553244491,
+        "horizontal_tendency": 1.0266203703703705,
+        "vertical_tendency": 8.46596364883402,
+        "edge_ratio": 0.12126444347676385
+      },
+      "signature": "401c3e00830f5546216834decf665d07",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [60, 71, 87],
+      "color_variance": 4680.734632288012,
+      "dominant_colors": [
+        [25, 31, 54],
+        [11, 14, 24],
+        [219, 243, 247],
+        [83, 108, 131],
+        [96, 125, 152]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 11,
+          "max": 253,
+          "std": 65.40141801840214
+        },
+        "green": {
+          "min": 14,
+          "max": 243,
+          "std": 70.30246395186741
+        },
+        "blue": {
+          "min": 24,
+          "max": 247,
+          "std": 66.6575577689086
+        },
+        "diversity": 0.001286008230452675,
+        "unique_colors": 10,
+        "brightness": {
+          "average": 72.88481652949244,
+          "min": 16.333333333333332,
+          "max": 236.33333333333334,
+          "std": 66.68523109427517
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 11.289481733463665,
+        "edge_variance": 634.5693928848062,
+        "max_edge_strength": 155.56349186104046,
+        "horizontal_tendency": 1.9414866255144032,
+        "vertical_tendency": 9.631129972565157,
+        "edge_ratio": 0.20158451096027596
+      },
+      "signature": "4ebeeb99e184ef4da00747185da1466c",
+      "pixel_count": 7776
+    },
+    "combined_signature": "6d76cb6e213bc9feea5e539d3a1b26295d544fe746c940a4393927b12b3a340b",
+    "timestamp": "2025-08-13T19:06:59.876043",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "6.1_Silicon_Extruder": {
+    "frame_id": "6.1",
+    "frame_name": "Silicon Extruder",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [77, 81, 94],
+      "color_variance": 3311.579891600149,
+      "dominant_colors": [
+        [15, 20, 22],
+        [89, 89, 112],
+        [157, 207, 225],
+        [28, 49, 70],
+        [93, 90, 119]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 15,
+          "max": 255,
+          "std": 56.96247416253445
+        },
+        "green": {
+          "min": 20,
+          "max": 207,
+          "std": 53.753126726870846
+        },
+        "blue": {
+          "min": 20,
+          "max": 225,
+          "std": 60.42826302672914
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 84.56875857338821,
+          "min": 19.0,
+          "max": 196.33333333333334,
+          "std": 52.47523872464752
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.612329934550843,
+        "edge_variance": 499.6280475000284,
+        "max_edge_strength": 95.38591207417488,
+        "horizontal_tendency": 1.1977023319615914,
+        "vertical_tendency": 8.651577503429356,
+        "edge_ratio": 0.13843745045187886
+      },
+      "signature": "7eb1a2f9851e466fededf090831b3061",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [80, 84, 97],
+      "color_variance": 3480.345942548112,
+      "dominant_colors": [
+        [28, 49, 70],
+        [15, 20, 22],
+        [125, 150, 175],
+        [15, 29, 45],
+        [89, 89, 112]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 8,
+          "max": 245,
+          "std": 61.494444985326474
+        },
+        "green": {
+          "min": 8,
+          "max": 207,
+          "std": 52.97835901003186
+        },
+        "blue": {
+          "min": 16,
+          "max": 225,
+          "std": 60.77543882435048
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 87.32728909465021,
+          "min": 10.666666666666666,
+          "max": 196.33333333333334,
+          "std": 52.1419426672793
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 11.308681856139334,
+        "edge_variance": 447.4188272737902,
+        "max_edge_strength": 121.680821094461,
+        "horizontal_tendency": 1.9973422496570645,
+        "vertical_tendency": 9.678412208504803,
+        "edge_ratio": 0.20637085987120088
+      },
+      "signature": "ebc68375e7f76246f3f78c5596c626fd",
+      "pixel_count": 7776
+    },
+    "combined_signature": "d5c12ca42ef44d29740e01e8dd281057243a441306f0e53bcdb77be8aab8589f",
+    "timestamp": "2025-08-13T19:07:02.439227",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "6.2_Processor_Lab": {
+    "frame_id": "6.2",
+    "frame_name": "Processor Lab",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [14, 55, 53],
+      "color_variance": 1101.1285211752106,
+      "dominant_colors": [
+        [1, 20, 17],
+        [9, 43, 47],
+        [18, 73, 68],
+        [33, 93, 94],
+        [14, 69, 61]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 69,
+          "std": 13.24121716224669
+        },
+        "green": {
+          "min": 20,
+          "max": 168,
+          "std": 32.12705953533452
+        },
+        "blue": {
+          "min": 17,
+          "max": 148,
+          "std": 31.453195387102927
+        },
+        "diversity": 0.001286008230452675,
+        "unique_colors": 10,
+        "brightness": {
+          "average": 41.26286008230453,
+          "min": 12.666666666666666,
+          "max": 128.33333333333334,
+          "std": 25.469826355008166
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 3.769632608981717,
+        "edge_variance": 53.696334328006785,
+        "max_edge_strength": 51.954039517849075,
+        "horizontal_tendency": 1.326474622770919,
+        "vertical_tendency": 2.611111111111111,
+        "edge_ratio": 0.5080115576569477
+      },
+      "signature": "4621aa463acd2b3175cb1f8a18dc5c5e",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [19, 66, 64],
+      "color_variance": 1399.6796890141616,
+      "dominant_colors": [
+        [9, 43, 47],
+        [1, 20, 17],
+        [33, 93, 94],
+        [38, 114, 109],
+        [24, 79, 85]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 71,
+          "std": 15.99637154369616
+        },
+        "green": {
+          "min": 20,
+          "max": 199,
+          "std": 36.91774113589555
+        },
+        "blue": {
+          "min": 17,
+          "max": 168,
+          "std": 34.14353580454756
+        },
+        "diversity": 0.0011574074074074073,
+        "unique_colors": 9,
+        "brightness": {
+          "average": 50.13357338820301,
+          "min": 12.666666666666666,
+          "max": 146.0,
+          "std": 28.88010643152307
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.813549760091928,
+        "edge_variance": 73.0018780532552,
+        "max_edge_strength": 63.73774391990981,
+        "horizontal_tendency": 1.1544067215363512,
+        "vertical_tendency": 3.8410493827160495,
+        "edge_ratio": 0.300544618543815
+      },
+      "signature": "21a0294c88923560bcaba29527efeb51",
+      "pixel_count": 7776
+    },
+    "combined_signature": "f6ccf288aab1d1c3e2a94e4fc926b8d62b2313ba747a423c889b45dc22d2ea5f",
+    "timestamp": "2025-08-13T19:07:06.202570",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "6.3_Mainframe_Assembler": {
+    "frame_id": "6.3",
+    "frame_name": "Mainframe Assembler",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [46, 55, 71],
+      "color_variance": 2730.703527619952,
+      "dominant_colors": [
+        [23, 29, 42],
+        [5, 6, 8],
+        [112, 131, 161],
+        [43, 45, 72],
+        [99, 115, 134]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 132,
+          "std": 42.924487797141246
+        },
+        "green": {
+          "min": 6,
+          "max": 162,
+          "std": 50.77274191838192
+        },
+        "blue": {
+          "min": 8,
+          "max": 183,
+          "std": 58.896520822720795
+        },
+        "diversity": 0.001286008230452675,
+        "unique_colors": 10,
+        "brightness": {
+          "average": 57.96176268861454,
+          "min": 6.333333333333333,
+          "max": 159.0,
+          "std": 50.79178963056033
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.703666257870934,
+        "edge_variance": 232.54345817179444,
+        "max_edge_strength": 90.27396573148258,
+        "horizontal_tendency": 2.223122427983539,
+        "vertical_tendency": 5.861754115226337,
+        "edge_ratio": 0.3792589017353722
+      },
+      "signature": "93c9fe5bf4fa2cd58203796db0dd9772",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [37, 51, 61],
+      "color_variance": 3256.64718862364,
+      "dominant_colors": [
+        [5, 6, 8],
+        [71, 93, 118],
+        [93, 112, 128],
+        [90, 117, 149],
+        [23, 29, 42]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 132,
+          "std": 39.139353181443134
+        },
+        "green": {
+          "min": 6,
+          "max": 227,
+          "std": 59.41190449429286
+        },
+        "blue": {
+          "min": 8,
+          "max": 234,
+          "std": 66.31842833193208
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 50.237097050754464,
+          "min": 6.333333333333333,
+          "max": 177.33333333333334,
+          "std": 53.976763877121265
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.564347974561296,
+        "edge_variance": 239.9510952139119,
+        "max_edge_strength": 103.23759005323593,
+        "horizontal_tendency": 1.4528892318244169,
+        "vertical_tendency": 5.355452674897119,
+        "edge_ratio": 0.27129158262094577
+      },
+      "signature": "2a229bb4e6feb3e4fbc4b6599cffab2b",
+      "pixel_count": 7776
+    },
+    "combined_signature": "d93d83ddc19f087cbd44f755399dc44e7d06cb8c56de5b908793ce468783064a",
+    "timestamp": "2025-08-13T19:07:09.634139",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "7.1_Uranium_Mine": {
+    "frame_id": "7.1",
+    "frame_name": "Uranium Mine",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [46, 70, 58],
+      "color_variance": 1732.877537962528,
+      "dominant_colors": [
+        [1, 2, 2],
+        [66, 98, 85],
+        [62, 96, 79],
+        [44, 72, 59],
+        [23, 46, 35]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 142,
+          "std": 34.8460756299106
+        },
+        "green": {
+          "min": 2,
+          "max": 171,
+          "std": 45.24943104073804
+        },
+        "blue": {
+          "min": 2,
+          "max": 157,
+          "std": 40.567627790365634
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 58.39549039780521,
+          "min": 1.6666666666666667,
+          "max": 156.66666666666666,
+          "std": 40.091081718311486
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.579737161715408,
+        "edge_variance": 164.94612066829225,
+        "max_edge_strength": 78.34769371915877,
+        "horizontal_tendency": 1.5249485596707817,
+        "vertical_tendency": 5.352666323731138,
+        "edge_ratio": 0.2848951284166353
+      },
+      "signature": "1cf7ff9213a4cc382a3320460ee8f908",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [40, 65, 53],
+      "color_variance": 1350.9683487159648,
+      "dominant_colors": [
+        [10, 29, 19],
+        [1, 2, 2],
+        [62, 96, 79],
+        [66, 98, 85],
+        [23, 46, 35]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 142,
+          "std": 29.40525558527862
+        },
+        "green": {
+          "min": 2,
+          "max": 171,
+          "std": 40.28616092331998
+        },
+        "blue": {
+          "min": 2,
+          "max": 157,
+          "std": 35.35104286849315
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 53.43059842249657,
+          "min": 1.6666666666666667,
+          "max": 156.66666666666666,
+          "std": 34.89690318191677
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.783558510603102,
+        "edge_variance": 117.11519432434355,
+        "max_edge_strength": 76.69727649807534,
+        "horizontal_tendency": 1.2139489026063097,
+        "vertical_tendency": 4.810913923182443,
+        "edge_ratio": 0.25233228488180404
+      },
+      "signature": "88ff362b4bae96852eb4ba60d16087c2",
+      "pixel_count": 7776
+    },
+    "combined_signature": "5ac360bb84fd67e65ffec6b2d785f1f8fbbdfa0d6b4733dd74809e9a7122d303",
+    "timestamp": "2025-08-13T19:07:18.224052",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "7.2_Fuel_Rod_Assembler": {
+    "frame_id": "7.2",
+    "frame_name": "Fuel Rod Assembler",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [58, 88, 62],
+      "color_variance": 3527.382648557104,
+      "dominant_colors": [
+        [13, 38, 24],
+        [1, 2, 1],
+        [38, 84, 48],
+        [63, 98, 80],
+        [0, 0, 0]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 246,
+          "std": 58.0115511156847
+        },
+        "green": {
+          "min": 0,
+          "max": 246,
+          "std": 60.49001523312544
+        },
+        "blue": {
+          "min": 0,
+          "max": 246,
+          "std": 55.107741917673714
+        },
+        "diversity": 0.026234567901234566,
+        "unique_colors": 204,
+        "brightness": {
+          "average": 69.94122942386831,
+          "min": 0.0,
+          "max": 238.33333333333334,
+          "std": 54.11352823458002
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 13.89391387696214,
+        "edge_variance": 652.9522627465456,
+        "max_edge_strength": 164.04877323527901,
+        "horizontal_tendency": 10.41096536351166,
+        "vertical_tendency": 4.097865226337448,
+        "edge_ratio": 2.540582666457451
+      },
+      "signature": "e9e6060197f90e3bd31c8f2055e5cbe3",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [53, 92, 65],
+      "color_variance": 1126.5438403098103,
+      "dominant_colors": [
+        [63, 98, 80],
+        [1, 2, 1],
+        [67, 133, 70],
+        [58, 97, 75],
+        [52, 117, 58]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 80,
+          "std": 21.589735749903163
+        },
+        "green": {
+          "min": 2,
+          "max": 168,
+          "std": 38.19114151532339
+        },
+        "blue": {
+          "min": 1,
+          "max": 86,
+          "std": 25.53642782825098
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 70.36029663923183,
+          "min": 1.3333333333333333,
+          "max": 107.0,
+          "std": 27.60949853914024
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 3.3763644970944346,
+        "edge_variance": 75.25593410191891,
+        "max_edge_strength": 55.39003119294622,
+        "horizontal_tendency": 0.8099708504801097,
+        "vertical_tendency": 2.7114197530864197,
+        "edge_ratio": 0.2987257319926643
+      },
+      "signature": "196ec9115bafc1d4f87ad15ecfe99dc5",
+      "pixel_count": 7776
+    },
+    "combined_signature": "8ad94093554de3f88a45e7bf484868f8105e32e722880b0dc69194daa0a45210",
+    "timestamp": "2025-08-13T19:07:20.779132",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "7.3_Nuclear_Power_Plant": {
+    "frame_id": "7.3",
+    "frame_name": "Nuclear Power Plant",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [88, 89, 112],
+      "color_variance": 3611.2488374161444,
+      "dominant_colors": [
+        [97, 104, 131],
+        [1, 1, 1],
+        [158, 153, 182],
+        [53, 52, 86],
+        [194, 187, 201]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 194,
+          "std": 56.74114256559138
+        },
+        "green": {
+          "min": 1,
+          "max": 187,
+          "std": 55.52321379902191
+        },
+        "blue": {
+          "min": 1,
+          "max": 201,
+          "std": 64.41682337273448
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 96.79565329218107,
+          "min": 1.0,
+          "max": 194.0,
+          "std": 58.614882545674476
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.1010109119511515,
+        "edge_variance": 203.52573262002878,
+        "max_edge_strength": 87.69771313374648,
+        "horizontal_tendency": 1.0920353223593962,
+        "vertical_tendency": 6.2416409465020575,
+        "edge_ratio": 0.17495965111088213
+      },
+      "signature": "9d84cba6cf7a37b484e3725a993c8d0d",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [81, 81, 106],
+      "color_variance": 3980.690993655692,
+      "dominant_colors": [
+        [1, 1, 1],
+        [79, 77, 113],
+        [98, 102, 136],
+        [35, 36, 62],
+        [209, 202, 222]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 209,
+          "std": 60.126600225675624
+        },
+        "green": {
+          "min": 1,
+          "max": 202,
+          "std": 58.51240329712272
+        },
+        "blue": {
+          "min": 1,
+          "max": 222,
+          "std": 66.9381432288222
+        },
+        "diversity": 0.00205761316872428,
+        "unique_colors": 16,
+        "brightness": {
+          "average": 89.7175925925926,
+          "min": 1.0,
+          "max": 211.0,
+          "std": 61.537862565191226
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 8.735371125998745,
+        "edge_variance": 431.1818743957772,
+        "max_edge_strength": 105.34348579765148,
+        "horizontal_tendency": 0.9258401920438957,
+        "vertical_tendency": 8.032064471879286,
+        "edge_ratio": 0.11526802297034776
+      },
+      "signature": "f7da6e03c757bc7a87b916be53438a4b",
+      "pixel_count": 7776
+    },
+    "combined_signature": "edbabfac4e812657b266b92062f4252f3eeaee2455226ec71becebdfb4ba179e",
+    "timestamp": "2025-08-13T19:07:33.125602",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "7.4_Cloud_Digitizer": {
+    "frame_id": "7.4",
+    "frame_name": "Cloud Digitizer",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [82, 88, 111],
+      "color_variance": 1079.4328060534208,
+      "dominant_colors": [
+        [43, 48, 78],
+        [103, 107, 129],
+        [111, 117, 133],
+        [106, 111, 129],
+        [102, 111, 123]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 111,
+          "std": 31.32871898907644
+        },
+        "green": {
+          "min": 0,
+          "max": 134,
+          "std": 31.54067237768627
+        },
+        "blue": {
+          "min": 0,
+          "max": 214,
+          "std": 28.215143421888392
+        },
+        "diversity": 0.002829218106995885,
+        "unique_colors": 22,
+        "brightness": {
+          "average": 94.41679526748972,
+          "min": 0.0,
+          "max": 148.33333333333334,
+          "std": 30.05815301327072
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 2.9269030695341103,
+        "edge_variance": 83.7257552825486,
+        "max_edge_strength": 80.25739841285662,
+        "horizontal_tendency": 0.6391032235939642,
+        "vertical_tendency": 2.38485939643347,
+        "edge_ratio": 0.2679836071467088
+      },
+      "signature": "43608845c2755490c863b62c911e828b",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [71, 76, 96],
+      "color_variance": 1857.0385742196686,
+      "dominant_colors": [
+        [43, 48, 78],
+        [100, 106, 124],
+        [97, 98, 110],
+        [102, 111, 123],
+        [13, 20, 47]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 6,
+          "max": 219,
+          "std": 43.13577546239475
+        },
+        "green": {
+          "min": 7,
+          "max": 221,
+          "std": 42.93541082537215
+        },
+        "blue": {
+          "min": 11,
+          "max": 217,
+          "std": 38.9866970089888
+        },
+        "diversity": 0.0411522633744856,
+        "unique_colors": 320,
+        "brightness": {
+          "average": 81.30161179698216,
+          "min": 8.666666666666666,
+          "max": 219.0,
+          "std": 41.44445264631267
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 10.238922138432823,
+        "edge_variance": 348.05795623917794,
+        "max_edge_strength": 118.12070097997217,
+        "horizontal_tendency": 1.099408436213992,
+        "vertical_tendency": 9.476380315500688,
+        "edge_ratio": 0.1160156515052134
+      },
+      "signature": "4ff472d8dfc5cc42f3632c128b1cf860",
+      "pixel_count": 7776
+    },
+    "combined_signature": "cecc347f4518031637f20bfef2f6f42a572928f9fbb3ab346a59f297ea8b0cb8",
+    "timestamp": "2025-08-13T19:07:38.262579",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "8.1_Widget_Minitizers": {
+    "frame_id": "8.1",
+    "frame_name": "Widget Minitizers",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [99, 130, 161],
+      "color_variance": 3768.347544687169,
+      "dominant_colors": [
+        [115, 175, 226],
+        [52, 52, 70],
+        [135, 223, 250],
+        [152, 143, 148],
+        [72, 68, 103]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 24,
+          "max": 207,
+          "std": 35.45242430749124
+        },
+        "green": {
+          "min": 28,
+          "max": 226,
+          "std": 60.137010266594075
+        },
+        "blue": {
+          "min": 44,
+          "max": 250,
+          "std": 67.15304366446478
+        },
+        "diversity": 0.0021862139917695473,
+        "unique_colors": 17,
+        "brightness": {
+          "average": 130.08084705075447,
+          "min": 32.0,
+          "max": 221.33333333333334,
+          "std": 52.42921809911974
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.959733958750431,
+        "edge_variance": 190.55878042479944,
+        "max_edge_strength": 59.27642401869772,
+        "horizontal_tendency": 1.1397890946502056,
+        "vertical_tendency": 6.963906035665294,
+        "edge_ratio": 0.16367094685264752
+      },
+      "signature": "6ab7a27de41ec9958cdb843516f507ab",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [91, 106, 132],
+      "color_variance": 2211.769128032836,
+      "dominant_colors": [
+        [52, 52, 70],
+        [123, 159, 190],
+        [115, 145, 172],
+        [72, 68, 103],
+        [152, 143, 148]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 24,
+          "max": 170,
+          "std": 35.054666681535416
+        },
+        "green": {
+          "min": 28,
+          "max": 223,
+          "std": 45.87730284286256
+        },
+        "blue": {
+          "min": 44,
+          "max": 250,
+          "std": 49.32944720500951
+        },
+        "diversity": 0.0021862139917695473,
+        "unique_colors": 17,
+        "brightness": {
+          "average": 110.00578703703704,
+          "min": 32.0,
+          "max": 202.66666666666666,
+          "std": 42.23869999025604
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 8.812803169345159,
+        "edge_variance": 201.33263558644575,
+        "max_edge_strength": 66.7518206160368,
+        "horizontal_tendency": 1.9337277091906722,
+        "vertical_tendency": 7.250557270233196,
+        "edge_ratio": 0.2667005634352404
+      },
+      "signature": "c0fb6165f5be8ce5f9b924524de710f7",
+      "pixel_count": 7776
+    },
+    "combined_signature": "454a224a1e5a2543c3041c91c2d0e9f80dc14f16c7f61ecd5ba7b1080c653330",
+    "timestamp": "2025-08-13T19:07:40.934240",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "8.2_Nanoscale_Lab": {
+    "frame_id": "8.2",
+    "frame_name": "Nanoscale Lab",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [109, 92, 104],
+      "color_variance": 3042.080773194955,
+      "dominant_colors": [
+        [52, 30, 48],
+        [92, 86, 99],
+        [158, 143, 153],
+        [59, 52, 95],
+        [206, 187, 187]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 218,
+          "std": 56.669695669618186
+        },
+        "green": {
+          "min": 30,
+          "max": 212,
+          "std": 55.37624912290409
+        },
+        "blue": {
+          "min": 33,
+          "max": 211,
+          "std": 51.77821233266959
+        },
+        "diversity": 0.00205761316872428,
+        "unique_colors": 16,
+        "brightness": {
+          "average": 102.15294924554183,
+          "min": 43.333333333333336,
+          "max": 213.33333333333334,
+          "std": 51.692196449209355
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 10.386838576947543,
+        "edge_variance": 373.51638358768264,
+        "max_edge_strength": 113.13708498984761,
+        "horizontal_tendency": 3.214377572016461,
+        "vertical_tendency": 7.549039780521262,
+        "edge_ratio": 0.42579952755190115
+      },
+      "signature": "e40acee93c97728c50afcc128f7994fd",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [89, 79, 103],
+      "color_variance": 2571.0543341049975,
+      "dominant_colors": [
+        [59, 52, 95],
+        [92, 86, 99],
+        [52, 30, 48],
+        [188, 178, 183],
+        [206, 187, 187]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 52,
+          "max": 217,
+          "std": 51.80511961531919
+        },
+        "green": {
+          "min": 30,
+          "max": 212,
+          "std": 52.921848784193514
+        },
+        "blue": {
+          "min": 48,
+          "max": 211,
+          "std": 43.938545408540755
+        },
+        "diversity": 0.0011574074074074073,
+        "unique_colors": 9,
+        "brightness": {
+          "average": 90.89034636488341,
+          "min": 43.333333333333336,
+          "max": 213.33333333333334,
+          "std": 48.97609577937395
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.512463692782532,
+        "edge_variance": 189.9428192222058,
+        "max_edge_strength": 94.29931659938535,
+        "horizontal_tendency": 1.028249314128944,
+        "vertical_tendency": 5.607596021947875,
+        "edge_ratio": 0.1833672236916538
+      },
+      "signature": "f8377a3fbd80440cbf6b9a05ab79a5bf",
+      "pixel_count": 7776
+    },
+    "combined_signature": "9677ccdaf702bde24a6137bbbfb3530d21e03327c96538367113c9f379d3b55a",
+    "timestamp": "2025-08-13T19:07:45.658329",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "8.3_Reactor_Foundry": {
+    "frame_id": "8.3",
+    "frame_name": "Reactor Foundry",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [52, 63, 70],
+      "color_variance": 1527.7876461250373,
+      "dominant_colors": [
+        [20, 27, 33],
+        [44, 46, 62],
+        [73, 96, 101],
+        [134, 162, 156],
+        [55, 79, 75]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 20,
+          "max": 172,
+          "std": 34.446459814471496
+        },
+        "green": {
+          "min": 27,
+          "max": 213,
+          "std": 42.00740507728277
+        },
+        "blue": {
+          "min": 33,
+          "max": 200,
+          "std": 38.20755297009202
+        },
+        "diversity": 0.0011574074074074073,
+        "unique_colors": 9,
+        "brightness": {
+          "average": 62.123671124828526,
+          "min": 26.666666666666668,
+          "max": 195.0,
+          "std": 38.07097863897439
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.109859317846907,
+        "edge_variance": 141.74063836337018,
+        "max_edge_strength": 66.47158958699741,
+        "horizontal_tendency": 1.0189471879286693,
+        "vertical_tendency": 6.289609053497942,
+        "edge_ratio": 0.16200485264851014
+      },
+      "signature": "dc79824c1a07f168399a219ad26ac35d",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [70, 84, 92],
+      "color_variance": 1418.801548670781,
+      "dominant_colors": [
+        [73, 96, 101],
+        [44, 46, 62],
+        [68, 69, 89],
+        [134, 162, 156],
+        [55, 79, 75]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 20,
+          "max": 134,
+          "std": 33.1206224596108
+        },
+        "green": {
+          "min": 27,
+          "max": 162,
+          "std": 39.98408929894187
+        },
+        "blue": {
+          "min": 33,
+          "max": 156,
+          "std": 36.2593347577504
+        },
+        "diversity": 0.0014146090534979425,
+        "unique_colors": 11,
+        "brightness": {
+          "average": 82.60866769547324,
+          "min": 26.666666666666668,
+          "max": 150.66666666666666,
+          "std": 36.22996497533297
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 8.151912706509929,
+        "edge_variance": 191.88794016737157,
+        "max_edge_strength": 62.60014199486913,
+        "horizontal_tendency": 1.2904663923182442,
+        "vertical_tendency": 7.141546639231824,
+        "edge_ratio": 0.18069844776047733
+      },
+      "signature": "6944f2c7b5500559dd9dffd6e2968493",
+      "pixel_count": 7776
+    },
+    "combined_signature": "dd4bfd01fc472d65538bf047fe28e0b69147c64562ce9850d72bdd4f0c41c202",
+    "timestamp": "2025-08-13T19:07:48.298631",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "8.4_Quantum_Tunneler": {
+    "frame_id": "8.4",
+    "frame_name": "Quantum Tunneler",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [60, 29, 78],
+      "color_variance": 3237.415838697801,
+      "dominant_colors": [
+        [53, 9, 57],
+        [2, 3, 4],
+        [50, 13, 50],
+        [64, 48, 112],
+        [48, 8, 56]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 2,
+          "max": 253,
+          "std": 48.290084137705364
+        },
+        "green": {
+          "min": 3,
+          "max": 169,
+          "std": 41.541466476940755
+        },
+        "blue": {
+          "min": 4,
+          "max": 250,
+          "std": 66.61181963526678
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 56.09495027434842,
+          "min": 3.0,
+          "max": 206.66666666666666,
+          "std": 50.0431666737997
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.436308224334178,
+        "edge_variance": 222.5262826919398,
+        "max_edge_strength": 107.12466776818701,
+        "horizontal_tendency": 1.113640260631001,
+        "vertical_tendency": 5.558599108367627,
+        "edge_ratio": 0.20034548973941738
+      },
+      "signature": "e835666223e9ce9510fbc3639909e52c",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [130, 41, 149],
+      "color_variance": 7207.345208681444,
+      "dominant_colors": [
+        [253, 41, 241],
+        [60, 22, 95],
+        [2, 3, 4],
+        [119, 85, 176],
+        [64, 48, 112]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 2,
+          "max": 253,
+          "std": 86.85528854831007
+        },
+        "green": {
+          "min": 3,
+          "max": 169,
+          "std": 38.512100677200976
+        },
+        "blue": {
+          "min": 4,
+          "max": 250,
+          "std": 77.04456019900374
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 107.05744170096023,
+          "min": 3.0,
+          "max": 206.66666666666666,
+          "std": 60.426541821533355
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.905043280293152,
+        "edge_variance": 154.3378798999294,
+        "max_edge_strength": 55.753923628745625,
+        "horizontal_tendency": 2.1528635116598087,
+        "vertical_tendency": 6.092678326474624,
+        "edge_ratio": 0.3533525645535778
+      },
+      "signature": "55545eb9e7a331cf5c8e990c7001150e",
+      "pixel_count": 7776
+    },
+    "combined_signature": "7d2e6a66d3ab6d52e5411c38afe8a397ca29ea1814676a3b7a6dd380a3dbdbee",
+    "timestamp": "2025-08-13T19:07:52.748371",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "9.1_Helium_Extractor": {
+    "frame_id": "9.1",
+    "frame_name": "Helium Extractor",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [93, 53, 93],
+      "color_variance": 2367.7325097570065,
+      "dominant_colors": [
+        [17, 10, 22],
+        [153, 52, 97],
+        [101, 31, 91],
+        [74, 44, 94],
+        [94, 84, 123]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 17,
+          "max": 204,
+          "std": 50.32735660391662
+        },
+        "green": {
+          "min": 5,
+          "max": 162,
+          "std": 38.564551567328266
+        },
+        "blue": {
+          "min": 22,
+          "max": 198,
+          "std": 45.06758308082577
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 79.93822873799726,
+          "min": 16.333333333333332,
+          "max": 178.0,
+          "std": 41.45637122398771
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.026620886446368,
+        "edge_variance": 155.97754341975605,
+        "max_edge_strength": 75.34513181944065,
+        "horizontal_tendency": 1.9107938957475994,
+        "vertical_tendency": 5.4747085048010975,
+        "edge_ratio": 0.34902203360633915
+      },
+      "signature": "e2fc541f5636211efd982865d208de61",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [91, 52, 95],
+      "color_variance": 3143.128168050331,
+      "dominant_colors": [
+        [17, 10, 22],
+        [101, 31, 91],
+        [74, 5, 67],
+        [174, 162, 198],
+        [153, 52, 97]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 17,
+          "max": 174,
+          "std": 50.26754207607746
+        },
+        "green": {
+          "min": 5,
+          "max": 162,
+          "std": 52.88811211484507
+        },
+        "blue": {
+          "min": 22,
+          "max": 198,
+          "std": 54.847579203137535
+        },
+        "diversity": 0.001800411522633745,
+        "unique_colors": 14,
+        "brightness": {
+          "average": 79.85343792866942,
+          "min": 16.333333333333332,
+          "max": 178.0,
+          "std": 50.80473848205079
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.333547663182278,
+        "edge_variance": 359.96697106665835,
+        "max_edge_strength": 80.83333333333333,
+        "horizontal_tendency": 1.5506687242798354,
+        "vertical_tendency": 8.061256858710562,
+        "edge_ratio": 0.19236066428081444
+      },
+      "signature": "c7ae124d22a739e9d9cc74bb2ffa2fba",
+      "pixel_count": 7776
+    },
+    "combined_signature": "6be69b97a72ca95fd0c684de4311718b1790173782f23b0adb999e1013b1a175",
+    "timestamp": "2025-08-13T19:07:59.247194",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "9.2_Conductor_Foundry": {
+    "frame_id": "9.2",
+    "frame_name": "Conductor Foundry",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [46, 70, 85],
+      "color_variance": 1542.4938819349184,
+      "dominant_colors": [
+        [53, 86, 109],
+        [7, 12, 15],
+        [44, 50, 71],
+        [50, 72, 96],
+        [92, 141, 154]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 7,
+          "max": 95,
+          "std": 26.27558512804789
+        },
+        "green": {
+          "min": 12,
+          "max": 141,
+          "std": 37.582245440028174
+        },
+        "blue": {
+          "min": 15,
+          "max": 154,
+          "std": 42.0552166437295
+        },
+        "diversity": 0.0014146090534979425,
+        "unique_colors": 11,
+        "brightness": {
+          "average": 67.5108024691358,
+          "min": 11.333333333333334,
+          "max": 129.0,
+          "std": 34.57361239610331
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.6769552346217855,
+        "edge_variance": 109.36459324443865,
+        "max_edge_strength": 57.423620769002554,
+        "horizontal_tendency": 1.1078103566529491,
+        "vertical_tendency": 4.776063100137175,
+        "edge_ratio": 0.23195052775184888
+      },
+      "signature": "55bf3b19209c8b48071f6331a2da30d6",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [46, 65, 81],
+      "color_variance": 1634.8556199511536,
+      "dominant_colors": [
+        [44, 50, 71],
+        [7, 12, 15],
+        [53, 86, 109],
+        [50, 72, 96],
+        [92, 141, 154]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 7,
+          "max": 110,
+          "std": 27.004708558186753
+        },
+        "green": {
+          "min": 12,
+          "max": 185,
+          "std": 40.133831747140476
+        },
+        "blue": {
+          "min": 15,
+          "max": 200,
+          "std": 44.217939848721144
+        },
+        "diversity": 0.0014146090534979425,
+        "unique_colors": 11,
+        "brightness": {
+          "average": 64.45554698216736,
+          "min": 11.333333333333334,
+          "max": 165.0,
+          "std": 36.51979127407431
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.912457404226452,
+        "edge_variance": 187.9842363613209,
+        "max_edge_strength": 102.05254637794307,
+        "horizontal_tendency": 1.782793209876543,
+        "vertical_tendency": 5.426568930041152,
+        "edge_ratio": 0.32853046425101307
+      },
+      "signature": "a9ec415c821682050838a5edcad3f4f9",
+      "pixel_count": 7776
+    },
+    "combined_signature": "e68078a9ef53f5547be8fbb51965b0be8b3c4bfc5664efea5ef5103ce68ad45b",
+    "timestamp": "2025-08-13T19:08:03.119898",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "9.3_AI_Laboratory": {
+    "frame_id": "9.3",
+    "frame_name": "AI Laboratory",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [58, 74, 53],
+      "color_variance": 1321.9342625683635,
+      "dominant_colors": [
+        [47, 80, 48],
+        [11, 10, 9],
+        [47, 28, 23],
+        [79, 47, 39],
+        [78, 96, 114]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 11,
+          "max": 168,
+          "std": 28.02994663521685
+        },
+        "green": {
+          "min": 10,
+          "max": 178,
+          "std": 41.66887474144714
+        },
+        "blue": {
+          "min": 9,
+          "max": 142,
+          "std": 34.64539485137726
+        },
+        "diversity": 0.001800411522633745,
+        "unique_colors": 14,
+        "brightness": {
+          "average": 62.17635459533608,
+          "min": 10.0,
+          "max": 133.33333333333334,
+          "std": 30.59944365666472
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.705317724458269,
+        "edge_variance": 88.76470031455983,
+        "max_edge_strength": 60.901787968644875,
+        "horizontal_tendency": 2.2309242112482854,
+        "vertical_tendency": 3.8100994513031545,
+        "edge_ratio": 0.5855291285074594
+      },
+      "signature": "6fd1fa5891df5ee34361c25c4a1e2991",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [64, 76, 59],
+      "color_variance": 1224.9492148451538,
+      "dominant_colors": [
+        [47, 80, 48],
+        [47, 28, 23],
+        [79, 47, 39],
+        [64, 75, 93],
+        [72, 178, 40]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 11,
+          "max": 181,
+          "std": 26.570394297019654
+        },
+        "green": {
+          "min": 10,
+          "max": 203,
+          "std": 41.044677256291195
+        },
+        "blue": {
+          "min": 9,
+          "max": 208,
+          "std": 33.76758749824689
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 66.74695644718793,
+          "min": 10.0,
+          "max": 197.33333333333334,
+          "std": 27.96317652086182
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.361841606759059,
+        "edge_variance": 87.55618870611248,
+        "max_edge_strength": 89.5831395346741,
+        "horizontal_tendency": 2.0991083676268865,
+        "vertical_tendency": 3.533221879286694,
+        "edge_ratio": 0.5941060140980068
+      },
+      "signature": "e911f446a1e7d786231a27e0ec568a3c",
+      "pixel_count": 7776
+    },
+    "combined_signature": "01804cdc652c83ec8412555214c2e6cf0405d56c17c12b4ce2969da464e4e443",
+    "timestamp": "2025-08-13T19:08:20.171350",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "9.4_AI_Delimiter": {
+    "frame_id": "9.4",
+    "frame_name": "AI Delimiter",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [30, 77, 122],
+      "color_variance": 5084.724383555454,
+      "dominant_colors": [
+        [2, 5, 11],
+        [29, 41, 84],
+        [37, 50, 98],
+        [54, 85, 152],
+        [27, 221, 254]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 2,
+          "max": 111,
+          "std": 21.287907652197255
+        },
+        "green": {
+          "min": 5,
+          "max": 251,
+          "std": 65.91786432772486
+        },
+        "blue": {
+          "min": 11,
+          "max": 254,
+          "std": 78.90037192552569
+        },
+        "diversity": 0.0029578189300411522,
+        "unique_colors": 23,
+        "brightness": {
+          "average": 76.67292524005488,
+          "min": 6.0,
+          "max": 188.0,
+          "std": 51.50729896796826
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.460790116146451,
+        "edge_variance": 236.7993594710693,
+        "max_edge_strength": 71.84705978674423,
+        "horizontal_tendency": 1.966006515775034,
+        "vertical_tendency": 5.733667695473251,
+        "edge_ratio": 0.34288811633209965
+      },
+      "signature": "4fa070f62e74f107fd9d996da9e4fe4a",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [37, 66, 112],
+      "color_variance": 3075.9881095672395,
+      "dominant_colors": [
+        [2, 5, 11],
+        [54, 85, 152],
+        [15, 43, 94],
+        [11, 56, 114],
+        [35, 73, 143]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 2,
+          "max": 111,
+          "std": 25.704600578617338
+        },
+        "green": {
+          "min": 5,
+          "max": 251,
+          "std": 44.76389430581455
+        },
+        "blue": {
+          "min": 11,
+          "max": 254,
+          "std": 61.09696657702801
+        },
+        "diversity": 0.003472222222222222,
+        "unique_colors": 27,
+        "brightness": {
+          "average": 72.27919238683127,
+          "min": 6.0,
+          "max": 188.0,
+          "std": 41.03844753516795
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.0785433499726205,
+        "edge_variance": 98.89268242187276,
+        "max_edge_strength": 73.53948297041227,
+        "horizontal_tendency": 1.5781035665294925,
+        "vertical_tendency": 3.730195473251029,
+        "edge_ratio": 0.4230618952400652
+      },
+      "signature": "c88cde76bb103e1d9ac1804fe8fed865",
+      "pixel_count": 7776
+    },
+    "combined_signature": "cbf91279f4e3899020273732611c0a1c5b6967175ab843cc9903f1b01c45b6fd",
+    "timestamp": "2025-08-13T19:08:23.073100",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "10.1_Training_Center": {
+    "frame_id": "10.1",
+    "frame_name": "Training Center",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [34, 67, 117],
+      "color_variance": 3375.3588678000006,
+      "dominant_colors": [
+        [2, 2, 8],
+        [21, 83, 141],
+        [3, 12, 35],
+        [13, 53, 109],
+        [54, 69, 133]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 2,
+          "max": 244,
+          "std": 33.32476683403009
+        },
+        "green": {
+          "min": 2,
+          "max": 248,
+          "std": 48.081936854658714
+        },
+        "blue": {
+          "min": 8,
+          "max": 255,
+          "std": 57.02815507555909
+        },
+        "diversity": 0.00360082304526749,
+        "unique_colors": 28,
+        "brightness": {
+          "average": 73.00377229080932,
+          "min": 4.0,
+          "max": 183.66666666666666,
+          "std": 39.88135822444517
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.75137834032757,
+        "edge_variance": 170.51723222783423,
+        "max_edge_strength": 90.05630954513342,
+        "horizontal_tendency": 0.9298268175582992,
+        "vertical_tendency": 3.973851165980795,
+        "edge_ratio": 0.23398632176220585
+      },
+      "signature": "f4c4982dc899d19e398ed3bc72f0b28d",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [20, 42, 81],
+      "color_variance": 2881.616836574697,
+      "dominant_colors": [
+        [2, 2, 8],
+        [10, 36, 90],
+        [54, 69, 133],
+        [13, 53, 109],
+        [25, 107, 180]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 2,
+          "max": 254,
+          "std": 33.18388926393784
+        },
+        "green": {
+          "min": 2,
+          "max": 248,
+          "std": 39.80234139154816
+        },
+        "blue": {
+          "min": 8,
+          "max": 255,
+          "std": 63.562275032462324
+        },
+        "diversity": 0.003472222222222222,
+        "unique_colors": 27,
+        "brightness": {
+          "average": 48.452589163237306,
+          "min": 4.0,
+          "max": 183.66666666666666,
+          "std": 40.21542333398727
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.693205282901097,
+        "edge_variance": 146.35983301689794,
+        "max_edge_strength": 101.47755635826302,
+        "horizontal_tendency": 2.127314814814815,
+        "vertical_tendency": 3.8502229080932784,
+        "edge_ratio": 0.5525173127880826
+      },
+      "signature": "102c950205f17d2c7616a9027d0712da",
+      "pixel_count": 7776
+    },
+    "combined_signature": "b11f2f4b7230edce71a2af0d259d3b0d0c6a6ca6844f1ae4baf70cd92365a087",
+    "timestamp": "2025-08-13T19:08:25.286063",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "10.2_Data_Transformer": {
+    "frame_id": "10.2",
+    "frame_name": "Data Transformer",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [40, 141, 174],
+      "color_variance": 8667.186633017585,
+      "dominant_colors": [
+        [60, 232, 254],
+        [5, 8, 21],
+        [37, 107, 159],
+        [22, 66, 119],
+        [48, 139, 206]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 251,
+          "std": 25.915389928034568
+        },
+        "green": {
+          "min": 8,
+          "max": 245,
+          "std": 89.53646376153226
+        },
+        "blue": {
+          "min": 21,
+          "max": 254,
+          "std": 87.28087315160734
+        },
+        "diversity": 0.0009002057613168725,
+        "unique_colors": 7,
+        "brightness": {
+          "average": 119.110768175583,
+          "min": 11.333333333333334,
+          "max": 220.0,
+          "std": 66.06708550315602
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.01998966379607,
+        "edge_variance": 142.91189370450724,
+        "max_edge_strength": 69.51618516575834,
+        "horizontal_tendency": 1.8266889574759944,
+        "vertical_tendency": 3.359739368998628,
+        "edge_ratio": 0.5436996019189548
+      },
+      "signature": "889c4995465daea20118faea6f6c456c",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [36, 57, 103],
+      "color_variance": 1975.7561644583284,
+      "dominant_colors": [
+        [22, 66, 119],
+        [5, 8, 21],
+        [37, 107, 159],
+        [13, 41, 87],
+        [66, 65, 118]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 84,
+          "std": 25.553194315427362
+        },
+        "green": {
+          "min": 8,
+          "max": 139,
+          "std": 30.839930673347393
+        },
+        "blue": {
+          "min": 21,
+          "max": 206,
+          "std": 45.056169040791815
+        },
+        "diversity": 0.0033436213991769547,
+        "unique_colors": 26,
+        "brightness": {
+          "average": 66.00715877914953,
+          "min": 11.333333333333334,
+          "max": 131.0,
+          "std": 30.782625557291905
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.480186459011348,
+        "edge_variance": 88.69641923304918,
+        "max_edge_strength": 47.60281270868118,
+        "horizontal_tendency": 1.0282921810699588,
+        "vertical_tendency": 3.649391289437586,
+        "edge_ratio": 0.2817708761584814
+      },
+      "signature": "7443e21646f4a26fc81442aa964fce0a",
+      "pixel_count": 7776
+    },
+    "combined_signature": "444121d51910f311a82135df4fd8ea4ee201a333291b090a599494c4f604603e",
+    "timestamp": "2025-08-13T19:08:40.971533",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "10.3_Ascension_Facility": {
+    "frame_id": "10.3",
+    "frame_name": "Ascension Facility",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [24, 76, 125],
+      "color_variance": 5165.015151477231,
+      "dominant_colors": [
+        [1, 3, 11],
+        [2, 19, 48],
+        [21, 132, 211],
+        [17, 92, 161],
+        [44, 65, 130]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 63,
+          "std": 20.236037939614594
+        },
+        "green": {
+          "min": 3,
+          "max": 247,
+          "std": 65.67624733301834
+        },
+        "blue": {
+          "min": 11,
+          "max": 255,
+          "std": 75.54252848902885
+        },
+        "diversity": 0.0016718106995884773,
+        "unique_colors": 13,
+        "brightness": {
+          "average": 75.47680898491085,
+          "min": 5.0,
+          "max": 188.33333333333334,
+          "std": 51.18837763748791
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.733067220284568,
+        "edge_variance": 119.28554678633601,
+        "max_edge_strength": 64.23243382867845,
+        "horizontal_tendency": 0.9482596021947876,
+        "vertical_tendency": 4.951688957475996,
+        "edge_ratio": 0.19150225515742814
+      },
+      "signature": "909921298967ffdeb6fc623a9e453e2c",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [29, 92, 141],
+      "color_variance": 5932.364368969227,
+      "dominant_colors": [
+        [2, 19, 48],
+        [24, 205, 251],
+        [2, 39, 87],
+        [13, 79, 132],
+        [44, 65, 130]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 2,
+          "max": 219,
+          "std": 41.289172866904714
+        },
+        "green": {
+          "min": 19,
+          "max": 247,
+          "std": 70.94688236145241
+        },
+        "blue": {
+          "min": 48,
+          "max": 255,
+          "std": 68.77595773414046
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 87.50017146776405,
+          "min": 23.0,
+          "max": 219.0,
+          "std": 53.740132918667065
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.7938499577809,
+        "edge_variance": 269.90838768927944,
+        "max_edge_strength": 72.50076627947536,
+        "horizontal_tendency": 0.8261316872427986,
+        "vertical_tendency": 7.133787722908093,
+        "edge_ratio": 0.11580547660395275
+      },
+      "signature": "b177c39fb491adbe91355d15147b721f",
+      "pixel_count": 7776
+    },
+    "combined_signature": "de4fb517640ae614270570d98dc920262bd6f94222d8814285b78d487904a591",
+    "timestamp": "2025-08-13T19:08:44.913306",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "11.2_Sentience_Facility": {
+    "frame_id": "11.2",
+    "frame_name": "Sentience Facility",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [109, 49, 142],
+      "color_variance": 4424.417328891814,
+      "dominant_colors": [
+        [0, 0, 0],
+        [94, 40, 133],
+        [94, 39, 132],
+        [96, 40, 135],
+        [4, 5, 10]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 255,
+          "std": 67.77912020247409
+        },
+        "green": {
+          "min": 0,
+          "max": 110,
+          "std": 27.084084076946617
+        },
+        "blue": {
+          "min": 0,
+          "max": 231,
+          "std": 59.40166303085297
+        },
+        "diversity": 0.03022119341563786,
+        "unique_colors": 235,
+        "brightness": {
+          "average": 100.55341220850481,
+          "min": 0.0,
+          "max": 188.66666666666666,
+          "std": 46.99736442175182
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.7570913960590095,
+        "edge_variance": 181.75923987079227,
+        "max_edge_strength": 70.64858259174223,
+        "horizontal_tendency": 1.2431841563786008,
+        "vertical_tendency": 5.743098422496571,
+        "edge_ratio": 0.21646575853704048
+      },
+      "signature": "49084165f6869f85eadeb645d7197940",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [101, 52, 143],
+      "color_variance": 3890.428414103045,
+      "dominant_colors": [
+        [9, 9, 29],
+        [9, 9, 25],
+        [255, 51, 214],
+        [93, 39, 132],
+        [91, 43, 129]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 255,
+          "std": 61.31823153576307
+        },
+        "green": {
+          "min": 3,
+          "max": 122,
+          "std": 31.030178327155642
+        },
+        "blue": {
+          "min": 19,
+          "max": 255,
+          "std": 53.159085820734454
+        },
+        "diversity": 0.032407407407407406,
+        "unique_colors": 252,
+        "brightness": {
+          "average": 98.96729252400549,
+          "min": 12.0,
+          "max": 194.0,
+          "std": 42.68216362270104
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.988526548346162,
+        "edge_variance": 165.09018061081582,
+        "max_edge_strength": 64.15108035809772,
+        "horizontal_tendency": 0.8263031550068586,
+        "vertical_tendency": 6.339677640603566,
+        "edge_ratio": 0.13033835501582236
+      },
+      "signature": "f385530b7614c9d0b97a426e2cfb55a8",
+      "pixel_count": 7776
+    },
+    "combined_signature": "27b246fda8eb9fa9ab20c4c4ede21f1515d019f2d3f23ebdcb33116e26b0d0de",
+    "timestamp": "2025-08-13T19:09:17.137830",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "11.3_Picoscale_Lab": {
+    "frame_id": "11.3",
+    "frame_name": "Picoscale Lab",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [25, 50, 94],
+      "color_variance": 2055.8890344174497,
+      "dominant_colors": [
+        [1, 3, 5],
+        [27, 53, 94],
+        [35, 74, 141],
+        [32, 56, 103],
+        [42, 92, 166]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 57,
+          "std": 13.890125342672507
+        },
+        "green": {
+          "min": 3,
+          "max": 117,
+          "std": 28.558911391986122
+        },
+        "blue": {
+          "min": 5,
+          "max": 197,
+          "std": 52.21279040388713
+        },
+        "diversity": 0.0015432098765432098,
+        "unique_colors": 12,
+        "brightness": {
+          "average": 56.73756858710562,
+          "min": 3.0,
+          "max": 123.66666666666667,
+          "std": 31.397707204952408
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.254046007657425,
+        "edge_variance": 76.8411284014966,
+        "max_edge_strength": 68.7469191228879,
+        "horizontal_tendency": 1.1695387517146778,
+        "vertical_tendency": 3.2738340192043895,
+        "edge_ratio": 0.35723825485780136
+      },
+      "signature": "7bde8dec4e24797f9bbe18f0cac16869",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [33, 53, 90],
+      "color_variance": 2215.69343626096,
+      "dominant_colors": [
+        [30, 50, 95],
+        [35, 74, 141],
+        [1, 3, 5],
+        [27, 53, 94],
+        [137, 137, 137]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 137,
+          "std": 35.559019749846996
+        },
+        "green": {
+          "min": 3,
+          "max": 137,
+          "std": 36.63862189216157
+        },
+        "blue": {
+          "min": 5,
+          "max": 197,
+          "std": 49.02258280581409
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 59.25090020576132,
+          "min": 3.0,
+          "max": 137.0,
+          "std": 37.42730368752358
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.387017892620051,
+        "edge_variance": 190.96196636833162,
+        "max_edge_strength": 80.61017305526642,
+        "horizontal_tendency": 1.2200788751714675,
+        "vertical_tendency": 6.379501028806584,
+        "edge_ratio": 0.19124989080842084
+      },
+      "signature": "89cec72241b9246c742295d28b13ee33",
+      "pixel_count": 7776
+    },
+    "combined_signature": "7e428872faf10b2a400227694265789c87e07489ae12d0e1658f0d3c7d10877c",
+    "timestamp": "2025-08-13T19:09:20.379248",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "11.4_Sentience_Aggregator": {
+    "frame_id": "11.4",
+    "frame_name": "Sentience Aggregator",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [49, 60, 81],
+      "color_variance": 2168.305463689687,
+      "dominant_colors": [
+        [4, 11, 21],
+        [24, 32, 52],
+        [74, 111, 144],
+        [41, 92, 140],
+        [36, 62, 90]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 4,
+          "max": 252,
+          "std": 47.06531869035851
+        },
+        "green": {
+          "min": 11,
+          "max": 208,
+          "std": 37.88353930272009
+        },
+        "blue": {
+          "min": 16,
+          "max": 163,
+          "std": 48.162927195165885
+        },
+        "diversity": 0.00360082304526749,
+        "unique_colors": 28,
+        "brightness": {
+          "average": 63.89218964334705,
+          "min": 12.0,
+          "max": 194.0,
+          "std": 36.57593204588024
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.433499075525784,
+        "edge_variance": 156.61377620213617,
+        "max_edge_strength": 84.17722706026586,
+        "horizontal_tendency": 1.6997170781893005,
+        "vertical_tendency": 4.990955075445817,
+        "edge_ratio": 0.34055948260313146
+      },
+      "signature": "fcbfd4e5a07173048c93c7d5c4c91e6a",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [46, 76, 100],
+      "color_variance": 4297.051977928216,
+      "dominant_colors": [
+        [4, 11, 21],
+        [27, 198, 247],
+        [25, 42, 67],
+        [62, 98, 129],
+        [35, 62, 85]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 4,
+          "max": 252,
+          "std": 50.74924187802977
+        },
+        "green": {
+          "min": 11,
+          "max": 221,
+          "std": 59.529254384670175
+        },
+        "blue": {
+          "min": 16,
+          "max": 251,
+          "std": 72.9624596961545
+        },
+        "diversity": 0.00360082304526749,
+        "unique_colors": 28,
+        "brightness": {
+          "average": 74.36526920438958,
+          "min": 12.0,
+          "max": 208.33333333333334,
+          "std": 48.96608483178481
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.532205942030944,
+        "edge_variance": 182.62846797259664,
+        "max_edge_strength": 105.08475415375703,
+        "horizontal_tendency": 1.4753515089163236,
+        "vertical_tendency": 5.321030521262003,
+        "edge_ratio": 0.2772680034480258
+      },
+      "signature": "167a75e611ed958267b54382ef8e61c9",
+      "pixel_count": 7776
+    },
+    "combined_signature": "14613d989af9b77661f09751ede044fe7b0b7f65df6ce13619b41eb80d955660",
+    "timestamp": "2025-08-13T19:09:27.218307",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "12.1_Ω_Processor_Lab": {
+    "frame_id": "12.1",
+    "frame_name": "Ω Processor Lab",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [66, 66, 118],
+      "color_variance": 3390.4926316031997,
+      "dominant_colors": [
+        [3, 5, 15],
+        [77, 86, 136],
+        [30, 56, 120],
+        [119, 88, 195],
+        [96, 89, 179]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 163,
+          "std": 45.368256521464296
+        },
+        "green": {
+          "min": 0,
+          "max": 213,
+          "std": 42.16283312965824
+        },
+        "blue": {
+          "min": 0,
+          "max": 235,
+          "std": 67.18882587863362
+        },
+        "diversity": 0.0045010288065843625,
+        "unique_colors": 35,
+        "brightness": {
+          "average": 83.92339677640604,
+          "min": 0.0,
+          "max": 189.33333333333334,
+          "std": 49.8424177635095
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.213205065287336,
+        "edge_variance": 179.79691891382234,
+        "max_edge_strength": 95.10184599213157,
+        "horizontal_tendency": 3.0264489026063095,
+        "vertical_tendency": 4.549254115226337,
+        "edge_ratio": 0.6652626619552414
+      },
+      "signature": "be18f4038b5e1fa51a4cc766f7000c38",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [110, 74, 132],
+      "color_variance": 3532.59248542524,
+      "dominant_colors": [
+        [81, 8, 75],
+        [130, 135, 221],
+        [77, 86, 136],
+        [107, 115, 198],
+        [79, 87, 139]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 255,
+          "std": 57.87054640562503
+        },
+        "green": {
+          "min": 0,
+          "max": 248,
+          "std": 49.56330894999539
+        },
+        "blue": {
+          "min": 0,
+          "max": 248,
+          "std": 55.40272227436884
+        },
+        "diversity": 0.012345679012345678,
+        "unique_colors": 96,
+        "brightness": {
+          "average": 106.0324074074074,
+          "min": 0.0,
+          "max": 239.33333333333334,
+          "std": 43.344220910517414
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.27661203030498,
+        "edge_variance": 429.5182110944822,
+        "max_edge_strength": 238.0,
+        "horizontal_tendency": 4.406914437585734,
+        "vertical_tendency": 5.319187242798354,
+        "edge_ratio": 0.8284939477459182
+      },
+      "signature": "f87fdc714bf2e5eb04a00514858eabf3",
+      "pixel_count": 7776
+    },
+    "combined_signature": "52cef7e895bdea639b18951262c4aeb82f82ea31b4dfaea7b18bec97d90bfc88",
+    "timestamp": "2025-08-13T19:09:32.502228",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "12.2_Ω_Core_Foundry": {
+    "frame_id": "12.2",
+    "frame_name": "Ω Core Foundry",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [73, 66, 105],
+      "color_variance": 3217.376499459062,
+      "dominant_colors": [
+        [5, 6, 11],
+        [83, 92, 124],
+        [133, 136, 185],
+        [85, 85, 127],
+        [142, 150, 204]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 2,
+          "max": 199,
+          "std": 47.66609110706071
+        },
+        "green": {
+          "min": 2,
+          "max": 214,
+          "std": 49.5339635247415
+        },
+        "blue": {
+          "min": 3,
+          "max": 248,
+          "std": 63.78873018510272
+        },
+        "diversity": 0.0045010288065843625,
+        "unique_colors": 35,
+        "brightness": {
+          "average": 81.71266289437587,
+          "min": 2.3333333333333335,
+          "max": 220.33333333333334,
+          "std": 52.755861940187394
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 10.5594741042625,
+        "edge_variance": 344.22396911854736,
+        "max_edge_strength": 94.58755497186483,
+        "horizontal_tendency": 2.3731352880658436,
+        "vertical_tendency": 8.581747256515776,
+        "edge_ratio": 0.27653288044156943
+      },
+      "signature": "e933182c68f79b9e5fe13ce3f3b46529",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [75, 58, 106],
+      "color_variance": 2343.9938694320604,
+      "dominant_colors": [
+        [5, 6, 11],
+        [86, 91, 129],
+        [107, 37, 120],
+        [80, 53, 122],
+        [90, 92, 131]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 251,
+          "std": 42.80354493455609
+        },
+        "green": {
+          "min": 6,
+          "max": 176,
+          "std": 37.66181254656274
+        },
+        "blue": {
+          "min": 11,
+          "max": 232,
+          "std": 51.08574899821373
+        },
+        "diversity": 0.00360082304526749,
+        "unique_colors": 28,
+        "brightness": {
+          "average": 80.12577160493827,
+          "min": 7.333333333333333,
+          "max": 192.66666666666666,
+          "std": 41.68162539411294
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 7.220882435046756,
+        "edge_variance": 172.85988566581761,
+        "max_edge_strength": 85.04541270534361,
+        "horizontal_tendency": 1.6700531550068585,
+        "vertical_tendency": 5.871099108367627,
+        "edge_ratio": 0.28445323851315335
+      },
+      "signature": "7ef404cefb3cf692e538b5a6dc4d7ff2",
+      "pixel_count": 7776
+    },
+    "combined_signature": "ea5e6905f394d46946d834d23370fa7194d9783b078e51e5762f267758fba2d9",
+    "timestamp": "2025-08-13T19:09:35.081037",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "12.3_Ω_Widget_Distiller": {
+    "frame_id": "12.3",
+    "frame_name": "Ω Widget Distiller",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [60, 72, 93],
+      "color_variance": 2475.100871687706,
+      "dominant_colors": [
+        [6, 3, 4],
+        [102, 126, 149],
+        [33, 38, 62],
+        [69, 73, 101],
+        [46, 49, 74]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 6,
+          "max": 216,
+          "std": 38.446571334060486
+        },
+        "green": {
+          "min": 3,
+          "max": 240,
+          "std": 48.51571729575727
+        },
+        "blue": {
+          "min": 4,
+          "max": 249,
+          "std": 55.15797794647682
+        },
+        "diversity": 0.0029578189300411522,
+        "unique_colors": 23,
+        "brightness": {
+          "average": 75.55191186556928,
+          "min": 4.333333333333333,
+          "max": 235.0,
+          "std": 47.16221214251015
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.192271017970962,
+        "edge_variance": 160.31665926962648,
+        "max_edge_strength": 122.54568309183496,
+        "horizontal_tendency": 2.267532578875172,
+        "vertical_tendency": 4.206661522633745,
+        "edge_ratio": 0.5390337603048925
+      },
+      "signature": "e8006f456f3c5e972b080929dcaee0fe",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [73, 81, 102],
+      "color_variance": 4157.471578642946,
+      "dominant_colors": [
+        [6, 3, 4],
+        [46, 49, 74],
+        [134, 159, 187],
+        [33, 38, 62],
+        [155, 177, 209]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 248,
+          "std": 55.205356896239266
+        },
+        "green": {
+          "min": 0,
+          "max": 248,
+          "std": 61.924302005041916
+        },
+        "blue": {
+          "min": 0,
+          "max": 248,
+          "std": 71.68661073027364
+        },
+        "diversity": 0.009259259259259259,
+        "unique_colors": 72,
+        "brightness": {
+          "average": 86.03339334705076,
+          "min": 0.0,
+          "max": 239.33333333333334,
+          "std": 60.51281514480996
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.511906514914253,
+        "edge_variance": 301.17582995336073,
+        "max_edge_strength": 130.59107081947747,
+        "horizontal_tendency": 3.929612482853224,
+        "vertical_tendency": 6.069508744855967,
+        "edge_ratio": 0.6474350146020715
+      },
+      "signature": "6872f626667bd0c88497c53255d3a574",
+      "pixel_count": 7776
+    },
+    "combined_signature": "821ef0afd5e02e8565391b3fc129a362019fafd411bc7bb97f76f96afad37f74",
+    "timestamp": "2025-08-13T19:09:38.544323",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "12.4_Ω_Casing_Factory": {
+    "frame_id": "12.4",
+    "frame_name": "Ω Casing Factory",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [80, 95, 106],
+      "color_variance": 3631.622454327009,
+      "dominant_colors": [
+        [13, 15, 22],
+        [134, 148, 158],
+        [36, 41, 58],
+        [102, 115, 131],
+        [130, 144, 155]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 220,
+          "std": 51.6478897583628
+        },
+        "green": {
+          "min": 0,
+          "max": 238,
+          "std": 62.21042058050062
+        },
+        "blue": {
+          "min": 0,
+          "max": 254,
+          "std": 63.232668713103784
+        },
+        "diversity": 0.00257201646090535,
+        "unique_colors": 20,
+        "brightness": {
+          "average": 94.05212620027436,
+          "min": 0.0,
+          "max": 185.33333333333334,
+          "std": 56.9388720353428
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 8.436951262806012,
+        "edge_variance": 280.4936435696488,
+        "max_edge_strength": 163.97831834998456,
+        "horizontal_tendency": 1.4076646090534979,
+        "vertical_tendency": 7.314771947873799,
+        "edge_ratio": 0.19244135279742614
+      },
+      "signature": "ee81c7ddb087513a033a19ad4c19ae07",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [87, 100, 113],
+      "color_variance": 2562.43568728224,
+      "dominant_colors": [
+        [102, 115, 131],
+        [13, 15, 22],
+        [134, 148, 158],
+        [81, 91, 108],
+        [56, 66, 84]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 13,
+          "max": 146,
+          "std": 44.61857214183029
+        },
+        "green": {
+          "min": 15,
+          "max": 177,
+          "std": 50.98189472355406
+        },
+        "blue": {
+          "min": 22,
+          "max": 195,
+          "std": 52.503474410628826
+        },
+        "diversity": 0.0019290123456790122,
+        "unique_colors": 15,
+        "brightness": {
+          "average": 100.60643861454048,
+          "min": 16.666666666666668,
+          "max": 170.0,
+          "std": 49.13259775245973
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 8.630656814385086,
+        "edge_variance": 253.1028123350243,
+        "max_edge_strength": 70.23927359786371,
+        "horizontal_tendency": 1.7464849108367626,
+        "vertical_tendency": 7.183899176954733,
+        "edge_ratio": 0.24311099972551403
+      },
+      "signature": "43dc0efc502b95802978da3b41527e40",
+      "pixel_count": 7776
+    },
+    "combined_signature": "5439814c6d01a8a2ee3e480699ed6394e107ee35670342e838196149cb870404",
+    "timestamp": "2025-08-13T19:09:41.554854",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "12.5_Ω_Shielding_Plant": {
+    "frame_id": "12.5",
+    "frame_name": "Ω Shielding Plant",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [50, 72, 105],
+      "color_variance": 2815.370385833561,
+      "dominant_colors": [
+        [35, 46, 77],
+        [88, 109, 158],
+        [69, 73, 113],
+        [1, 1, 2],
+        [64, 72, 105]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 121,
+          "std": 28.704627807601366
+        },
+        "green": {
+          "min": 1,
+          "max": 244,
+          "std": 51.43982895782981
+        },
+        "blue": {
+          "min": 2,
+          "max": 255,
+          "std": 58.60893491938922
+        },
+        "diversity": 0.0015432098765432098,
+        "unique_colors": 12,
+        "brightness": {
+          "average": 76.35661008230453,
+          "min": 1.3333333333333333,
+          "max": 179.33333333333334,
+          "std": 43.38815203485327
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.980715866606306,
+        "edge_variance": 165.21767983516136,
+        "max_edge_strength": 78.47221730580124,
+        "horizontal_tendency": 2.8407064471879284,
+        "vertical_tendency": 4.429955418381344,
+        "edge_ratio": 0.6412494435950533
+      },
+      "signature": "23f66307c6ceacb60bff1f2b0222b60b",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [57, 70, 104],
+      "color_variance": 2224.836061815599,
+      "dominant_colors": [
+        [35, 46, 77],
+        [66, 73, 110],
+        [69, 73, 113],
+        [41, 57, 97],
+        [1, 1, 2]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 1,
+          "max": 121,
+          "std": 31.87076057504349
+        },
+        "green": {
+          "min": 1,
+          "max": 165,
+          "std": 41.839804504308816
+        },
+        "blue": {
+          "min": 2,
+          "max": 206,
+          "std": 52.09135589218951
+        },
+        "diversity": 0.0014146090534979425,
+        "unique_colors": 11,
+        "brightness": {
+          "average": 77.54826817558298,
+          "min": 1.3333333333333333,
+          "max": 164.0,
+          "std": 41.58617309820832
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.476005096197563,
+        "edge_variance": 143.29158177809646,
+        "max_edge_strength": 60.16759002061566,
+        "horizontal_tendency": 0.8672410836762692,
+        "vertical_tendency": 4.775977366255144,
+        "edge_ratio": 0.1815840020105194
+      },
+      "signature": "3a55e29928e1a2fab31b9f83615b3818",
+      "pixel_count": 7776
+    },
+    "combined_signature": "940957c27c9bee70254f17109fab9591991ed07af353ca673ede2cea714ae476",
+    "timestamp": "2025-08-13T19:09:43.956922",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "12.6_Ω_Project_Assembler": {
+    "frame_id": "12.6",
+    "frame_name": "Ω Project Assembler",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [87, 76, 97],
+      "color_variance": 2027.1682205032373,
+      "dominant_colors": [
+        [75, 87, 131],
+        [72, 84, 128],
+        [228, 111, 44],
+        [96, 42, 11],
+        [44, 50, 91]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 17,
+          "max": 228,
+          "std": 56.4930995794155
+        },
+        "green": {
+          "min": 25,
+          "max": 197,
+          "std": 26.93104037307656
+        },
+        "blue": {
+          "min": 11,
+          "max": 244,
+          "std": 44.14875764458532
+        },
+        "diversity": 0.002700617283950617,
+        "unique_colors": 21,
+        "brightness": {
+          "average": 87.1246999314129,
+          "min": 29.666666666666668,
+          "max": 205.0,
+          "std": 28.2087008959491
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.291683753644571,
+        "edge_variance": 125.3962383440524,
+        "max_edge_strength": 102.57490487985406,
+        "horizontal_tendency": 1.3656121399176955,
+        "vertical_tendency": 4.135545267489712,
+        "edge_ratio": 0.3302133217239878
+      },
+      "signature": "d049798608c6493bff296d3028944f5e",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [54, 63, 98],
+      "color_variance": 2291.8400781271316,
+      "dominant_colors": [
+        [5, 2, 1],
+        [72, 84, 128],
+        [75, 87, 131],
+        [27, 31, 60],
+        [85, 102, 164]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 5,
+          "max": 116,
+          "std": 31.580009216293778
+        },
+        "green": {
+          "min": 2,
+          "max": 144,
+          "std": 39.24347553179361
+        },
+        "blue": {
+          "min": 1,
+          "max": 189,
+          "std": 57.3854673017288
+        },
+        "diversity": 0.002829218106995885,
+        "unique_colors": 22,
+        "brightness": {
+          "average": 72.26624657064471,
+          "min": 2.6666666666666665,
+          "max": 149.66666666666666,
+          "std": 42.585071804414305
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.978690409385241,
+        "edge_variance": 96.92078938408437,
+        "max_edge_strength": 58.68583967004117,
+        "horizontal_tendency": 1.247170781893004,
+        "vertical_tendency": 3.9519890260631003,
+        "edge_ratio": 0.31558052759458516
+      },
+      "signature": "74441604a3c276932e91d8eba18e18d0",
+      "pixel_count": 7776
+    },
+    "combined_signature": "ac67054ece3af29fbd88d569803dd535c6927a7c3c108346d4dd2adce515e257",
+    "timestamp": "2025-08-13T19:09:58.537206",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "13.1_⌤_Electronics_Lab": {
+    "frame_id": "13.1",
+    "frame_name": "⌤ Electronics Lab",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [82, 94, 114],
+      "color_variance": 1346.1976460121368,
+      "dominant_colors": [
+        [77, 100, 117],
+        [74, 100, 108],
+        [31, 41, 77],
+        [83, 86, 137],
+        [129, 131, 160]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 19,
+          "max": 251,
+          "std": 38.54924914445471
+        },
+        "green": {
+          "min": 7,
+          "max": 208,
+          "std": 32.97550048241324
+        },
+        "blue": {
+          "min": 7,
+          "max": 211,
+          "std": 31.08330486789013
+        },
+        "diversity": 0.002829218106995885,
+        "unique_colors": 22,
+        "brightness": {
+          "average": 97.11681241426611,
+          "min": 28.666666666666668,
+          "max": 208.0,
+          "std": 30.059825954418663
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 5.521280192071346,
+        "edge_variance": 211.26162130492963,
+        "max_edge_strength": 119.1149071741699,
+        "horizontal_tendency": 1.7204218106995885,
+        "vertical_tendency": 4.041580932784637,
+        "edge_ratio": 0.4256804055917354
+      },
+      "signature": "11fd19deeb62d62165b2d7b7d6619ed7",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [97, 113, 131],
+      "color_variance": 1685.9954554849899,
+      "dominant_colors": [
+        [77, 100, 117],
+        [162, 166, 183],
+        [144, 149, 174],
+        [74, 100, 108],
+        [72, 90, 111]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 176,
+          "std": 42.58381242606664
+        },
+        "green": {
+          "min": 0,
+          "max": 188,
+          "std": 36.88784412667985
+        },
+        "blue": {
+          "min": 0,
+          "max": 190,
+          "std": 35.98576042895467
+        },
+        "diversity": 0.0015432098765432098,
+        "unique_colors": 12,
+        "brightness": {
+          "average": 114.02361968449932,
+          "min": 0.0,
+          "max": 184.66666666666666,
+          "std": 38.3087224100026
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 6.440501201273011,
+        "edge_variance": 255.61777378028748,
+        "max_edge_strength": 75.13118157226361,
+        "horizontal_tendency": 0.5948645404663923,
+        "vertical_tendency": 5.981481481481482,
+        "edge_ratio": 0.09945103772503151
+      },
+      "signature": "f742f8065a3af4794445bcd48ef80405",
+      "pixel_count": 7776
+    },
+    "combined_signature": "5e1380afd93c1bce283f1d166cde7d76929555c62d9b52c6243e59f754b1a0c1",
+    "timestamp": "2025-08-13T19:10:06.187005",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "13.2_⌤_Fuel_Distiller": {
+    "frame_id": "13.2",
+    "frame_name": "⌤ Fuel Distiller",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [82, 62, 68],
+      "color_variance": 2450.5392897546926,
+      "dominant_colors": [
+        [75, 3, 11],
+        [59, 74, 89],
+        [62, 74, 89],
+        [254, 143, 59],
+        [61, 77, 90]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 254,
+          "std": 64.30607364769482
+        },
+        "green": {
+          "min": 0,
+          "max": 237,
+          "std": 40.46917309852144
+        },
+        "blue": {
+          "min": 0,
+          "max": 238,
+          "std": 37.00159234940713
+        },
+        "diversity": 0.006815843621399177,
+        "unique_colors": 53,
+        "brightness": {
+          "average": 71.42725480109739,
+          "min": 0.0,
+          "max": 236.66666666666666,
+          "std": 37.83362408228419
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 9.450247331226853,
+        "edge_variance": 355.2422795395908,
+        "max_edge_strength": 131.27378091437586,
+        "horizontal_tendency": 3.9254115226337447,
+        "vertical_tendency": 6.062157064471879,
+        "edge_ratio": 0.6475271889009885
+      },
+      "signature": "028516f56584fe449c9ad32d760d7cda",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [98, 70, 74],
+      "color_variance": 3833.4501035789363,
+      "dominant_colors": [
+        [59, 72, 86],
+        [254, 143, 59],
+        [74, 17, 34],
+        [139, 162, 193],
+        [0, 0, 0]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 0,
+          "max": 254,
+          "std": 72.15310713000052
+        },
+        "green": {
+          "min": 0,
+          "max": 244,
+          "std": 53.37454940860009
+        },
+        "blue": {
+          "min": 0,
+          "max": 244,
+          "std": 54.58422020262833
+        },
+        "diversity": 0.006430041152263375,
+        "unique_colors": 50,
+        "brightness": {
+          "average": 81.07964677640602,
+          "min": 0.0,
+          "max": 243.0,
+          "std": 49.70093632029857
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 12.838780252115084,
+        "edge_variance": 442.2437144648316,
+        "max_edge_strength": 129.60077588930983,
+        "horizontal_tendency": 4.097393689986283,
+        "vertical_tendency": 9.391953875171469,
+        "edge_ratio": 0.4362663769908556
+      },
+      "signature": "ade875042153a9dc75d1441597d3bed3",
+      "pixel_count": 7776
+    },
+    "combined_signature": "f35d8c8fbd470ea163b051ee02704e478162bd1cdaf592d5153ed857daf38062",
+    "timestamp": "2025-08-13T19:10:09.679716",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "13.3_⌤_Part_Assembler": {
+    "frame_id": "13.3",
+    "frame_name": "⌤ Part Assembler",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [110, 113, 108],
+      "color_variance": 709.4513982660322,
+      "dominant_colors": [
+        [107, 110, 98],
+        [106, 110, 90],
+        [105, 108, 94],
+        [107, 113, 95],
+        [102, 113, 88]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 39,
+          "max": 192,
+          "std": 25.609222545250958
+        },
+        "green": {
+          "min": 45,
+          "max": 187,
+          "std": 24.124463173886085
+        },
+        "blue": {
+          "min": 62,
+          "max": 196,
+          "std": 29.637496061964615
+        },
+        "diversity": 0.002700617283950617,
+        "unique_colors": 21,
+        "brightness": {
+          "average": 110.70949074074075,
+          "min": 48.666666666666664,
+          "max": 191.66666666666666,
+          "std": 25.035210303070784
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.216020649587067,
+        "edge_variance": 124.36325858824539,
+        "max_edge_strength": 68.73823131594561,
+        "horizontal_tendency": 1.1346021947873797,
+        "vertical_tendency": 3.2671467764060353,
+        "edge_ratio": 0.34727616248556725
+      },
+      "signature": "389d7fcb5300245a6be6491400c67a06",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [113, 114, 113],
+      "color_variance": 1181.4623665891415,
+      "dominant_colors": [
+        [102, 107, 90],
+        [134, 131, 152],
+        [105, 108, 94],
+        [105, 104, 98],
+        [107, 110, 98]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 39,
+          "max": 215,
+          "std": 33.792296725736165
+        },
+        "green": {
+          "min": 45,
+          "max": 221,
+          "std": 31.646285073437
+        },
+        "blue": {
+          "min": 62,
+          "max": 227,
+          "std": 37.41443212660838
+        },
+        "diversity": 0.002700617283950617,
+        "unique_colors": 21,
+        "brightness": {
+          "average": 113.69684499314128,
+          "min": 48.666666666666664,
+          "max": 221.0,
+          "std": 33.602322649478
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 4.342081241152984,
+        "edge_variance": 97.88331323413912,
+        "max_edge_strength": 51.9072356334944,
+        "horizontal_tendency": 1.105752743484225,
+        "vertical_tendency": 3.400591563786008,
+        "edge_ratio": 0.32516481992713886
+      },
+      "signature": "38386e4823a310a5ebec4bbbd29ac963",
+      "pixel_count": 7776
+    },
+    "combined_signature": "7d8ce80298b63bc10e97761c51fd23f734e1ade51a00a3456660b3f4c67db93f",
+    "timestamp": "2025-08-13T19:10:17.177827",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  },
+  "13.4_⌤_Launch_Factory": {
+    "frame_id": "13.4",
+    "frame_name": "⌤ Launch Factory",
+    "resolution": "1080x720",
+    "screen_position": "-2448,56",
+    "left_border": {
+      "side": "left",
+      "dimensions": "54x144",
+      "average_color": [135, 170, 201],
+      "color_variance": 835.5027120819121,
+      "dominant_colors": [
+        [142, 178, 211],
+        [128, 161, 190],
+        [121, 152, 180],
+        [135, 169, 200],
+        [139, 174, 207]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 113,
+          "max": 142,
+          "std": 8.3097018453741
+        },
+        "green": {
+          "min": 142,
+          "max": 178,
+          "std": 10.260313835460042
+        },
+        "blue": {
+          "min": 168,
+          "max": 211,
+          "std": 12.326021344001145
+        },
+        "diversity": 0.0009002057613168725,
+        "unique_colors": 7,
+        "brightness": {
+          "average": 169.4766375171468,
+          "min": 141.0,
+          "max": 177.0,
+          "std": 10.297674131167902
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 0.514519099078272,
+        "edge_variance": 1.9278998406251566,
+        "max_edge_strength": 7.0710678118654755,
+        "horizontal_tendency": 0.31524348422496573,
+        "vertical_tendency": 0.2301097393689986,
+        "edge_ratio": 1.3699701937406858
+      },
+      "signature": "879021bbe5c3f79b4f830081a2bb89fa",
+      "pixel_count": 7776
+    },
+    "right_border": {
+      "side": "right",
+      "dimensions": "54x144",
+      "average_color": [135, 170, 201],
+      "color_variance": 836.8883125005291,
+      "dominant_colors": [
+        [142, 178, 211],
+        [128, 161, 190],
+        [135, 169, 200],
+        [121, 152, 180],
+        [141, 177, 209]
+      ],
+      "color_ranges": {
+        "red": {
+          "min": 113,
+          "max": 142,
+          "std": 8.394625356810176
+        },
+        "green": {
+          "min": 142,
+          "max": 178,
+          "std": 10.371946500551172
+        },
+        "blue": {
+          "min": 168,
+          "max": 211,
+          "std": 12.449681008826886
+        },
+        "diversity": 0.0009002057613168725,
+        "unique_colors": 7,
+        "brightness": {
+          "average": 169.4210390946502,
+          "min": 141.0,
+          "max": 177.0,
+          "std": 10.404463127279639
+        }
+      },
+      "edge_characteristics": {
+        "edge_density": 0.5546345540317766,
+        "edge_variance": 2.0852345924067577,
+        "max_edge_strength": 7.0710678118654755,
+        "horizontal_tendency": 0.3354766803840879,
+        "vertical_tendency": 0.2531292866941015,
+        "edge_ratio": 1.325317527519052
+      },
+      "signature": "2c23ecd3aea1c9a7b56afa471ddb1b80",
+      "pixel_count": 7776
+    },
+    "combined_signature": "2ecade0cb40c7a6d9640d2a6d137f8a69389c0b09fe8923a5c7f878557086422",
+    "timestamp": "2025-08-13T19:10:35.030787",
+    "analysis_parameters": {
+      "border_inset": 0.05,
+      "center_strip": 0.2,
+      "border_dimensions": {
+        "left": "54x144",
+        "right": "54x144"
+      }
+    }
+  }
+}

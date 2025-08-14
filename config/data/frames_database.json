@@ -376,18 +376,6 @@
       }
     },
     {
-      "id": "6.4",
-      "name": "Graveyard",
-      "item": "Human Remains",
-      "automation": {
-        "can_automate": 0,
-        "programmed": 0
-      },
-      "buttons": {
-        "1": [1, 1, 1]
-      }
-    },
-    {
       "id": "7.1",
       "name": "Uranium Mine",
       "item": "Uranium",
@@ -574,18 +562,6 @@
         "target_dot_2": [0.8152775, 0.5118055],
         "target_dot_3": [0.8152775, 0.6368055],
         "target_dot_4": [0.8152775, 0.7618055]
-      }
-    },
-    {
-      "id": "8.5",
-      "name": "Incinerator",
-      "item": "Power (Remains)",
-      "automation": {
-        "can_automate": 0,
-        "programmed": 0
-      },
-      "buttons": {
-        "1": [1, 1, 1]
       }
     },
     {
